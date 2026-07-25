@@ -1,160 +1,169 @@
-# 🚀 CobraDiarioApp - Sistema Integral de Gestión de Créditos, Cobranza Diaria y Caja
+# CobraDiarioApp — Sistema Integral de Gestión de Créditos, Cobranza Diaria y Caja
 
-**CobraDiarioApp** es una solución tecnológica avanzada, progresiva (PWA) y multitenant diseñada para optimizar y automatizar la gestión de préstamos, la ruta de cobranza diaria, el cálculo inteligente de mora en tiempo real, el control de caja y la generación de cierres contables con exportación a PDF.
+**CobraDiarioApp** es una solución tecnológica progresiva (PWA) y multitenant diseñada para optimizar y automatizar la gestión de préstamos, la ruta de cobranza diaria, el cálculo de mora en tiempo real, el control de caja y la generación de cierres contables con exportación a PDF.
 
-Construido sobre una arquitectura moderna con **React 18**, **Vite**, **Tailwind CSS** (bajo una estética *Flat Design*) y **Firebase Firestore** con soporte completo para sincronización y almacenamiento offline sin conexión a internet.
+**Demo en producción:** [https://cobradiarioapp.netlify.app](https://cobradiarioapp.netlify.app)
 
----
-
-## 📋 Tabla de Contenidos
-
-1. [Visión General y Características Principales](#-visión-general-y-características-principales)
-2. [Estructura Completa del Proyecto](#-estructura-completa-del-proyecto)
-3. [Guía de Instalación y Configuración](#-guía-de-instalación-y-configuración)
-4. [Modelo de Datos en Firebase (Firestore Schema)](#-modelo-de-datos-en-firebase-firestore-schema)
-5. [Lógica de Negocio y Algoritmos Financieros](#-lógica-de-negocio-y-algoritmos-financieros)
-6. [Gestión de Estado y Hooks en Tiempo Real](#-gestión-de-estado-y-hooks-en-tiempo-real)
-7. [Manual de Uso Operativo (Flujos del Sistema)](#-manual-de-uso-operativo-flujos-del-sistema)
-8. [Capacidades PWA y Funcionamiento Offline](#-capacidades-pwa-y-funcionamiento-offline)
-9. [Paleta de Colores y Sistema de Diseño](#-paleta-de-colores-y-sistema-de-diseño)
-10. [Despliegue en Producción (Netlify)](#-despliegue-en-producción-netlify)
+Construido con **React 18**, **Vite**, **Tailwind CSS** y **Firebase Firestore**, con soporte completo para sincronización y almacenamiento offline.
 
 ---
 
-## 🌟 Visión General y Características Principales
+## Tabla de Contenidos
 
-CobraDiarioApp resuelve la necesidad de los cobradores de campo y administradores de crédito de contar con una herramienta rápida, ligera y fiable, capaz de operar tanto con buena conexión como en zonas rurales o de señal deficiente.
-
-### 🔑 Funcionalidades Clave
-
-- **Priorización Inteligente de Ruta ("Ruta del Día")**: Ordena automáticamente a los clientes priorizando en la parte superior a aquellos que presentan cuotas vencidas o mora, optimizando el tiempo del cobrador.
-- **Clasificación Dinámica de Estado de Mora**: Algoritmo en tiempo real que determina la salud financiera del cliente (*En Mora*, *Al Día*, *Adelantado*) comparando lo pagado acumulado contra la cuota esperada según la fecha oficial de Colombia (`America/Bogota`) omitiendo domingos o días no hábiles configurados.
-- **Sincronización Offline (IndexedDB + Firestore Persistence)**: Permite registrar cobros, préstamos y caja sin conexión a internet. Los datos se guardan localmente en el dispositivo y se sincronizan con la nube al detectar red.
-- **Control de Caja y Cierres Diarios**: Monitoreo de ingresos y egresos extraordinarios con cálculo de saldo neto diario y guardado del historial de cierres por fecha.
-- **Generación de Reportes PDF**: Exportación limpia de cierres diarios estilo comprobante/factura en formato PDF listo para compartir o imprimir mediante `jsPDF` y `jspdf-autotable`.
-- **Instalación PWA (Progressive Web App)**: La aplicación se instala directamente en dispositivos Android, iOS o Windows como una app nativa desde el navegador web.
+1. [Visión General](#visión-general)
+2. [Estructura del Proyecto](#estructura-del-proyecto)
+3. [Instalación y Configuración](#instalación-y-configuración)
+4. [Modelo de Datos en Firestore](#modelo-de-datos-en-firestore)
+5. [Lógica de Negocio y Algoritmos Financieros](#lógica-de-negocio-y-algoritmos-financieros)
+6. [Manual de Uso Operativo](#manual-de-uso-operativo)
+7. [Funcionalidad GPS y Navegación](#funcionalidad-gps-y-navegación)
+8. [Capacidades PWA y Modo Offline](#capacidades-pwa-y-modo-offline)
+9. [Paleta de Colores y Sistema de Diseño](#paleta-de-colores-y-sistema-de-diseño)
+10. [Despliegue en Producción](#despliegue-en-producción)
+11. [Historial de Cambios](#historial-de-cambios)
 
 ---
 
-## 📂 Estructura Completa del Proyecto
+## Visión General
+
+CobraDiarioApp resuelve la necesidad de cobradores de campo y administradores de crédito de contar con una herramienta rápida, ligera y confiable, capaz de operar con buena conexión o en zonas rurales con señal deficiente.
+
+### Funcionalidades principales
+
+- **Priorización de Ruta ("Ruta del Día")**: Ordena automáticamente los clientes priorizando aquellos con cuotas vencidas o en mora, optimizando el tiempo del cobrador. Incluye botón de navegación GPS directo a Google Maps.
+- **Clasificación Dinámica de Mora**: Algoritmo en tiempo real que clasifica la salud financiera del cliente (En Mora, Al Día, Adelantado) según la fecha oficial de Colombia (`America/Bogota`), omitiendo domingos y días no hábiles.
+- **Captura y Navegación GPS**: El cobrador puede registrar las coordenadas GPS del domicilio del cliente desde el celular. Una vez guardadas, aparece el botón "Cómo llegar" que abre Google Maps con la ruta trazada.
+- **Sincronización Offline**: Permite registrar cobros, préstamos y movimientos de caja sin conexión a internet. Los datos se sincronizan con Firestore al recuperar la red.
+- **Control de Caja y Cierres Diarios**: Monitoreo de ingresos y egresos con cálculo de saldo neto diario e historial de cierres por fecha.
+- **Generación de Reportes PDF**: Exportación de cierres diarios en formato PDF mediante `jsPDF` y `jspdf-autotable`.
+- **PWA instalable**: Se instala directamente en Android, iOS o Windows como aplicación nativa desde el navegador.
+- **Diseño Responsivo**: Interfaz optimizada para uso en campo (móvil) y en oficina (escritorio).
+
+---
+
+## Estructura del Proyecto
 
 ```text
 CobraDiarioApp/
 └── cobro-diario-app/
-    ├── public/                      # Recursos estáticos e íconos PWA
+    ├── public/
     │   ├── favicon.ico
     │   ├── icon-192.png
     │   └── icon-512.png
-    ├── firebase/                    # Reglas de seguridad de Firestore
+    ├── firebase/
     │   └── firestore.rules
     ├── src/
-    │   ├── components/              # Componentes de UI modulares y reutilizables
-    │   │   ├── forms/               # Formularios interactivos
-    │   │   │   ├── ClientForm.jsx   # Formulario de alta y edición de clientes
-    │   │   │   └── LoanForm.jsx     # Simulación y otorgamiento de créditos
-    │   │   ├── layout/              # Estructura visual de navegación
-    │   │   │   ├── BottomNav.jsx    # Barra inferior fija de pestañas
-    │   │   │   └── Header.jsx       # Cabecera principal y botón de navegación
-    │   │   └── ui/                  # Elementos atómicos de interfaz
-    │   │       ├── Badge.jsx        # Etiqueta visual de estado (Mora/Al día/Adelantado)
-    │   │       ├── ClientRow.jsx    # Tarjeta de cliente con cambio dinámico de color
-    │   │       ├── FrequencySelector.jsx # Selector interactivo de frecuencias
-    │   │       └── MetricCard.jsx   # Tarjetas informativas de saldo e indicadores
-    │   ├── context/                 # Estado global de React
-    │   │   └── AuthContext.jsx      # Autenticación, sesión y orgId de Firebase
-    │   ├── firebase/                # Conexión y operaciones de base de datos
-    │   │   ├── auth.js              # Iniciar sesión, registro y cerrar sesión
-    │   │   ├── config.js            # Inicialización de Firebase con persistencia offline
-    │   │   └── firestore.js         # API de servicios CRUD para Firestore
-    │   ├── hooks/                   # Custom Hooks para suscripción en tiempo real
-    │   │   ├── useClients.js        # Listener en tiempo real para clientes
-    │   │   ├── useLoans.js          # Listener en tiempo real para préstamos y pagos
-    │   │   └── useMovements.js      # Listener en tiempo real para caja del día
-    │   ├── logic/                   # Motor matemático y reglas de negocio
-    │   │   ├── caja.js              # Arqueo de caja, balance neto y resumen diario
-    │   │   ├── credito.js           # Cálculo de interés, total a pagar y cuotas
-    │   │   ├── dateUtils.js         # Manejo estricto de zona horaria Bogotá/Colombia
-    │   │   ├── frecuencia.js        # Cálculo de cuotas esperadas según días hábiles
-    │   │   ├── mora.js              # Algoritmo de clasificación de estado de mora
-    │   │   └── pdfExport.js         # Motor de generación de reportes en PDF
-    │   ├── pages/                   # Páginas y vistas principales
-    │   │   ├── Caja/                # Registro y vista de movimientos de efectivo
-    │   │   ├── Clientes/            # Directorio y búsqueda de clientes
-    │   │   ├── Configuracion/       # Parámetros de la organización y tasa global
-    │   │   ├── Creditos/            # Otorgamiento de nuevos préstamos
-    │   │   ├── Inicio/              # Dashboard principal de métricas y accesos
-    │   │   ├── Login/               # Inicio de sesión y registro de cobradores
-    │   │   ├── RegistrarCobro/      # Interfaz de registro de abonos individuales
-    │   │   ├── Reportes/            # Histórico de cierres y exportación PDF
-    │   │   └── RutaDelDia/          # Lista de cobranza diaria con filtro e intelección
-    │   ├── styles/                  # Configuración CSS
-    │   │   └── index.css            # Estilos globales de Tailwind y Flat Design
-    │   ├── App.jsx                  # Enrutador principal (`react-router-dom`)
-    │   └── main.jsx                 # Punto de entrada y Bootstrap de React
-    ├── .env                         # Variables de entorno locales
-    ├── .env.example                 # Guía de variables de entorno requeridas
-    ├── .gitignore                   # Exclusión de archivos pesados o confidenciales
-    ├── index.html                   # Documento HTML principal
-    ├── netlify.toml                 # Reglas de enrutamiento SPA para despliegue en Netlify
-    ├── package.json                 # Dependencias y scripts
-    ├── postcss.config.js            # Configuración de PostCSS
-    ├── tailwind.config.js           # Tema de colores y extensión de estilos
-    └── vite.config.js               # Configuración de compilación Vite y PWA
+    │   ├── components/
+    │   │   ├── forms/
+    │   │   │   ├── ClientForm.jsx          # Formulario de alta y edición de clientes
+    │   │   │   └── LoanForm.jsx            # Formulario de créditos
+    │   │   │                               # Prop onClientChange: notifica clientId al padre
+    │   │   ├── layout/
+    │   │   │   ├── BottomNav.jsx           # Barra de navegación inferior
+    │   │   │   └── Header.jsx              # Cabecera con botón de retroceso
+    │   │   └── ui/
+    │   │       ├── Badge.jsx               # Etiqueta de estado (Mora / Al día / Adelantado)
+    │   │       ├── ClientRow.jsx           # Fila de cliente con botón GPS opcional
+    │   │       │                           # Prop ubicacion: muestra "Cómo llegar" si existe
+    │   │       ├── FrequencySelector.jsx   # Selector de frecuencia de cobro
+    │   │       └── MetricCard.jsx          # Tarjetas de métricas e indicadores
+    │   ├── context/
+    │   │   └── AuthContext.jsx             # Autenticación global y orgId
+    │   ├── firebase/
+    │   │   ├── auth.js                     # Inicio de sesión, registro y cierre
+    │   │   ├── config.js                   # Inicialización con persistencia offline
+    │   │   └── firestore.js                # API CRUD para Firestore
+    │   ├── hooks/
+    │   │   ├── useClients.js               # Suscripción en tiempo real + addClient + updateClient
+    │   │   ├── useLoans.js                 # Suscripción en tiempo real para préstamos y pagos
+    │   │   └── useMovements.js             # Suscripción en tiempo real para caja
+    │   ├── logic/                          # Motor de negocio — no modificado en v1.1
+    │   │   ├── caja.js                     # Arqueo y balance de caja
+    │   │   ├── credito.js                  # Cálculo de interés, total y cuota
+    │   │   ├── dateUtils.js                # Zona horaria Bogotá / Colombia
+    │   │   ├── frecuencia.js               # Cuotas esperadas según días hábiles
+    │   │   ├── mora.js                     # Clasificación de estado de mora
+    │   │   └── pdfExport.js                # Generación de reportes PDF
+    │   ├── pages/
+    │   │   ├── Caja/                       # Registro de movimientos de efectivo
+    │   │   ├── Clientes/                   # Directorio de clientes con botón GPS
+    │   │   ├── Configuracion/              # Parámetros de la organización
+    │   │   ├── Creditos/                   # Otorgamiento de créditos + captura GPS
+    │   │   ├── Inicio/                     # Dashboard de métricas
+    │   │   ├── Login/                      # Autenticación
+    │   │   ├── RegistrarCobro/             # Cobro individual con botón "Cómo llegar" / "Guardar GPS"
+    │   │   ├── Reportes/                   # Histórico de cierres y exportación PDF
+    │   │   └── RutaDelDia/                 # Lista de cobranza diaria con GPS por cliente
+    │   ├── styles/
+    │   │   └── index.css
+    │   ├── App.jsx                         # Enrutador principal (react-router-dom)
+    │   └── main.jsx                        # Punto de entrada
+    ├── .env
+    ├── .env.example
+    ├── .gitignore
+    ├── index.html
+    ├── netlify.toml
+    ├── package.json
+    ├── postcss.config.js
+    ├── tailwind.config.js
+    └── vite.config.js
 ```
 
 ---
 
-## 🛠 Guía de Instalación y Configuración
+## Instalación y Configuración
 
-### Requisitos Previos
+### Requisitos previos
 
-- **Node.js**: Versión 18.0.0 o superior.
-- **npm** o **yarn**: Gestor de paquetes.
-- **Proyecto en Firebase**: Cuenta activa en Google Firebase con Firestore Database y Firebase Authentication habilitados (Email/Contraseña).
+- Node.js 18.0.0 o superior
+- npm o yarn
+- Proyecto en Firebase con Firestore y Authentication (Email/Contraseña) habilitados
 
-### Pasos de Instalación
+### Pasos
 
-1. **Clonar o descargar el proyecto**:
-   ```bash
-   git clone <URL_DEL_REPOSITORIO> CobraDiarioApp
-   cd CobraDiarioApp/cobro-diario-app
-   ```
+**1. Clonar el repositorio:**
+```bash
+git clone <URL_DEL_REPOSITORIO> CobraDiarioApp
+cd CobraDiarioApp/cobro-diario-app
+```
 
-2. **Instalar dependencias**:
-   ```bash
-   npm install
-   ```
+**2. Instalar dependencias:**
+```bash
+npm install
+```
 
-3. **Configurar Variables de Entorno (`.env`)**:
-   Crea un archivo `.env` en la raíz de `cobro-diario-app/` utilizando como base `.env.example`:
-   ```env
-   VITE_FIREBASE_API_KEY=tu_api_key_aqui
-   VITE_FIREBASE_AUTH_DOMAIN=tu_proyecto.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=tu_proyecto_id
-   VITE_FIREBASE_STORAGE_BUCKET=tu_proyecto.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
-   VITE_FIREBASE_APP_ID=tu_app_id
-   ```
+**3. Configurar variables de entorno:**
 
-4. **Ejecutar en modo Desarrollo**:
-   ```bash
-   npm run dev
-   ```
-   La aplicación se abrirá en `http://localhost:5173`.
+Crear un archivo `.env` en la raíz de `cobro-diario-app/` a partir de `.env.example`:
 
-5. **Compilar para Producción**:
-   ```bash
-   npm run build
-   ```
-   Los archivos optimizados para despliegue se generarán en la carpeta `dist/`.
+```env
+VITE_FIREBASE_API_KEY=tu_api_key
+VITE_FIREBASE_AUTH_DOMAIN=tu_proyecto.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=tu_proyecto_id
+VITE_FIREBASE_STORAGE_BUCKET=tu_proyecto.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=tu_sender_id
+VITE_FIREBASE_APP_ID=tu_app_id
+```
+
+**4. Ejecutar en modo desarrollo:**
+```bash
+npm run dev
+```
+La aplicación se abrirá en `http://localhost:5173`.
+
+**5. Compilar para producción:**
+```bash
+npm run build
+```
+Los archivos optimizados se generarán en `dist/`.
 
 ---
 
-## 🔥 Modelo de Datos en Firebase (Firestore Schema)
+## Modelo de Datos en Firestore
 
-El sistema utiliza una arquitectura **Multitenant aislada por Organización**, garantizando que cada empresa o cobrador mantenga sus datos 100% segregados e independientes bajo la ruta `/organizations/{orgId}/`.
+El sistema usa una arquitectura **multitenant aislada por organización**. Todos los datos residen bajo la ruta `/organizations/{orgId}/`, garantizando segregación completa entre usuarios.
 
-### Colecciones Principales
+### Colecciones principales
 
 ```mermaid
 erDiagram
@@ -170,6 +179,7 @@ erDiagram
         string documento
         string telefono
         string direccion
+        object ubicacion "{ lat, lng } — opcional"
         timestamp createdAt
     }
 
@@ -203,7 +213,6 @@ erDiagram
 
     CIERRES {
         string id PK "YYYY-MM-DD"
-        string fecha
         number saldoInicial
         number totalCobrado
         number totalIngresos
@@ -213,9 +222,9 @@ erDiagram
     }
 ```
 
-### Configuración de Persistencia Offline (`src/firebase/config.js`)
+> El campo `ubicacion: { lat, lng }` se almacena en el documento del **cliente**, no del crédito, para que quede disponible en todos los créditos futuros sin duplicación. Es completamente opcional.
 
-Para asegurar el funcionamiento offline continuo sin desconexiones, la base de datos Firestore se inicializa activando la memoria caché local persistente:
+### Persistencia offline (`src/firebase/config.js`)
 
 ```javascript
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
@@ -229,101 +238,162 @@ export const db = initializeFirestore(app, {
 
 ---
 
-## 🧮 Lógica de Negocio y Algoritmos Financieros
+## Lógica de Negocio y Algoritmos Financieros
 
-Los cálculos matemáticos y financieros están desacoplados de la interfaz gráfica y residen en `src/logic/`:
+Todos los cálculos residen en `src/logic/` y están completamente desacoplados de la interfaz. Esta capa no fue modificada en ninguna actualización posterior.
 
-### 1. Cálculo Financiero del Crédito (`src/logic/credito.js`)
+### Cálculo del crédito (`credito.js`)
 
-Dado un capital prestado ($C$), un porcentaje de interés ($I$) y un número de cuotas ($N$):
+Dado capital `C`, porcentaje de interés `I` y número de cuotas `N`:
 
-$$\text{Monto Interés} = C \times \left(\frac{I}{100}\right)$$
+```
+Monto Interés       = C × (I / 100)
+Monto Total a Pagar = C + Monto Interés
+Valor por Cuota     = Monto Total / N
+```
 
-$$\text{Monto Total a Pagar} = C + \text{Monto Interés}$$
+### Días hábiles y frecuencia (`frecuencia.js`)
 
-$$\text{Valor por Cuota} = \frac{\text{Monto Total a Pagar}}{N}$$
+Evalúa las fechas transcurridas desde el inicio del préstamo considerando la frecuencia de cobro y omitiendo domingos y días feriados configurados.
 
-### 2. Proyección de Fechas y Días Hábiles (`src/logic/frecuencia.js`)
+### Clasificación de mora (`mora.js`)
 
-El sistema evalúa las fechas transcurridas desde el inicio del préstamo considerando la frecuencia de cobro (Diaria, Semanal, Quincenal, Mensual) y omitiendo automáticamente los días no laborables (como domingos o días feriados configurados en el sistema).
+| Estado | Condición |
+|---|---|
+| `mora` | Total pagado < Total esperado a la fecha actual |
+| `al_dia` | Total pagado = Total esperado a la fecha actual |
+| `adelantado` | Total pagado > Total esperado a la fecha actual |
 
-### 3. Algoritmo de Clasificación de Estado de Mora (`src/logic/mora.js`)
+### Balance de caja (`caja.js`)
 
-El estado del crédito se clasifica dinámicamente comparando el **Monto Total Abonado** acumulado por el cliente contra el **Monto Esperado a la Fecha**:
-
-- **`mora`** (Roja): El total pagado es **menor** al total esperado a la fecha actual. Se calcula el número exacto de cuotas de atraso y el valor en dinero adeudado.
-- **`al_dia`** (Amarilla/Dorada): El total pagado es **igual** al monto esperado a la fecha actual.
-- **`adelantado`** (Azul): El total pagado es **mayor** al monto esperado a la fecha actual.
-
-### 4. Control de Caja y Cierres (`src/logic/caja.js`)
-
-Calcula el saldo neto en efectivo del cobrador en tiempo real:
-
-$$\text{Saldo Neto en Caja} = \text{Saldo Inicial} + \sum \text{Cobros de Préstamos} + \sum \text{Ingresos Extra} - \sum \text{Egresos/Gastos}$$
-
----
-
-## 📱 Manual de Uso Operativo (Flujos del Sistema)
-
-### Flujo 1: Autenticación e Iniciar Sesión
-1. Ingrese con su correo electrónico y contraseña.
-2. Si es la primera vez, cree una cuenta de cobrador. Al registrarse, el sistema genera automáticamente una Organización única (`orgId`) con la configuración predeterminada.
-
-### Flujo 2: Creación de Clientes y Otorgamiento de Crédito
-1. Ingrese al módulo de **Clientes** y presione `+ Nuevo Cliente`.
-2. Diligencie el nombre completo, documento, teléfono y dirección del cliente.
-3. Presione `Otorgar Préstamo` para abrir el formulario interactivo de crédito (`LoanForm.jsx`).
-4. Seleccione el monto deseado, tasa de interés (por defecto 20%), frecuencia y número de cuotas. Observe la vista previa en tiempo real del valor de cuota y total a pagar antes de guardar.
-
-### Flujo 3: Operación en "Ruta del Día"
-1. Ingrese a la pestaña **Ruta del Día**.
-2. Los clientes aparecerán ordenados inteligentemente: los clientes con **Mora** encabezan la lista destacados en color rojo suave, seguidos por los clientes **Al Día** y **Adelantados**.
-3. Use el buscador rápido para filtrar por nombre o dirección.
-
-### Flujo 4: Registrar un Cobro
-1. Presione sobre el cliente en la lista para ingresar a **Registrar Cobro**.
-2. Visualizará el saldo pendiente, el valor de la cuota sugerida y el historial de abonos.
-3. Ingrese la cantidad entregada por el cliente y confirme el cobro. El saldo se actualizará instantáneamente y se registrará en la caja diaria.
-
-### Flujo 5: Gestión de Caja y Cierre Diario
-1. Ingrese al módulo de **Caja** para registrar gastos operativos (ejemplo: gasolina, almuerzo) o ingresos extra.
-2. En el módulo de **Reportes**, consulte el resumen detallado del día.
-3. Presione `Cerrar Caja del Día` para consolidar los números y guardarlos en el historial de la nube.
-4. Presione `Descargar Reporte PDF` para generar un comprobante imprimible con los cobros del día, totales y clientes en mora.
+```
+Saldo Neto = Saldo Inicial + Suma(Cobros) + Suma(Ingresos Extra) - Suma(Egresos)
+```
 
 ---
 
-## 📶 Capacidades PWA y Funcionamiento Offline
+## Manual de Uso Operativo
 
-CobraDiarioApp está configurada como una **PWA Completa** mediante `vite-plugin-pwa`.
+### Autenticación
+Ingrese con correo y contraseña. En el primer registro, el sistema crea automáticamente una organización (`orgId`) con configuración predeterminada.
 
-- **Instalación**: Al navegar en la app desde Google Chrome o Safari en un dispositivo móvil, aparecerá la opción "Agregar a la pantalla principal".
-- **Modo Offline**: Si el cobrador entra a una zona sin señal de celular:
-  - La aplicación continuará cargando normalmente desde el Service Worker.
-  - Se podrán registrar abonos y préstamos.
-  - Firebase guardará los datos en la base de datos IndexedDB local.
-  - Al recuperar la señal de red, Firebase sincronizará automáticamente todas las operaciones pendientes con Firestore sin pérdida de información.
+### Creación de clientes y créditos
+1. Ir a **Clientes** → presionar **Nuevo Cliente** y completar el formulario.
+2. Ir a **Creditos** → **Nuevo crédito**, seleccionar el cliente, ingresar capital, tasa, frecuencia y cuotas.
+3. Opcional: presionar **"Capturar ubicación del cliente"** para registrar las coordenadas GPS del domicilio.
+
+### Ruta del Día
+Los clientes se listan ordenados: **En Mora** (rojo) primero, luego **Al Día** (dorado) y **Adelantado** (azul). Si el cliente tiene ubicación guardada, aparece el ícono de mapa en su fila para abrir la ruta en Google Maps.
+
+### Registrar un cobro
+1. Presionar sobre el cliente en la lista para ingresar a **Registrar Cobro**.
+2. Si el cliente tiene ubicación: aparece el botón **"Cómo llegar"** que abre Google Maps.
+3. Si el cliente no tiene ubicación: aparece el botón **"Guardar GPS"** para capturar la posición actual.
+4. Ingresar el monto y confirmar el cobro. El saldo se actualiza en tiempo real.
+
+### Caja y cierre diario
+1. Registrar gastos o ingresos extra en el módulo de **Caja**.
+2. Ir a **Reportes** para consultar el resumen del día.
+3. Presionar **"Cerrar Caja del Día"** para consolidar el histórico en Firestore.
+4. Presionar **"Descargar Reporte PDF"** para generar el comprobante.
 
 ---
 
-## 🎨 Paleta de Colores y Sistema de Diseño
+## Funcionalidad GPS y Navegación
 
-El sistema utiliza un estándar visual **Flat Design (Diseño Plano)** sin sombras pesadas, priorizando la legibilidad en pantallas bajo luz solar directa en campo:
+### Captura de ubicación
 
-| Función Visual | Color Hexadecimal | Clase Tailwind | Muestra |
-| :--- | :--- | :--- | :--- |
-| **Color Principal (Brand / Headers)** | `#26215C` | `bg-primary`, `text-primary` | Deep Purple |
-| **Acento y Botones Destacados** | `#7F77DD` | `bg-primary-light`, `text-primary-light` | Violet Light |
-| **Fondo de Pantalla (Superficie)** | `#EEEDFE` | `bg-primary-bg` | Soft Purple Tint |
-| **Estado "Al Día" (Normal)** | `#FAC775` | `bg-[#FAC775]/20`, `text-amber-700` | Warm Gold |
-| **Estado "Mora" (Alerta / Prioritario)** | `#EF4444` | `bg-red-50`, `text-red-600` | Crimson Red |
-| **Estado "Adelantado" (Informativo)** | `#3B82F6` | `bg-blue-50`, `text-blue-600` | Ocean Blue |
+La funcionalidad es completamente **opcional y no bloqueante**. No interrumpe ningún flujo existente.
+
+| Pantalla | Activación | Ícono |
+|---|---|---|
+| Nuevo Crédito | Botón debajo del formulario | `IconCurrentLocation` |
+| Registrar Cobro | Botón "Guardar GPS" en la tarjeta del cliente | `IconMapPin` |
+
+```javascript
+// Las coordenadas se guardan en el documento del cliente:
+updateClient(clientId, { ubicacion: { lat: latitude, lng: longitude } });
+```
+
+**Patrón de implementación correcto:** `NuevoCredito.jsx` usa estado React (`selectedClientId` via `useState`) que se actualiza a través de la prop `onClientChange` de `LoanForm`. No se accede al DOM directamente.
+
+```javascript
+// LoanForm.jsx — notifica al padre cuando cambia el selector de cliente
+if (field === "clientId" && onClientChange) {
+  onClientChange(value);
+}
+
+// NuevoCredito.jsx — usa estado React, no document.querySelector
+const [selectedClientId, setSelectedClientId] = useState("");
+<LoanForm onClientChange={setSelectedClientId} ... />
+```
+
+### Navegación
+
+Cuando `client.ubicacion` existe, el botón "Cómo llegar" abre:
+
+```
+https://www.google.com/maps/dir/?api=1&destination={lat},{lng}
+```
+
+En Android abre Google Maps. En iOS abre Maps o Google Maps según la configuración del dispositivo.
+
+**Disponible en:**
+- Ruta del Día — ícono en cada fila de cliente
+- Listado de Clientes — ícono en cada fila de cliente
+- Registrar Cobro — botón prominente en la tarjeta del cliente
 
 ---
 
-## 🌐 Despliegue en Producción (Netlify)
+## Capacidades PWA y Modo Offline
 
-El proyecto incluye el archivo `netlify.toml` con las redirecciones requeridas para aplicaciones de una sola página (SPA):
+- **Instalación**: Desde Chrome o Safari en móvil, la opción "Agregar a pantalla principal" instala la app de forma nativa.
+- **Modo offline**: Sin señal, la aplicación sigue funcionando desde el Service Worker. Firebase almacena las operaciones en IndexedDB local y las sincroniza automáticamente con Firestore al recuperar la conexión.
+
+---
+
+## Paleta de Colores y Sistema de Diseño
+
+Paleta pastel suave, optimizada para legibilidad en campo y bajo luz solar directa.
+
+| Función | Hex | Clase Tailwind |
+|:---|:---|:---|
+| Color principal (brand) | `#5A52C5` | `bg-primary` / `text-primary` |
+| Acento y botones | `#7F77DD` | `bg-primary-light` / `text-primary-light` |
+| Fondo de pantalla | `#EEEDFE` | `bg-primary-bg` |
+| Estado "Al Día" | amber | `bg-amber-50` / `text-amber-800` |
+| Estado "En Mora" | red | `bg-red-50` / `text-red-600` |
+| Estado "Adelantado" | blue | `bg-blue-50` / `text-blue-600` |
+
+```javascript
+// tailwind.config.js
+theme: {
+  extend: {
+    colors: {
+      primary:         "#5A52C5",
+      "primary-light": "#7F77DD",
+      "primary-bg":    "#EEEDFE",
+      "surface-1":     "#F5F5F7",
+      "surface-2":     "#EBEBF0",
+    }
+  }
+}
+```
+
+### Principios de diseño aplicados
+
+- Íconos semánticos diferenciados: `IconCurrentLocation` para capturar posición propia, `IconMapPin` para navegar hacia un destino.
+- `e.stopPropagation()` en el botón GPS de `ClientRow` para evitar activar el click de la fila al presionar el ícono de mapa.
+- Visualización de moneda con `Intl.NumberFormat` y atributo `translate="no"` para evitar que traductores automáticos conviertan el símbolo `$` a "dólares".
+- Layout centrado con `max-w-5xl mx-auto` en escritorio; pantalla completa en móvil.
+
+---
+
+## Despliegue en Producción
+
+**URL:** [https://cobradiarioapp.netlify.app](https://cobradiarioapp.netlify.app)
+
+El proyecto incluye `netlify.toml` con las redirecciones requeridas para SPA:
 
 ```toml
 [[redirects]]
@@ -332,15 +402,38 @@ El proyecto incluye el archivo `netlify.toml` con las redirecciones requeridas p
   status = 200
 ```
 
-### Pasos para Desplegar en Netlify:
+### Pasos para desplegar
 
-1. Conecte su repositorio de GitHub/GitLab a Netlify.
-2. Defina el directorio base del proyecto (`cobro-diario-app`).
-3. Comando de construcción (*Build command*): `npm run build`
-4. Directorio de publicación (*Publish directory*): `dist`
-5. Añada las variables de entorno (`VITE_FIREBASE_*`) en el panel de Netlify (`Site settings > Environment variables`).
-6. Presione **Deploy site**.
+1. Conectar el repositorio de GitHub/GitLab a Netlify.
+2. Directorio base del proyecto: `cobro-diario-app`
+3. Comando de construcción: `npm run build`
+4. Directorio de publicación: `dist`
+5. Añadir variables de entorno (`VITE_FIREBASE_*`) en `Site settings > Environment variables`.
+6. Presionar **Deploy site**.
 
 ---
 
-© 2026 **CobraDiarioApp** - Todos los derechos reservados.
+## Historial de Cambios
+
+### v1.1.0 — GPS y Navegación a domicilios (julio 2026)
+
+**Nuevas funcionalidades:**
+
+- Captura GPS opcional en "Nuevo Crédito" y "Registrar Cobro".
+- Botón "Cómo llegar" en Ruta del Día, Listado de Clientes y Registrar Cobro.
+- `updateClient(id, data)` añadido a `useClients` para actualizar campos del cliente.
+- Prop `onClientChange` en `LoanForm` para exponer el `clientId` seleccionado al padre de forma reactiva.
+- Íconos semánticos distintos: `IconCurrentLocation` (capturar) vs. `IconMapPin` (navegar).
+
+**Mejoras:**
+
+- Paleta de colores ajustada a tonos pastel (`primary: #5A52C5`, `primary-light: #7F77DD`).
+- `ClientRow` refactorizado de `<button>` a `<div>` con `onClick` para permitir botones anidados sin violar HTML semántico.
+- Moneda en Reportes corregida con `Intl.NumberFormat` y `translate="no"`.
+- Diseño responsivo ajustado para escritorio y móvil.
+
+**Sin cambios en:** `src/logic/`, flujos de autenticación, creación de clientes ni registro de pagos.
+
+---
+
+© 2026 CobraDiarioApp. Todos los derechos reservados.
