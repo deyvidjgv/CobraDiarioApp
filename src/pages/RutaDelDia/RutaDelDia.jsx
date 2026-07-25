@@ -68,6 +68,7 @@ export default function RutaDelDia() {
                     ? `Debe ${item.mora.cuotasMora} cuotas — $${item.mora.deficit.toLocaleString()}`
                     : `Cuota: $${item.cuota.toLocaleString()}`
                 }
+                ubicacion={item.client.ubicacion}
                 onClick={() => navigate(`/cobro/${item.id}`)}
               />
             ))}

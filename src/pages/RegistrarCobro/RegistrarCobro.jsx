@@ -8,20 +8,21 @@ import { calcularCuotasVencidas } from "../../logic/frecuencia";
 import { calcularEstadoMora } from "../../logic/mora";
 import { getDocument, toDate } from "../../firebase/firestore";
 import { useAuth } from "../../context/AuthContext";
-import { IconCheck } from "@tabler/icons-react";
+import { IconCheck, IconMapPin } from "@tabler/icons-react";
 
 export default function RegistrarCobro() {
   const { loanId } = useParams();
   const navigate = useNavigate();
   const { orgId } = useAuth();
   const { registerPayment } = useLoans();
-  const { clients } = useClients();
+  const { clients, updateClient } = useClients();
 
   const [loan, setLoan] = useState(null);
   const [monto, setMonto] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
+  const [capturingGps, setCapturingGps] = useState(false);
 
   useEffect(() => {
     if (!orgId || !loanId) return;
@@ -42,6 +43,29 @@ export default function RegistrarCobro() {
   }, [orgId, loanId]);
 
   const client = clients.find((c) => c.id === loan?.clientId);
+
+  function handleCaptureCurrentGps() {
+    if (!client?.id) return;
+    if (!navigator.geolocation) {
+      alert("Geolocalización no disponible.");
+      return;
+    }
+    setCapturingGps(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        updateClient(client.id, { ubicacion: { lat: latitude, lng: longitude } })
+          .then(() => alert("Ubicación del cliente guardada con éxito."))
+          .catch((e) => alert("Error guardando ubicación: " + e.message))
+          .finally(() => setCapturingGps(false));
+      },
+      (err) => {
+        alert("No se pudo obtener la ubicación: " + err.message);
+        setCapturingGps(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
 
   async function handleCobro(e) {
     e.preventDefault();
@@ -85,15 +109,40 @@ export default function RegistrarCobro() {
 
       <div className="p-4 space-y-5">
         {/* Info del cliente */}
-        <div className="bg-white rounded-xl p-4 border-thin">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-full bg-primary-bg text-primary flex items-center justify-center text-sm font-medium">
-              {client?.nombre?.charAt(0) || "?"}
+        <div className="bg-white rounded-xl p-4 border-thin space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary-bg text-primary flex items-center justify-center text-sm font-medium">
+                {client?.nombre?.charAt(0) || "?"}
+              </div>
+              <div>
+                <p className="font-medium text-gray-800">{client?.nombre || "Cliente"}</p>
+                <p className="text-xs text-gray-400">{client?.telefono}</p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-gray-800">{client?.nombre || "Cliente"}</p>
-              <p className="text-xs text-gray-400">{client?.telefono}</p>
-            </div>
+
+            {/* Botón de Google Maps o Capturar GPS */}
+            {client?.ubicacion?.lat && client?.ubicacion?.lng ? (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${client.ubicacion.lat},${client.ubicacion.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 bg-primary-light text-white px-3 py-1.5 rounded-xl text-xs font-medium hover:bg-primary transition shadow-sm shrink-0"
+              >
+                <IconMapPin size={16} stroke={2} />
+                Cómo llegar
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={handleCaptureCurrentGps}
+                disabled={capturingGps}
+                className="flex items-center gap-1 bg-surface-2 text-primary-light px-2.5 py-1.5 rounded-xl text-xs font-medium hover:bg-primary-bg transition border border-thin shrink-0"
+              >
+                <IconMapPin size={14} stroke={2} />
+                {capturingGps ? "Guardando..." : "Guardar GPS"}
+              </button>
+            )}
           </div>
 
           {/* Progreso */}

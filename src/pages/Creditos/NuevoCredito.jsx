@@ -7,14 +7,17 @@ import { useLoans } from "../../hooks/useLoans";
 import { useAuth } from "../../context/AuthContext";
 import { getSettings } from "../../firebase/firestore";
 import { construirCredito } from "../../logic/credito";
+import { IconMapPin, IconCurrentLocation } from "@tabler/icons-react";
 
 export default function NuevoCredito() {
   const navigate = useNavigate();
   const { orgId } = useAuth();
-  const { clients } = useClients();
+  const { clients, updateClient } = useClients();
   const { addLoan } = useLoans();
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(false);
+  // Estado React: clientId seleccionado en el formulario (fuente única de verdad)
+  const [selectedClientId, setSelectedClientId] = useState("");
 
   useEffect(() => {
     if (!orgId) return;
@@ -36,6 +39,35 @@ export default function NuevoCredito() {
     }
   }
 
+  // Captura opcional de ubicación GPS y la guarda en el cliente
+  function handleCaptureLocation() {
+    // Usa el estado React, no el DOM
+    if (!selectedClientId) {
+      alert("Selecciona un cliente antes de capturar la ubicación.");
+      return;
+    }
+    if (!navigator.geolocation) {
+      alert("Geolocalización no está disponible en este navegador.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        updateClient(selectedClientId, { ubicacion: { lat: latitude, lng: longitude } })
+          .then(() => alert("Ubicación guardada exitosamente."))
+          .catch((e) => {
+            console.error(e);
+            alert("No se pudo guardar la ubicación.");
+          });
+      },
+      (error) => {
+        console.warn(error);
+        alert("No se pudo obtener la ubicación: " + error.message);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  }
+
   return (
     <>
       <Header title="Nuevo crédito" showBack />
@@ -45,7 +77,19 @@ export default function NuevoCredito() {
           settings={settings}
           onSubmit={handleSubmit}
           loading={loading}
+          onClientChange={setSelectedClientId}
         />
+        {/* Botón opcional para capturar ubicación del cliente */}
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={handleCaptureLocation}
+            className="flex items-center gap-2 bg-primary-light text-white rounded-xl py-2 px-4 hover:bg-primary transition"
+          >
+            <IconCurrentLocation size={18} stroke={2} />
+            Capturar ubicación del cliente
+          </button>
+        </div>
       </div>
     </>
   );

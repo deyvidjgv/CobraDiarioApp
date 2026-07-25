@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import FrequencySelector from "../ui/FrequencySelector";
 import { calcularTotalesCredito } from "../../logic/credito";
 
-export default function LoanForm({ clients = [], settings = {}, onSubmit, loading = false }) {
+export default function LoanForm({ clients = [], settings = {}, onSubmit, loading = false, onClientChange }) {
   const [form, setForm] = useState({
     clientId: "",
     capital: "",
@@ -25,7 +25,14 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
       : null;
 
   function set(field) {
-    return (e) => setForm({ ...form, [field]: e.target.value });
+    return (e) => {
+      const value = e.target.value;
+      setForm({ ...form, [field]: value });
+      // Notificar al padre cuando cambia el cliente seleccionado
+      if (field === "clientId" && onClientChange) {
+        onClientChange(value);
+      }
+    };
   }
 
   function handleSubmit(e) {

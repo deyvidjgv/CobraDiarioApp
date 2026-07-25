@@ -118,6 +118,7 @@ export default function Clientes() {
                 phone={client.telefono}
                 status={client.status}
                 subtitle={`${client.loanCount} crédito(s) · ${client.direccion || "Sin dirección"}`}
+                ubicacion={client.ubicacion}
                 onClick={() => navigate(`/clientes/${client.id}`)}
               />
             ))}

@@ -1,5 +1,5 @@
 import Badge from "./Badge";
-import { IconChevronRight } from "@tabler/icons-react";
+import { IconChevronRight, IconMapPin } from "@tabler/icons-react";
 
 const rowColors = {
   mora: "bg-red-50 hover:bg-red-100 border-red-200",
@@ -26,14 +26,25 @@ function getInitials(name) {
   return parts[0][0].toUpperCase();
 }
 
-export default function ClientRow({ name, phone, status, subtitle, amount, onClick }) {
+export default function ClientRow({ name, phone, status, subtitle, amount, onClick, ubicacion }) {
   const aColors = avatarColors[status] || avatarColors.activo;
   const rColors = rowColors[status] || rowColors.activo;
 
+  const handleMapClick = (e) => {
+    e.stopPropagation();
+    if (ubicacion?.lat && ubicacion?.lng) {
+      window.open(
+        `https://www.google.com/maps/dir/?api=1&destination=${ubicacion.lat},${ubicacion.lng}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    }
+  };
+
   return (
-    <button
+    <div
       onClick={onClick}
-      className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 transition text-left border ${rColors}`}
+      className={`w-full flex items-center gap-3 rounded-xl px-4 py-3 transition text-left border cursor-pointer ${rColors}`}
     >
       {/* Avatar con iniciales */}
       <div className={`w-10 h-10 rounded-full ${aColors.bg} ${aColors.text} flex items-center justify-center text-sm font-medium shrink-0`}>
@@ -52,8 +63,20 @@ export default function ClientRow({ name, phone, status, subtitle, amount, onCli
         {status && <Badge status={status} />}
       </div>
 
+      {/* Botón GPS si hay ubicación */}
+      {ubicacion && ubicacion.lat && ubicacion.lng && (
+        <button
+          type="button"
+          onClick={handleMapClick}
+          className="p-2 text-primary-light hover:text-primary hover:bg-primary-bg/50 rounded-lg transition shrink-0 flex items-center justify-center"
+          title="Cómo llegar (Google Maps)"
+        >
+          <IconMapPin size={20} stroke={2} />
+        </button>
+      )}
+
       {/* Chevron */}
       <IconChevronRight size={16} stroke={1.5} className="text-gray-300 shrink-0" />
-    </button>
+    </div>
   );
 }
