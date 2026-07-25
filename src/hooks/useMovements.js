@@ -4,6 +4,7 @@ import {
   subscribeToCollection,
   addDocument,
   setDocument,
+  deleteDocument,
 } from "../firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { calcularSaldo, construirCierreDiario } from "../logic/caja";
@@ -52,5 +53,21 @@ export function useMovements(fechaStr = null) {
     return cierre;
   }
 
-  return { movements, loading, saldo, addMovement, cerrarCaja };
+  /**
+   * Elimina TODOS los movimientos del día actual de Firestore.
+   * Solo borra los que fueron creados manualmente (gasto / ingreso_base).
+   * Los cobros (tipo "cobro") NO se tocan — viven en los préstamos.
+   * Si quieres limpiar TODO sin excepción pasa `soloManuales = false`.
+   */
+  async function limpiarDia(soloManuales = true) {
+    const aEliminar = soloManuales
+      ? movements.filter(
+          (m) => m.tipo === "gasto" || m.tipo === "ingreso_base" || m.tipo === "ajuste"
+        )
+      : movements;
+
+    await Promise.all(aEliminar.map((m) => deleteDocument(orgId, "movements", m.id)));
+  }
+
+  return { movements, loading, saldo, addMovement, cerrarCaja, limpiarDia };
 }

@@ -45,6 +45,10 @@ export async function removeDocument(orgId, sub, docId) {
   return deleteDoc(ref);
 }
 
+// Alias semántico (igual que removeDocument)
+export const deleteDocument = removeDocument;
+
+
 export async function getDocument(orgId, sub, docId) {
   const ref = doc(db, "organizations", orgId, sub, docId);
   const snap = await getDoc(ref);

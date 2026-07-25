@@ -17,11 +17,19 @@ import Configuracion from "./pages/Configuracion/Configuracion";
 function ProtectedLayout({ children }) {
   const { usuario, cargando } = useAuth();
 
-  if (cargando) return <div className="p-6 text-sm text-gray-500">Cargando...</div>;
+  if (cargando)
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-surface-1">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-primary-light/40 border-t-primary rounded-full animate-spin" />
+          <p className="text-sm text-gray-400">Cargando...</p>
+        </div>
+      </div>
+    );
   if (!usuario) return <Navigate to="/login" replace />;
 
   return (
-    <div className="min-h-screen pb-16">
+    <div className="min-h-screen bg-surface-1 pb-16">
       {children}
       <BottomNav />
     </div>
@@ -53,7 +61,17 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <AppRoutes />
+        {/*
+          Contenedor responsivo global:
+          - En móvil: ocupa el 100% del ancho (app nativa PWA)
+          - En tablet/desktop: centrado con max-w-sm (430px) y fondo gris suave de "escritorio"
+          Todo el sistema queda dentro de este contenedor.
+        */}
+        <div className="min-h-screen bg-gray-200 sm:flex sm:items-start sm:justify-center">
+          <div className="w-full sm:max-w-sm sm:min-h-screen sm:shadow-2xl bg-surface-1 relative">
+            <AppRoutes />
+          </div>
+        </div>
       </BrowserRouter>
     </AuthProvider>
   );

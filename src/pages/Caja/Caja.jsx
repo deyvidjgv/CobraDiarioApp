@@ -3,23 +3,38 @@ import Header from "../../components/layout/Header";
 import { useMovements } from "../../hooks/useMovements";
 import { construirMovimiento, TIPOS_MOVIMIENTO } from "../../logic/caja";
 import { useAuth } from "../../context/AuthContext";
+import { verificarPassword } from "../../firebase/auth";
 import {
   IconArrowUpRight,
   IconArrowDownRight,
   IconPlus,
   IconMinus,
+  IconTrash,
+  IconAlertTriangle,
+  IconX,
+  IconLock,
+  IconEye,
+  IconEyeOff,
 } from "@tabler/icons-react";
 
 export default function Caja() {
   const { orgId } = useAuth();
-  const { movements, loading, saldo, addMovement, cerrarCaja } = useMovements();
-  const [modalType, setModalType] = useState(null); // "gasto" | "base" | null
+  const { movements, loading, saldo, addMovement, limpiarDia } = useMovements();
+  const [modalType, setModalType] = useState(null); // "gasto" | "base" | "confirm_limpiar" | null
   const [monto, setMonto] = useState("");
   const [nota, setNota] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Seguridad para limpiar caja
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
   const entradas = movements.filter((m) => m.monto > 0).reduce((a, m) => a + m.monto, 0);
   const salidas = Math.abs(movements.filter((m) => m.monto < 0).reduce((a, m) => a + m.monto, 0));
+
+  // Total a limpiar = TODOS los movimientos del día
+  const totalALimpiar = movements.length;
 
   async function handleForm(e) {
     e.preventDefault();
@@ -44,12 +59,46 @@ export default function Caja() {
     }
   }
 
+  async function handleLimpiarDia(e) {
+    e.preventDefault();
+    setPasswordError("");
+    if (!confirmPassword) {
+      setPasswordError("Debes ingresar tu contraseña para continuar");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // 1. Verificar contraseña mediante Firebase Re-authentication
+      await verificarPassword(confirmPassword);
+
+      // 2. Si la contraseña es correcta, realizar la limpieza completa
+      await limpiarDia(false);
+
+      // 3. Limpiar estados del modal
+      setConfirmPassword("");
+      setPasswordError("");
+      setModalType(null);
+    } catch (err) {
+      if (
+        err.code === "auth/wrong-password" ||
+        err.code === "auth/invalid-credential"
+      ) {
+        setPasswordError("Contraseña incorrecta. Inténtalo de nuevo.");
+      } else {
+        setPasswordError(err.message || "Error al verificar la contraseña");
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const tipoLabel = {
-    cobro: { text: "Cobro", color: "text-emerald-600", Icon: IconArrowUpRight },
-    prestamo_nuevo: { text: "Préstamo", color: "text-red-600", Icon: IconArrowDownRight },
-    gasto: { text: "Gasto", color: "text-red-600", Icon: IconArrowDownRight },
-    ajuste: { text: "Ajuste", color: "text-amber-600", Icon: IconMinus },
-    ingreso_base: { text: "Base", color: "text-emerald-600", Icon: IconArrowUpRight },
+    cobro: { text: "Cobro", color: "text-emerald-600", bg: "bg-emerald-50", Icon: IconArrowUpRight },
+    prestamo_nuevo: { text: "Préstamo", color: "text-red-500", bg: "bg-red-50", Icon: IconArrowDownRight },
+    gasto: { text: "Gasto", color: "text-red-500", bg: "bg-red-50", Icon: IconArrowDownRight },
+    ajuste: { text: "Ajuste", color: "text-amber-600", bg: "bg-amber-50", Icon: IconMinus },
+    ingreso_base: { text: "Base", color: "text-emerald-600", bg: "bg-emerald-50", Icon: IconArrowUpRight },
   };
 
   return (
@@ -58,43 +107,70 @@ export default function Caja() {
 
       <div className="p-4 space-y-4">
         {/* Saldo */}
-        <div className="bg-primary rounded-xl p-5 text-white">
-          <p className="text-sm opacity-70">Saldo del día</p>
-          <p className="text-3xl font-medium mt-1">${saldo.toLocaleString()}</p>
-          <div className="flex gap-6 mt-3 text-sm">
+        <div className="bg-primary rounded-2xl p-5 text-white relative overflow-hidden">
+          {/* Círculo decorativo */}
+          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-primary-light/20 pointer-events-none" />
+          <p className="text-sm opacity-70 relative">Saldo del día</p>
+          <p className="text-4xl font-semibold mt-1 relative tracking-tight">
+            ${saldo.toLocaleString()}
+          </p>
+          <div className="flex gap-6 mt-4 text-sm relative">
             <div>
-              <p className="opacity-60">Entradas</p>
+              <p className="opacity-60 text-xs mb-0.5">Entradas</p>
               <p className="font-medium text-emerald-300">+${entradas.toLocaleString()}</p>
             </div>
             <div>
-              <p className="opacity-60">Salidas</p>
+              <p className="opacity-60 text-xs mb-0.5">Salidas</p>
               <p className="font-medium text-red-300">-${salidas.toLocaleString()}</p>
             </div>
           </div>
         </div>
 
         {/* Acciones */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => setModalType("base")}
-            className="bg-emerald-50 border-thin border-emerald-100 rounded-xl py-3 px-1 text-[13px] font-medium text-emerald-700 hover:bg-emerald-100 transition flex items-center justify-center gap-1"
+            className="bg-emerald-50 border border-emerald-100 rounded-xl py-3 px-1 text-[13px] font-medium text-emerald-700 hover:bg-emerald-100 transition flex items-center justify-center gap-1"
           >
-            <IconPlus size={16} stroke={2} /> Ingresar base
+            <IconPlus size={16} stroke={2} />
+            Ingresar base
           </button>
           <button
             onClick={() => setModalType("gasto")}
-            className="bg-red-50 border-thin border-red-100 rounded-xl py-3 px-1 text-[13px] font-medium text-red-700 hover:bg-red-100 transition flex items-center justify-center gap-1"
+            className="bg-red-50 border border-red-100 rounded-xl py-3 px-1 text-[13px] font-medium text-red-600 hover:bg-red-100 transition flex items-center justify-center gap-1"
           >
-            <IconMinus size={16} stroke={2} /> Gasto
+            <IconMinus size={16} stroke={2} />
+            Gasto
+          </button>
+          <button
+            onClick={() => {
+              setConfirmPassword("");
+              setPasswordError("");
+              setModalType("confirm_limpiar");
+            }}
+            disabled={totalALimpiar === 0}
+            className="bg-primary-bg border border-primary-light/30 rounded-xl py-3 px-1 text-[13px] font-medium text-primary hover:bg-primary/5 transition flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <IconTrash size={16} stroke={1.5} />
+            Nuevo día
           </button>
         </div>
 
-        {/* Modal */}
-        {modalType && (
-          <form onSubmit={handleForm} className="bg-white rounded-xl p-4 border-thin space-y-3">
-            <h3 className="text-sm font-medium text-gray-700">
-              {modalType === "base" ? "Ingresar dinero (Base)" : "Registrar gasto"}
-            </h3>
+        {/* Modal ingreso / gasto */}
+        {(modalType === "base" || modalType === "gasto") && (
+          <form onSubmit={handleForm} className="bg-white rounded-2xl p-4 border border-[#E5E5EA] space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-primary">
+                {modalType === "base" ? "💰 Ingresar base" : "💸 Registrar gasto"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setModalType(null)}
+                className="p-1 rounded-lg hover:bg-gray-100 transition text-gray-400"
+              >
+                <IconX size={18} stroke={1.5} />
+              </button>
+            </div>
             <input
               type="number"
               required
@@ -102,54 +178,152 @@ export default function Caja() {
               placeholder="Monto ($)"
               value={monto}
               onChange={(e) => setMonto(e.target.value)}
-              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
             />
             <input
               type="text"
               placeholder="Nota (opcional)"
               value={nota}
               onChange={(e) => setNota(e.target.value)}
-              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
             />
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setModalType(null)}
-                className="flex-1 py-2 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+                onClick={() => { setModalType(null); setMonto(""); setNota(""); }}
+                className="flex-1 py-2.5 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary-light transition disabled:opacity-50"
+                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition disabled:opacity-50"
               >
-                {saving ? "..." : "Guardar"}
+                {saving ? "Guardando..." : "Guardar"}
               </button>
             </div>
           </form>
         )}
 
-        {/* Movimientos del día */}
+        {/* Modal confirmación con contraseña: Limpiar día */}
+        {modalType === "confirm_limpiar" && (
+          <form onSubmit={handleLimpiarDia} className="bg-white rounded-2xl p-5 border border-[#E5E5EA] space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                <IconAlertTriangle size={20} stroke={1.5} className="text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-800">Limpiar historial del día</h3>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+                  Se eliminarán <strong className="text-gray-700">todos los {totalALimpiar} movimientos</strong> de hoy.
+                  <br />
+                  <span className="text-amber-600">⚠ El saldo quedará en $0. Esta acción no se puede deshacer.</span>
+                </p>
+              </div>
+            </div>
+
+            {/* Error de contraseña */}
+            {passwordError && (
+              <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl px-3 py-2 flex items-center gap-1.5">
+                <span>⚠</span>
+                <span>{passwordError}</span>
+              </div>
+            )}
+
+            {/* Campo de confirmación de contraseña */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Ingresa tu contraseña para autorizar:
+              </label>
+              <div className="relative">
+                <IconLock
+                  size={18}
+                  stroke={1.5}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
+                <input
+                  type={showConfirmPass ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Tu contraseña de usuario"
+                  className="w-full rounded-xl border border-[#E5E5EA] pl-9 pr-10 py-2.5 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPass(!showConfirmPass)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                >
+                  {showConfirmPass ? (
+                    <IconEyeOff size={18} stroke={1.5} />
+                  ) : (
+                    <IconEye size={18} stroke={1.5} />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalType(null);
+                  setConfirmPassword("");
+                  setPasswordError("");
+                }}
+                className="flex-1 py-2.5 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                <IconTrash size={15} stroke={1.5} />
+                {saving ? "Verificando..." : "Confirmar limpieza"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Lista de movimientos del día */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Movimientos de hoy</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-gray-700">Movimientos de hoy</h3>
+            {movements.length > 0 && (
+              <span className="text-xs text-gray-400 bg-surface-2 rounded-full px-2.5 py-0.5">
+                {movements.length}
+              </span>
+            )}
+          </div>
+
           {loading ? (
-            <p className="text-sm text-gray-400 text-center py-8">Cargando...</p>
+            <p className="text-sm text-gray-400 text-center py-10">Cargando...</p>
           ) : movements.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">Sin movimientos hoy</p>
+            <div className="text-center py-10">
+              <p className="text-2xl mb-2">🏦</p>
+              <p className="text-sm text-gray-400">Sin movimientos hoy</p>
+            </div>
           ) : (
             <div className="space-y-2">
               {movements.map((m) => {
                 const info = tipoLabel[m.tipo] || tipoLabel.ajuste;
                 const IconComponent = info.Icon;
                 return (
-                  <div key={m.id} className="bg-white rounded-xl px-4 py-3 border-thin flex items-center gap-3">
-                    <IconComponent size={24} stroke={2} className={info.color} />
+                  <div
+                    key={m.id}
+                    className="bg-white rounded-xl px-4 py-3 border border-[#E5E5EA] flex items-center gap-3"
+                  >
+                    <div className={`w-9 h-9 rounded-xl ${info.bg} flex items-center justify-center flex-shrink-0`}>
+                      <IconComponent size={18} stroke={2} className={info.color} />
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-700">{info.text}</p>
                       <p className="text-xs text-gray-400 truncate">{m.nota || "—"}</p>
                     </div>
-                    <p className={`text-sm font-medium ${m.monto >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                    <p className={`text-sm font-semibold ${m.monto >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                       {m.monto >= 0 ? "+" : ""}${Math.abs(m.monto).toLocaleString()}
                     </p>
                   </div>
@@ -162,4 +336,3 @@ export default function Caja() {
     </div>
   );
 }
-
