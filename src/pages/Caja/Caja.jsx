@@ -102,65 +102,73 @@ export default function Caja() {
   };
 
   return (
-    <div className="pb-24">
+    <div className="pb-24 space-y-6 max-w-5xl mx-auto">
       <Header title="Caja" />
 
-      <div className="p-4 space-y-4">
-        {/* Saldo */}
-        <div className="bg-primary rounded-2xl p-5 text-white relative overflow-hidden">
-          {/* Círculo decorativo */}
-          <div className="absolute -right-6 -top-6 w-28 h-28 rounded-full bg-primary-light/20 pointer-events-none" />
-          <p className="text-sm opacity-70 relative">Saldo del día</p>
-          <p className="text-4xl font-semibold mt-1 relative tracking-tight">
-            ${saldo.toLocaleString()}
-          </p>
-          <div className="flex gap-6 mt-4 text-sm relative">
+      <div className="px-4 sm:px-6 lg:px-8 space-y-6">
+        {/* Saldo y Acciones principales en Grid para PC */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+          {/* Saldo */}
+          <div className="md:col-span-2 bg-primary-light rounded-2xl p-6 text-white relative overflow-hidden flex flex-col justify-between shadow-lg shadow-primary-light/20">
+            {/* Círculo decorativo */}
+            <div className="absolute -right-6 -top-6 w-36 h-36 rounded-full bg-white/10 pointer-events-none" />
             <div>
-              <p className="opacity-60 text-xs mb-0.5">Entradas</p>
-              <p className="font-medium text-emerald-300">+${entradas.toLocaleString()}</p>
+              <p className="text-sm opacity-80 relative">Saldo del día</p>
+              <p className="text-4xl sm:text-5xl font-bold mt-2 relative tracking-tight">
+                ${saldo.toLocaleString()}
+              </p>
             </div>
-            <div>
-              <p className="opacity-60 text-xs mb-0.5">Salidas</p>
-              <p className="font-medium text-red-300">-${salidas.toLocaleString()}</p>
+            <div className="flex gap-8 mt-6 text-sm relative border-t border-white/10 pt-4">
+              <div>
+                <p className="opacity-70 text-xs mb-0.5">Entradas</p>
+                <p className="font-semibold text-emerald-300 text-base">+${entradas.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="opacity-70 text-xs mb-0.5">Salidas</p>
+                <p className="font-semibold text-red-300 text-base">-${salidas.toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Botones de acción */}
+          <div className="flex flex-col justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E5E5EA] shadow-sm">
+            <h4 className="text-xs font-semibold uppercase text-gray-400 tracking-wider">Acciones de caja</h4>
+            <div className="space-y-2.5 flex-1 flex flex-col justify-center">
+              <button
+                onClick={() => setModalType("base")}
+                className="w-full bg-emerald-50 border border-emerald-100 rounded-xl py-3 px-4 text-sm font-medium text-emerald-700 hover:bg-emerald-100 transition flex items-center justify-center gap-2"
+              >
+                <IconPlus size={18} stroke={2} />
+                Ingresar base
+              </button>
+              <button
+                onClick={() => setModalType("gasto")}
+                className="w-full bg-red-50 border border-red-100 rounded-xl py-3 px-4 text-sm font-medium text-red-600 hover:bg-red-100 transition flex items-center justify-center gap-2"
+              >
+                <IconMinus size={18} stroke={2} />
+                Registrar gasto
+              </button>
+              <button
+                onClick={() => {
+                  setConfirmPassword("");
+                  setPasswordError("");
+                  setModalType("confirm_limpiar");
+                }}
+                disabled={totalALimpiar === 0}
+                className="w-full bg-primary-bg border border-primary-light/30 rounded-xl py-3 px-4 text-sm font-medium text-primary hover:bg-primary/10 transition flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <IconTrash size={18} stroke={1.5} />
+                Nuevo día
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Acciones */}
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            onClick={() => setModalType("base")}
-            className="bg-emerald-50 border border-emerald-100 rounded-xl py-3 px-1 text-[13px] font-medium text-emerald-700 hover:bg-emerald-100 transition flex items-center justify-center gap-1"
-          >
-            <IconPlus size={16} stroke={2} />
-            Ingresar base
-          </button>
-          <button
-            onClick={() => setModalType("gasto")}
-            className="bg-red-50 border border-red-100 rounded-xl py-3 px-1 text-[13px] font-medium text-red-600 hover:bg-red-100 transition flex items-center justify-center gap-1"
-          >
-            <IconMinus size={16} stroke={2} />
-            Gasto
-          </button>
-          <button
-            onClick={() => {
-              setConfirmPassword("");
-              setPasswordError("");
-              setModalType("confirm_limpiar");
-            }}
-            disabled={totalALimpiar === 0}
-            className="bg-primary-bg border border-primary-light/30 rounded-xl py-3 px-1 text-[13px] font-medium text-primary hover:bg-primary/5 transition flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            <IconTrash size={16} stroke={1.5} />
-            Nuevo día
-          </button>
-        </div>
-
         {/* Modal ingreso / gasto */}
         {(modalType === "base" || modalType === "gasto") && (
-          <form onSubmit={handleForm} className="bg-white rounded-2xl p-4 border border-[#E5E5EA] space-y-3">
+          <form onSubmit={handleForm} className="bg-white rounded-2xl p-5 border border-[#E5E5EA] space-y-4 shadow-md max-w-lg mx-auto">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-primary">
+              <h3 className="text-base font-semibold text-primary">
                 {modalType === "base" ? "💰 Ingresar base" : "💸 Registrar gasto"}
               </h3>
               <button
@@ -168,7 +176,7 @@ export default function Caja() {
                 onClick={() => setModalType(null)}
                 className="p-1 rounded-lg hover:bg-gray-100 transition text-gray-400"
               >
-                <IconX size={18} stroke={1.5} />
+                <IconX size={20} stroke={1.5} />
               </button>
             </div>
             <input
@@ -187,18 +195,18 @@ export default function Caja() {
               onChange={(e) => setNota(e.target.value)}
               className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
             />
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => { setModalType(null); setMonto(""); setNota(""); }}
-                className="flex-1 py-2.5 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+                className="flex-1 py-3 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition disabled:opacity-50"
+                className="flex-1 py-3 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition disabled:opacity-50"
               >
                 {saving ? "Guardando..." : "Guardar"}
               </button>
@@ -208,24 +216,24 @@ export default function Caja() {
 
         {/* Modal confirmación con contraseña: Limpiar día */}
         {modalType === "confirm_limpiar" && (
-          <form onSubmit={handleLimpiarDia} className="bg-white rounded-2xl p-5 border border-[#E5E5EA] space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
-                <IconAlertTriangle size={20} stroke={1.5} className="text-amber-500" />
+          <form onSubmit={handleLimpiarDia} className="bg-white rounded-2xl p-6 border border-[#E5E5EA] space-y-4 shadow-lg max-w-lg mx-auto">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                <IconAlertTriangle size={24} stroke={1.5} className="text-amber-500" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-gray-800">Limpiar historial del día</h3>
+                <h3 className="text-base font-semibold text-gray-800">Limpiar historial del día</h3>
                 <p className="text-xs text-gray-500 mt-1 leading-relaxed">
                   Se eliminarán <strong className="text-gray-700">todos los {totalALimpiar} movimientos</strong> de hoy.
                   <br />
-                  <span className="text-amber-600">⚠ El saldo quedará en $0. Esta acción no se puede deshacer.</span>
+                  <span className="text-amber-600 font-medium">⚠ El saldo quedará en $0. Esta acción no se puede deshacer.</span>
                 </p>
               </div>
             </div>
 
             {/* Error de contraseña */}
             {passwordError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl px-3 py-2 flex items-center gap-1.5">
+              <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl px-3.5 py-2.5 flex items-center gap-2">
                 <span>⚠</span>
                 <span>{passwordError}</span>
               </div>
@@ -233,14 +241,14 @@ export default function Caja() {
 
             {/* Campo de confirmación de contraseña */}
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-xs font-medium text-gray-600 mb-1.5">
                 Ingresa tu contraseña para autorizar:
               </label>
               <div className="relative">
                 <IconLock
                   size={18}
                   stroke={1.5}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
                 />
                 <input
                   type={showConfirmPass ? "text" : "password"}
@@ -248,12 +256,12 @@ export default function Caja() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Tu contraseña de usuario"
-                  className="w-full rounded-xl border border-[#E5E5EA] pl-9 pr-10 py-2.5 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+                  className="w-full rounded-xl border border-[#E5E5EA] pl-10 pr-10 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPass(!showConfirmPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
                 >
                   {showConfirmPass ? (
                     <IconEyeOff size={18} stroke={1.5} />
@@ -264,7 +272,7 @@ export default function Caja() {
               </div>
             </div>
 
-            <div className="flex gap-2 pt-1">
+            <div className="flex gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => {
@@ -272,16 +280,16 @@ export default function Caja() {
                   setConfirmPassword("");
                   setPasswordError("");
                 }}
-                className="flex-1 py-2.5 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+                className="flex-1 py-3 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={saving}
-                className="flex-1 py-2.5 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+                className="flex-1 py-3 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                <IconTrash size={15} stroke={1.5} />
+                <IconTrash size={16} stroke={1.5} />
                 {saving ? "Verificando..." : "Confirmar limpieza"}
               </button>
             </div>
@@ -289,12 +297,12 @@ export default function Caja() {
         )}
 
         {/* Lista de movimientos del día */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-700">Movimientos de hoy</h3>
+        <div className="bg-white rounded-2xl p-5 border border-[#E5E5EA] shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-gray-700">Movimientos de hoy</h3>
             {movements.length > 0 && (
-              <span className="text-xs text-gray-400 bg-surface-2 rounded-full px-2.5 py-0.5">
-                {movements.length}
+              <span className="text-xs font-medium text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+                {movements.length} {movements.length === 1 ? "registro" : "registros"}
               </span>
             )}
           </div>
@@ -303,27 +311,27 @@ export default function Caja() {
             <p className="text-sm text-gray-400 text-center py-10">Cargando...</p>
           ) : movements.length === 0 ? (
             <div className="text-center py-10">
-              <p className="text-2xl mb-2">🏦</p>
+              <p className="text-3xl mb-2">🏦</p>
               <p className="text-sm text-gray-400">Sin movimientos hoy</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {movements.map((m) => {
                 const info = tipoLabel[m.tipo] || tipoLabel.ajuste;
                 const IconComponent = info.Icon;
                 return (
                   <div
                     key={m.id}
-                    className="bg-white rounded-xl px-4 py-3 border border-[#E5E5EA] flex items-center gap-3"
+                    className="bg-gray-50/60 rounded-xl px-4 py-3.5 border border-[#E5E5EA] flex items-center gap-3 hover:bg-gray-50 transition"
                   >
-                    <div className={`w-9 h-9 rounded-xl ${info.bg} flex items-center justify-center flex-shrink-0`}>
-                      <IconComponent size={18} stroke={2} className={info.color} />
+                    <div className={`w-10 h-10 rounded-xl ${info.bg} flex items-center justify-center flex-shrink-0`}>
+                      <IconComponent size={20} stroke={2} className={info.color} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-700">{info.text}</p>
+                      <p className="text-sm font-semibold text-gray-800">{info.text}</p>
                       <p className="text-xs text-gray-400 truncate">{m.nota || "—"}</p>
                     </div>
-                    <p className={`text-sm font-semibold ${m.monto >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+                    <p className={`text-sm font-bold ${m.monto >= 0 ? "text-emerald-600" : "text-red-500"}`}>
                       {m.monto >= 0 ? "+" : ""}${Math.abs(m.monto).toLocaleString()}
                     </p>
                   </div>

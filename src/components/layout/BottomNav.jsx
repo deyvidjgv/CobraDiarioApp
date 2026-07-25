@@ -17,20 +17,20 @@ const tabs = [
 
 export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full sm:max-w-sm bg-white border-t border-[#E5E5EA] z-50">
-      <div className="flex justify-around items-center h-16">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-white/95 backdrop-blur-md border-t border-[#E5E5EA] z-50">
+      <div className="max-w-5xl mx-auto flex justify-around items-center h-16 px-4">
         {tabs.map((tab) => (
           <NavLink
             key={tab.to}
             to={tab.to}
             end={tab.to === "/"}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 text-xs font-normal transition-colors ${
-                isActive ? "text-primary-light" : "text-gray-400 hover:text-gray-600"
+              `flex flex-col items-center gap-0.5 text-xs font-medium transition-colors ${
+                isActive ? "text-primary-light font-semibold" : "text-gray-400 hover:text-gray-600"
               }`
             }
           >
-            <tab.Icon size={24} stroke={1.5} />
+            <tab.Icon size={22} stroke={1.5} />
             <span>{tab.label}</span>
           </NavLink>
         ))}

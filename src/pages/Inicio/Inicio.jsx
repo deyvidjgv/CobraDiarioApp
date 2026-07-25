@@ -47,17 +47,17 @@ export default function Inicio() {
   ];
 
   return (
-    <div className="p-4 pb-24 space-y-5">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
       {/* Saludo */}
       <div>
-        <h2 className="text-xl font-medium text-gray-800">{saludo}</h2>
-        <p className="text-sm text-gray-400 font-normal capitalize">
+        <h2 className="text-2xl font-semibold text-gray-800">{saludo}</h2>
+        <p className="text-sm text-gray-400 font-normal capitalize mt-0.5">
           {hoy.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })}
         </p>
       </div>
 
       {/* Métricas */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <MetricCard
           label="Cobrado hoy"
           value={`$${cobradoHoy.toLocaleString()}`}
@@ -83,27 +83,30 @@ export default function Inicio() {
         />
       </div>
 
-      {/* CTA Principal — único botón con fondo sólido */}
+      {/* CTA Principal */}
       <button
         onClick={() => navigate("/ruta")}
-        className="w-full bg-primary-light hover:bg-primary-light/90 text-white font-medium rounded-xl py-4 flex items-center justify-center gap-2 transition"
+        className="w-full bg-primary-light hover:bg-primary-light/90 text-white font-medium rounded-2xl py-4 px-6 flex items-center justify-center gap-2 transition shadow-md shadow-primary-light/20 text-base"
       >
-        <IconMapPin size={20} stroke={1.5} />
+        <IconMapPin size={22} stroke={1.5} />
         Ir a la ruta de hoy
       </button>
 
-      {/* Acciones rápidas — tarjetas planas con iconos outline */}
-      <div className="grid grid-cols-2 gap-3">
-        {acciones.map((a) => (
-          <button
-            key={a.to}
-            onClick={() => navigate(a.to)}
-            className="bg-white rounded-xl p-4 text-left border-thin hover:bg-surface-1 transition"
-          >
-            <a.Icon size={22} stroke={1.5} className="text-gray-500 mb-2" />
-            <span className="text-sm font-medium text-gray-700 block">{a.label}</span>
-          </button>
-        ))}
+      {/* Acciones rápidas */}
+      <div>
+        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">Acciones rápidas</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {acciones.map((a) => (
+            <button
+              key={a.to}
+              onClick={() => navigate(a.to)}
+              className="bg-white rounded-2xl p-5 text-left border border-[#E5E5EA] hover:border-primary-light/40 hover:shadow-md transition flex flex-col items-start justify-between min-h-[100px]"
+            >
+              <a.Icon size={26} stroke={1.5} className="text-primary-light mb-3" />
+              <span className="text-sm font-semibold text-gray-800 block">{a.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

@@ -29,8 +29,10 @@ function ProtectedLayout({ children }) {
   if (!usuario) return <Navigate to="/login" replace />;
 
   return (
-    <div className="min-h-screen bg-surface-1 pb-16">
-      {children}
+    <div className="flex-1 flex flex-col bg-surface-1 min-h-screen relative pb-20">
+      <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        {children}
+      </div>
       <BottomNav />
     </div>
   );
@@ -61,16 +63,8 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        {/*
-          Contenedor responsivo global:
-          - En móvil: ocupa el 100% del ancho (app nativa PWA)
-          - En tablet/desktop: centrado con max-w-sm (430px) y fondo gris suave de "escritorio"
-          Todo el sistema queda dentro de este contenedor.
-        */}
-        <div className="min-h-screen bg-gray-200 sm:flex sm:items-start sm:justify-center">
-          <div className="w-full sm:max-w-sm sm:min-h-screen sm:shadow-2xl bg-surface-1 relative">
-            <AppRoutes />
-          </div>
+        <div className="min-h-screen bg-surface-1 text-gray-800 font-sans antialiased flex flex-col">
+          <AppRoutes />
         </div>
       </BrowserRouter>
     </AuthProvider>

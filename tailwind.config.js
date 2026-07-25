@@ -4,9 +4,9 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Paleta Claude
-        primary: "#26215C",
-        "primary-light": "#7F77DD",
+        // Paleta de la app (tonos suaves)
+        primary: "#5A52C5", // Índigo intermedio, más suave que el negro pero con contraste
+        "primary-light": "#7F77DD", // Restauramos el tono pastel original de los botones
         "primary-bg": "#EEEDFE",
         gold: "#FAC775",
         // Estados de crédito

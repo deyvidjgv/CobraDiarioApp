@@ -155,6 +155,15 @@ export default function Reportes() {
     exportarPDF("Reporte_de_Cartera", columnas, filas, `Fecha: ${getColombiaDateKey()}`);
   }
 
+  const formatMoney = (val) => {
+    if (val === undefined || val === null) return "$0";
+    return new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0,
+    }).format(val);
+  };
+
   return (
     <div className="pb-24">
       <Header title="Reportes y Cierres" />
@@ -184,7 +193,7 @@ export default function Reportes() {
                   <IconCheck size={18} stroke={2} />
                   <span>Guardado</span>
                 </div>
-                <span className="font-medium">Saldo: ${cierreGuardado.saldoNeto?.toLocaleString()}</span>
+                <span className="font-medium" translate="no">Saldo: {formatMoney(cierreGuardado.saldoNeto)}</span>
               </div>
               <div className="flex gap-2">
                 <button
@@ -227,19 +236,19 @@ export default function Reportes() {
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-white rounded-xl p-4 border-thin">
               <p className="text-xs text-gray-400">Total prestado</p>
-              <p className="text-lg font-medium text-primary mt-1">${totalPrestado.toLocaleString()}</p>
+              <p className="text-lg font-medium text-primary mt-1" translate="no">{formatMoney(totalPrestado)}</p>
             </div>
             <div className="bg-white rounded-xl p-4 border-thin">
               <p className="text-xs text-gray-400">Por cobrar</p>
-              <p className="text-lg font-medium text-red-600 mt-1">${totalPorCobrar.toLocaleString()}</p>
+              <p className="text-lg font-medium text-red-600 mt-1" translate="no">{formatMoney(totalPorCobrar)}</p>
             </div>
             <div className="bg-white rounded-xl p-4 border-thin">
               <p className="text-xs text-gray-400">Cobrado ({selectedDate})</p>
-              <p className="text-lg font-medium text-emerald-600 mt-1">${cobradoFecha.toLocaleString()}</p>
+              <p className="text-lg font-medium text-emerald-600 mt-1" translate="no">{formatMoney(cobradoFecha)}</p>
             </div>
             <div className="bg-white rounded-xl p-4 border-thin">
               <p className="text-xs text-gray-400">Saldo caja ({selectedDate})</p>
-              <p className="text-lg font-medium text-primary mt-1">${saldo.toLocaleString()}</p>
+              <p className="text-lg font-medium text-primary mt-1" translate="no">{formatMoney(saldo)}</p>
             </div>
           </div>
         </div>
