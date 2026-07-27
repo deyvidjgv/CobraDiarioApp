@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   IconHome,
   IconMapPin,
@@ -11,6 +11,7 @@ import {
   IconCoin,
   IconX,
 } from "@tabler/icons-react";
+import { cerrarSesion } from "../../firebase/auth";
 
 const navItems = [
   { to: "/", label: "Inicio", Icon: IconHome, end: true },
@@ -27,7 +28,15 @@ const navItems = [
  */
 export default function NavDrawer({ isOpen, onClose }) {
   const drawerRef = useRef(null);
+  const navigate = useNavigate();
   const { pathname } = useLocation();
+
+  async function handleLogout() {
+    if (!confirm("¿Cerrar sesión?")) return;
+    await cerrarSesion();
+    onClose();
+    navigate("/login", { replace: true });
+  }
 
   // Cierra el drawer cuando cambia la ruta (el usuario seleccionó una opción)
   // Usamos un ref para evitar que se dispare en el primer montaje
@@ -146,7 +155,14 @@ export default function NavDrawer({ isOpen, onClose }) {
         </nav>
 
         {/* Footer del drawer */}
-        <div className="px-5 py-4 border-t border-[#E5E5EA]">
+        <div className="mt-auto px-5 py-4 border-t border-[#E5E5EA] space-y-3">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 hover:bg-red-100 transition"
+          >
+            Cerrar sesión
+          </button>
           <p className="text-[11px] text-gray-300 text-center">
             Cobro Diario App
           </p>
