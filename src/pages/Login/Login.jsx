@@ -8,6 +8,8 @@ import {
   IconEye,
   IconEyeOff,
   IconArrowRight,
+  IconUser,
+  IconPhone,
 } from "@tabler/icons-react";
 
 export default function Login() {
@@ -15,6 +17,9 @@ export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
+  const [telefono, setTelefono] = useState("");
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +30,13 @@ export default function Login() {
     setLoading(true);
     try {
       if (isRegister) {
-        await registrarCobrador(email, password);
+        if (!nombre || !apellido || !telefono) {
+          setError("Por favor completa todos los campos");
+          setLoading(false);
+          return;
+        }
+        const displayName = `${nombre} ${apellido}`;
+        await registrarCobrador(email, password, displayName);
       } else {
         await iniciarSesion(email, password);
       }
@@ -88,6 +99,76 @@ export default function Login() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Modo Registro: Nombre y Apellido */}
+            {isRegister && (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                    Nombre
+                  </label>
+                  <div className="relative">
+                    <IconUser
+                      size={18}
+                      stroke={1.5}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    />
+                    <input
+                      type="text"
+                      required={isRegister}
+                      value={nombre}
+                      onChange={(e) => setNombre(e.target.value)}
+                      className="w-full rounded-xl bg-gray-50 border border-[#E5E5EA] pl-10 pr-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:bg-white focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+                      placeholder="Juan"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                    Apellido
+                  </label>
+                  <div className="relative">
+                    <IconUser
+                      size={18}
+                      stroke={1.5}
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    />
+                    <input
+                      type="text"
+                      required={isRegister}
+                      value={apellido}
+                      onChange={(e) => setApellido(e.target.value)}
+                      className="w-full rounded-xl bg-gray-50 border border-[#E5E5EA] pl-10 pr-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:bg-white focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+                      placeholder="Pérez"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modo Registro: Teléfono */}
+            {isRegister && (
+              <div>
+                <label className="block text-sm font-medium text-gray-600 mb-1.5">
+                  Teléfono
+                </label>
+                <div className="relative">
+                  <IconPhone
+                    size={18}
+                    stroke={1.5}
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                  <input
+                    type="tel"
+                    required={isRegister}
+                    value={telefono}
+                    onChange={(e) => setTelefono(e.target.value)}
+                    className="w-full rounded-xl bg-gray-50 border border-[#E5E5EA] pl-10 pr-4 py-3 text-sm text-gray-800 placeholder-gray-300 focus:bg-white focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+                    placeholder="+57 300 1234567"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Campo correo */}
             <div>
               <label className="block text-sm font-medium text-gray-600 mb-1.5">

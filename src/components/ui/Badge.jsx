@@ -1,9 +1,10 @@
 const styles = {
   mora: "text-red-600",
-  al_dia: "text-amber-600",
+  al_dia: "text-emerald-600",
   adelantado: "text-blue-600",
   completado: "text-gray-400",
   activo: "text-emerald-600",
+  anulado: "text-gray-500",
 };
 
 const labels = {
@@ -12,6 +13,7 @@ const labels = {
   adelantado: "Adelanto",
   completado: "Completado",
   activo: "Activo",
+  anulado: "Anulado",
 };
 
 export default function Badge({ status }) {

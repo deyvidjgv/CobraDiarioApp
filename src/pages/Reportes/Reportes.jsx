@@ -3,12 +3,12 @@ import Header from "../../components/layout/Header";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
 import { useMovements } from "../../hooks/useMovements";
-import { calcularCuotasVencidas } from "../../logic/frecuencia";
-import { calcularEstadoMora } from "../../logic/mora";
+import { calcularMoraGlobal } from "../../logic/mora";
 import { toDate, getDocument, setDocument } from "../../firebase/firestore";
-import { exportarPDF, exportarCierreDiarioPDF } from "../../logic/pdfExport";
+import { exportarPDF, exportarCierreDiarioPDF, exportarCarteraGlobalPDF } from "../../logic/pdfExport";
 import { getColombiaDateKey } from "../../logic/dateUtils";
 import { construirCierreDiario } from "../../logic/caja";
+import { formatearMonto } from "../../logic/formato";
 import { useAuth } from "../../context/AuthContext";
 import {
   IconCheck,
@@ -39,24 +39,21 @@ export default function Reportes() {
     });
   }, [orgId, selectedDate]);
 
+  const clientMap = useMemo(() => {
+    return Object.fromEntries(clients.map((c) => [c.id, c]));
+  }, [clients]);
+
   // Ranking de mora (general)
   const rankingMora = useMemo(() => {
-    const clientMap = Object.fromEntries(clients.map((c) => [c.id, c]));
-
     return loans
       .filter((l) => l.estado === "activo")
       .map((loan) => {
-        const cuotasVencidas = calcularCuotasVencidas({
-          ...loan,
-          fechaInicio: toDate(loan.fechaInicio),
-        });
-        const pagado = loan.montoTotalAPagar - (loan.saldoPendiente ?? 0);
-        const mora = calcularEstadoMora(cuotasVencidas, loan.cuota, pagado);
+        const mora = calcularMoraGlobal(loan);
         return { loan, mora, client: clientMap[loan.clientId] || {} };
       })
       .filter((item) => item.mora.estado === "mora")
       .sort((a, b) => b.mora.deficit - a.mora.deficit);
-  }, [loans, clients]);
+  }, [loans, clientMap]);
 
   // Totales
   const totalPrestado = loans.reduce((acc, l) => acc + (l.capital || 0), 0);
@@ -67,47 +64,48 @@ export default function Reportes() {
     .filter((m) => m.tipo === "cobro")
     .reduce((acc, m) => acc + m.monto, 0);
 
-  // Enriquecer movimientos de cobro para el cierre
+  // Enriquecer movimientos de cobro para el cierre y para el historial visible
   const movimientosEnriquecidos = useMemo(() => {
-    const clientMap = Object.fromEntries(clients.map((c) => [c.id, c]));
     return movements.map((m) => {
       if (m.tipo !== "cobro") return m;
-      
+
       const loan = loans.find((l) => l.id === m.referencia);
       const client = loan ? clientMap[loan.clientId] : null;
+      const nombreCliente = m.clienteNombre || client?.nombre || null;
       let estadoStr = "";
-      
+
       if (loan) {
-        const cuotasVencidas = calcularCuotasVencidas({
-          ...loan,
-          fechaInicio: toDate(loan.fechaInicio),
-        });
-        const pagado = loan.montoTotalAPagar - (loan.saldoPendiente ?? 0);
-        const mora = calcularEstadoMora(cuotasVencidas, loan.cuota, pagado);
+        const mora = calcularMoraGlobal(loan);
         const estadoLabels = { mora: "En mora", al_dia: "Al día", adelantado: "Adelanto", completado: "Completado" };
         estadoStr = estadoLabels[mora.estado] || mora.estado;
       }
-      
+
       return {
         ...m,
-        nota: client ? `Cobro: ${client.nombre}` : (m.nota || "Cobro crédito"),
-        estado: estadoStr
+        clienteNombre: nombreCliente,
+        nota: nombreCliente ? `Cobro: ${nombreCliente}` : (m.nota || "Cobro crédito"),
+        estado: estadoStr,
       };
     });
-  }, [movements, loans, clients]);
+  }, [movements, loans, clientMap]);
+
+
+
+  function formatearHora(fecha) {
+    if (!fecha) return "";
+    const d = fecha?.toDate ? fecha.toDate() : new Date(fecha);
+    return new Intl.DateTimeFormat("es-CO", { timeZone: "America/Bogota", hour: "2-digit", minute: "2-digit" }).format(d);
+  }
 
   async function handleGenerarCierre() {
     if (!confirm(`¿Generar reporte definitivo para el ${selectedDate}?`)) return;
     setGenerating(true);
     try {
-      // Filtrar nuevos de ese día
       const nuevosClientes = clients.filter((c) => {
-        const d = toDate(c.createdAt);
-        return d && d.toISOString().startsWith(selectedDate);
+        return getColombiaDateKey(toDate(c.createdAt)) === selectedDate;
       });
       const nuevosCreditos = loans.filter((l) => {
-        const d = toDate(l.fechaInicio); // Usamos fecha de inicio como referencia
-        return d && d.toISOString().startsWith(selectedDate);
+        return getColombiaDateKey(toDate(l.createdAt)) === selectedDate;
       });
       const listaMora = rankingMora.map(item => ({
         nombre: item.client.nombre || "—",
@@ -115,12 +113,33 @@ export default function Reportes() {
         deficit: item.mora.deficit
       }));
 
+      // Calcular datos de cartera
+      const datosCartera = {
+        capitalColocado: loans.reduce((acc, l) => acc + (l.capital || 0), 0),
+        capitalRecuperado: movements
+          .filter((m) => m.tipo === "cobro")
+          .reduce((acc, m) => acc + m.monto, 0),
+        saldoPendiente: loans
+          .filter((l) => l.estado === "activo")
+          .reduce((acc, l) => acc + (l.saldoPendiente || 0), 0),
+        creditosActivos: loans.filter((l) => l.estado === "activo").length,
+        creditosFinalizados: loans.filter((l) => l.estado === "completado").length,
+        creditosVencidos: rankingMora.length,
+      };
+
+      // Enriquecer nuevosCreditos con nombre del cliente
+      const nuevosCreditosEnriquecidos = nuevosCreditos.map((l) => ({
+        ...l,
+        clienteNombre: clientMap[l.clientId]?.nombre || "—",
+      }));
+
       const cierreObj = construirCierreDiario(
         movimientosEnriquecidos,
         nuevosClientes,
-        nuevosCreditos,
+        nuevosCreditosEnriquecidos,
         listaMora,
-        selectedDate
+        selectedDate,
+        datosCartera
       );
 
       await setDocument(orgId, "daily_closings", selectedDate, cierreObj);
@@ -139,30 +158,129 @@ export default function Reportes() {
   }
 
   function exportarCartera() {
-    const clientMap = Object.fromEntries(clients.map((c) => [c.id, c]));
-    const columnas = ["Cliente", "Capital", "Total", "Pagado", "Saldo", "Estado"];
-    const filas = loans.map((l) => {
-      const pagado = l.montoTotalAPagar - (l.saldoPendiente ?? 0);
-      return [
-        clientMap[l.clientId]?.nombre || "—",
-        `$${(l.capital || 0).toLocaleString()}`,
-        `$${(l.montoTotalAPagar || 0).toLocaleString()}`,
-        `$${pagado.toLocaleString()}`,
-        `$${(l.saldoPendiente || 0).toLocaleString()}`,
-        l.estado,
-      ];
+    // Calcular todos los datos necesarios para el reporte gerencial
+    const totalCreditos = loans.length;
+    const creditosActivos = loans.filter((l) => l.estado === "activo").length;
+    const creditosCompletados = loans.filter((l) => l.estado === "completado").length;
+    const creditosAnulados = loans.filter((l) => l.estado === "anulado").length;
+
+    // Totales financieros
+    const capitalColocado = loans.reduce((acc, l) => acc + (l.capital || 0), 0);
+    const totalProyectado = loans.reduce((acc, l) => acc + (l.montoTotalAPagar || 0), 0);
+    const totalRecuperado = loans.reduce((acc, l) => {
+      const pagado = (l.montoTotalAPagar || 0) - (l.saldoPendiente ?? 0);
+      return acc + pagado;
+    }, 0);
+    const saldoPendiente = loans.reduce((acc, l) => acc + (l.saldoPendiente || 0), 0);
+    const porcentajeRecuperacion = capitalColocado > 0 ? (totalRecuperado / capitalColocado) * 100 : 0;
+
+    // Distribución por frecuencia
+    const distribucionFrecuencia = {};
+    loans.forEach((l) => {
+      const freq = l.frecuencia || "Sin definir";
+      if (!distribucionFrecuencia[freq]) {
+        distribucionFrecuencia[freq] = {
+          cantidad: 0,
+          capital: 0,
+          saldo: 0,
+          recuperado: 0,
+        };
+      }
+      distribucionFrecuencia[freq].cantidad++;
+      distribucionFrecuencia[freq].capital += l.capital || 0;
+      distribucionFrecuencia[freq].saldo += l.saldoPendiente || 0;
+      const pagado = (l.montoTotalAPagar || 0) - (l.saldoPendiente ?? 0);
+      distribucionFrecuencia[freq].recuperado += pagado;
     });
-    exportarPDF("Reporte_de_Cartera", columnas, filas, `Fecha: ${getColombiaDateKey()}`);
+
+    // Distribución por estado
+    const distribucionEstado = {
+      activos: creditosActivos,
+      completados: creditosCompletados,
+      anulados: creditosAnulados,
+    };
+
+    // Top 10 clientes con mayor saldo pendiente
+    const clientesSaldo = {};
+    loans.forEach((l) => {
+      const clientId = l.clientId;
+      if (!clientesSaldo[clientId]) {
+        clientesSaldo[clientId] = {
+          nombre: clientMap[clientId]?.nombre || "—",
+          cantidad: 0,
+          saldo: 0,
+        };
+      }
+      clientesSaldo[clientId].cantidad++;
+      clientesSaldo[clientId].saldo += l.saldoPendiente || 0;
+    });
+
+    const top10Clientes = Object.values(clientesSaldo)
+      .sort((a, b) => b.saldo - a.saldo)
+      .slice(0, 10);
+
+    // Resumen por cliente (consolidado)
+    const resumenClientes = Object.entries(clientesSaldo).map(([clientId, data]) => {
+      const clientLoans = loans.filter((l) => l.clientId === clientId);
+      const capitalPrestado = clientLoans.reduce((acc, l) => acc + (l.capital || 0), 0);
+      const totalRecuperadoCliente = clientLoans.reduce((acc, l) => {
+        const pagado = (l.montoTotalAPagar || 0) - (l.saldoPendiente ?? 0);
+        return acc + pagado;
+      }, 0);
+
+      return {
+        nombre: data.nombre,
+        cantidad: data.cantidad,
+        capitalPrestado,
+        totalRecuperado: totalRecuperadoCliente,
+        saldoPendiente: data.saldo,
+      };
+    });
+
+    // Enriquecer tabla de créditos con datos necesarios
+    const clientLoanCounts = {};
+    const filas = loans.map((l) => {
+      const clientId = l.clientId;
+      clientLoanCounts[clientId] = (clientLoanCounts[clientId] || 0) + 1;
+      const numCredito = `#${clientLoanCounts[clientId]}`;
+
+      const pagado = (l.montoTotalAPagar || 0) - (l.saldoPendiente ?? 0);
+      const clienteNombre = clientMap[l.clientId]?.nombre || "—";
+
+      return {
+        cliente: clienteNombre,
+        credito: numCredito,
+        frecuencia: l.frecuencia ? l.frecuencia.toUpperCase() : "—",
+        capital: l.capital || 0,
+        totalPagar: l.montoTotalAPagar || 0,
+        pagado,
+        saldo: l.saldoPendiente || 0,
+        estado: l.estado === "activo" ? "Activo" : l.estado === "completado" ? "Completado" : "Anulado",
+      };
+    });
+
+    // Llamar la nueva función mejorada
+    exportarCarteraGlobalPDF({
+      fecha: getColombiaDateKey(),
+      resumenGeneral: {
+        totalCreditos,
+        creditosActivos,
+        creditosCompletados,
+        creditosAnulados,
+        capitalColocado,
+        totalProyectado,
+        totalRecuperado,
+        saldoPendiente,
+        porcentajeRecuperacion,
+      },
+      distribucionFrecuencia,
+      distribucionEstado,
+      top10Clientes,
+      resumenClientes,
+      filas,
+    });
   }
 
-  const formatMoney = (val) => {
-    if (val === undefined || val === null) return "$0";
-    return new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0,
-    }).format(val);
-  };
 
   return (
     <div className="pb-24">
@@ -180,6 +298,29 @@ export default function Reportes() {
           />
         </div>
 
+        {/* Resumen Global (Arriba) */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Resumen Global</h3>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white rounded-xl p-4 border-thin">
+              <p className="text-xs text-gray-400">Total prestado</p>
+              <p className="text-lg font-medium text-primary mt-1" translate="no">${formatearMonto(totalPrestado)}</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 border-thin">
+              <p className="text-xs text-gray-400">Por cobrar</p>
+              <p className="text-lg font-medium text-red-600 mt-1" translate="no">${formatearMonto(totalPorCobrar)}</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 border-thin">
+              <p className="text-xs text-gray-400">Cobrado ({selectedDate})</p>
+              <p className="text-lg font-medium text-emerald-600 mt-1" translate="no">${formatearMonto(cobradoFecha)}</p>
+            </div>
+            <div className="bg-white rounded-xl p-4 border-thin">
+              <p className="text-xs text-gray-400">Saldo caja ({selectedDate})</p>
+              <p className="text-lg font-medium text-primary mt-1" translate="no">${formatearMonto(saldo)}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Cierre diario */}
         <div className="bg-white rounded-xl p-4 border-thin">
           <h3 className="text-sm font-medium text-primary mb-3">Reporte Diario ({selectedDate})</h3>
@@ -193,7 +334,7 @@ export default function Reportes() {
                   <IconCheck size={18} stroke={2} />
                   <span>Guardado</span>
                 </div>
-                <span className="font-medium" translate="no">Saldo: {formatMoney(cierreGuardado.saldoNeto)}</span>
+                <span className="font-medium" translate="no">Saldo: ${formatearMonto(cierreGuardado.saldoNeto)}</span>
               </div>
               <div className="flex gap-2">
                 <button
@@ -230,39 +371,15 @@ export default function Reportes() {
           )}
         </div>
 
-        {/* Resumen Global */}
-        <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Resumen Global</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl p-4 border-thin">
-              <p className="text-xs text-gray-400">Total prestado</p>
-              <p className="text-lg font-medium text-primary mt-1" translate="no">{formatMoney(totalPrestado)}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border-thin">
-              <p className="text-xs text-gray-400">Por cobrar</p>
-              <p className="text-lg font-medium text-red-600 mt-1" translate="no">{formatMoney(totalPorCobrar)}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border-thin">
-              <p className="text-xs text-gray-400">Cobrado ({selectedDate})</p>
-              <p className="text-lg font-medium text-emerald-600 mt-1" translate="no">{formatMoney(cobradoFecha)}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border-thin">
-              <p className="text-xs text-gray-400">Saldo caja ({selectedDate})</p>
-              <p className="text-lg font-medium text-primary mt-1" translate="no">{formatMoney(saldo)}</p>
-            </div>
-          </div>
-        </div>
-
         {/* Exportar cartera */}
         <button
           onClick={exportarCartera}
           className="w-full bg-white border-thin text-primary font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-surface-1 transition"
         >
           <IconChartPie size={20} stroke={1.5} />
-          Exportar cartera global
+          Exportar cartera global (PDF)
         </button>
       </div>
     </div>
   );
 }
-

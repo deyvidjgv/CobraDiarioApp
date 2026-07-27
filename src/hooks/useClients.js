@@ -4,6 +4,7 @@ import {
   subscribeToCollection,
   addDocument,
   updateDocument,
+  removeDocument,
 } from "../firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 
@@ -34,5 +35,9 @@ export function useClients() {
     return updateDocument(orgId, "clients", id, data);
   }
 
-  return { clients, loading, addClient, updateClient };
+  async function deleteClient(id) {
+    return removeDocument(orgId, "clients", id);
+  }
+
+  return { clients, loading, addClient, updateClient, deleteClient };
 }

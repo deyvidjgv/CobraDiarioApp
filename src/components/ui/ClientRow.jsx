@@ -3,7 +3,7 @@ import { IconChevronRight, IconMapPin } from "@tabler/icons-react";
 
 const rowColors = {
   mora: "bg-red-50 hover:bg-red-100 border-red-200",
-  al_dia: "bg-amber-50 hover:bg-amber-100 border-amber-200",
+  al_dia: "bg-emerald-50 hover:bg-emerald-100 border-emerald-200",
   adelantado: "bg-blue-50 hover:bg-blue-100 border-blue-200",
   completado: "bg-gray-50 hover:bg-gray-100 border-gray-200",
   activo: "bg-white hover:bg-surface-1 border-thin"
@@ -11,7 +11,7 @@ const rowColors = {
 
 const avatarColors = {
   mora: { bg: "bg-red-200", text: "text-red-700" },
-  al_dia: { bg: "bg-amber-200", text: "text-amber-800" },
+  al_dia: { bg: "bg-emerald-200", text: "text-emerald-800" },
   adelantado: { bg: "bg-blue-200", text: "text-blue-700" },
   completado: { bg: "bg-gray-200", text: "text-gray-600" },
   activo: { bg: "bg-primary-bg", text: "text-primary" },

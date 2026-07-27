@@ -23,24 +23,38 @@ export function calcularCuotasVencidas(loan, hoy = new Date()) {
   const inicio = startOfDay(loan.fechaInicio);
   const fin = startOfDay(hoy);
 
-  if (fin < inicio) return 0;
+  // Si hoy es la fecha de inicio del crédito o anterior, aún no hay días pasados en mora.
+  if (fin <= inicio) return 0;
+
+  // Evaluamos las cuotas de los días efectivamente transcurridos hasta ayer
+  const ayer = new Date(fin);
+  ayer.setDate(ayer.getDate() - 1);
+
+  const maxCuotas = loan.numeroCuotas ?? Infinity;
+  let calculadas = 0;
 
   switch (loan.frecuencia) {
     case "diario":
-      return contarDiasHabiles(inicio, fin, loan.diasHabiles ?? [1, 2, 3, 4, 5, 6]);
+      calculadas = contarDiasHabiles(inicio, ayer, loan.diasHabiles ?? [1, 2, 3, 4, 5, 6]);
+      break;
 
     case "semanal":
-      return Math.floor(diffDias(inicio, fin) / 7);
+      calculadas = Math.floor(diffDias(inicio, fin) / 7);
+      break;
 
     case "quincenal":
-      return Math.floor(diffDias(inicio, fin) / 15);
+      calculadas = Math.floor(diffDias(inicio, fin) / 15);
+      break;
 
     case "mensual":
-      return Math.floor(diffDias(inicio, fin) / 30);
+      calculadas = Math.floor(diffDias(inicio, fin) / 30);
+      break;
 
     default:
       throw new Error(`Frecuencia desconocida: ${loan.frecuencia}`);
   }
+
+  return Math.min(maxCuotas, calculadas);
 }
 
 function contarDiasHabiles(inicio, fin, diasHabiles) {

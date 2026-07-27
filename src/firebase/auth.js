@@ -5,14 +5,19 @@ import {
   onAuthStateChanged,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  updateProfile,
 } from "firebase/auth";
 import { auth } from "./config";
 
 // El uid que Firebase asigna al crear la cuenta ES el orgId de esa
 // organizacion (ver firestore.rules) - no hace falta generar otro id.
 
-export function registrarCobrador(email, password) {
-  return createUserWithEmailAndPassword(auth, email, password);
+export async function registrarCobrador(email, password, displayName = "") {
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  if (displayName) {
+    await updateProfile(userCredential.user, { displayName });
+  }
+  return userCredential;
 }
 
 export function iniciarSesion(email, password) {

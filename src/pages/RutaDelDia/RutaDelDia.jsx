@@ -4,9 +4,8 @@ import Header from "../../components/layout/Header";
 import ClientRow from "../../components/ui/ClientRow";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
-import { calcularCuotasVencidas } from "../../logic/frecuencia";
-import { calcularEstadoMora } from "../../logic/mora";
-import { toDate } from "../../firebase/firestore";
+import { calcularMoraGlobal } from "../../logic/mora";
+import { formatearMonto } from "../../logic/formato";
 
 export default function RutaDelDia() {
   const navigate = useNavigate();
@@ -19,12 +18,7 @@ export default function RutaDelDia() {
 
     return loans
       .map((loan) => {
-        const cuotasVencidas = calcularCuotasVencidas({
-          ...loan,
-          fechaInicio: toDate(loan.fechaInicio),
-        });
-        const pagadoAcumulado = loan.montoTotalAPagar - (loan.saldoPendiente ?? 0);
-        const mora = calcularEstadoMora(cuotasVencidas, loan.cuota, pagadoAcumulado);
+        const mora = calcularMoraGlobal(loan);
         const client = clientMap[loan.clientId] || {};
 
         return { ...loan, mora, client };
@@ -65,8 +59,8 @@ export default function RutaDelDia() {
                 status={item.mora.estado}
                 subtitle={
                   item.mora.estado === "mora"
-                    ? `Debe ${item.mora.cuotasMora} cuotas — $${item.mora.deficit.toLocaleString()}`
-                    : `Cuota: $${item.cuota.toLocaleString()}`
+                    ? `Debe ${item.mora.cuotasMora} cuotas — $${formatearMonto(item.mora.deficit)}`
+                    : `Cuota: $${formatearMonto(Math.min(item.cuota, item.saldoPendiente ?? item.cuota))}`
                 }
                 ubicacion={item.client.ubicacion}
                 onClick={() => navigate(`/cobro/${item.id}`)}

@@ -1,29 +1,90 @@
 import { useNavigate } from "react-router-dom";
-import { IconChevronLeft, IconDotsVertical } from "@tabler/icons-react";
+import { IconChevronLeft, IconMenu2, IconLoader2 } from "@tabler/icons-react";
+import NavDrawer from "./NavDrawer";
+import { useUI } from "../../context/UIContext";
+import { useAndroidBack } from "../../hooks/useAndroidBack";
 
-export default function Header({ title, showBack = false, right = null }) {
+/**
+ * Header global de la app.
+ *
+ * Props:
+ *  - title: string — título de la página
+ *  - showBack: bool — muestra botón "volver" en la izquierda (el ☰ siempre aparece a la derecha)
+ *  - backTo: string|null — ruta a la que debe navegar el botón "volver" en lugar de retroceder en el historial
+ *  - right: ReactNode — contenido opcional en la esquina derecha (reemplaza el ☰)
+ *  - loading: bool — indica que la página está cargando y deshabilita la navegación de retroceso
+ */
+export default function Header({ 
+  title, 
+  showBack = false, 
+  backTo = null,
+  right = null,
+  loading = false,
+  modalOpen = false,
+  closeModal = () => {}
+}) {
   const navigate = useNavigate();
+  const { drawerOpen, setDrawerOpen } = useUI();
+
+  // Se inicializa el hook de Android Back aquí para que cada pantalla que use Header tenga la lógica centralizada
+  useAndroidBack({ modalOpen, closeModal, showBack, backTo, loading });
 
   return (
-    <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm px-4 py-3 flex items-center gap-3 border-b border-[#E5E5EA]">
-      {showBack && (
-        <button
-          onClick={() => navigate(-1)}
-          className="p-1 -ml-1 rounded-lg hover:bg-surface-2 transition"
-          aria-label="Volver"
-        >
-          <IconChevronLeft size={22} stroke={1.5} className="text-primary" />
-        </button>
-      )}
-      <h1 className="text-lg font-medium flex-1 text-primary">{title}</h1>
-      {right ? (
-        <div>{right}</div>
-      ) : (
-        <button className="p-1 rounded-lg hover:bg-surface-2 transition">
-          <IconDotsVertical size={20} stroke={1.5} className="text-gray-400" />
-        </button>
-      )}
-    </header>
+    <>
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm px-4 py-3 flex items-center gap-3 border-b border-[#E5E5EA]">
+        {showBack ? (
+          /* Botón volver a la izquierda */
+          <button
+            type="button"
+            onClick={() => {
+              if (loading) return;
+              if (backTo) {
+                navigate(backTo, { replace: true });
+              } else {
+                navigate(-1);
+              }
+            }}
+            disabled={loading}
+            aria-disabled={loading}
+            className={`p-1 -ml-1 rounded-lg transition ${loading ? "opacity-40 cursor-not-allowed" : "hover:bg-surface-2"}`}
+            aria-label="Volver"
+          >
+            <IconChevronLeft size={22} stroke={1.5} className="text-primary" />
+          </button>
+        ) : (
+          /* Espacio reservado para mantener el título alineado */
+          <div className="w-[30px]" aria-hidden="true" />
+        )}
+
+        <h1 className="text-lg font-medium flex-1 text-primary">{title}</h1>
+
+        {/* Derecha: contenido personalizado o botón ☰ (siempre visible) */}
+        <div className="flex items-center gap-2">
+          {loading && (
+            <IconLoader2 size={20} stroke={1.5} className="text-primary animate-spin" />
+          )}
+          {right ? (
+            <div>{right}</div>
+          ) : (
+            <button
+              id="nav-menu-toggle"
+              onClick={() => setDrawerOpen(true)}
+              className="p-1 -mr-1 rounded-lg hover:bg-surface-2 transition"
+              aria-label="Abrir menú"
+              aria-expanded={drawerOpen}
+              aria-controls="nav-drawer"
+            >
+              <IconMenu2 size={22} stroke={1.5} className="text-primary" />
+            </button>
+          )}
+        </div>
+      </header>
+
+      {/* Drawer de navegación — se monta fuera del header pero controlado aquí */}
+      <NavDrawer
+        isOpen={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+      />
+    </>
   );
 }
-

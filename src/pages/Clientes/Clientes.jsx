@@ -4,9 +4,7 @@ import Header from "../../components/layout/Header";
 import ClientRow from "../../components/ui/ClientRow";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
-import { calcularCuotasVencidas } from "../../logic/frecuencia";
-import { calcularEstadoMora } from "../../logic/mora";
-import { toDate } from "../../firebase/firestore";
+import { calcularMoraGlobal } from "../../logic/mora";
 import { IconUsersGroup, IconPlus } from "@tabler/icons-react";
 
 export default function Clientes() {
@@ -23,12 +21,7 @@ export default function Clientes() {
       let worstStatus = "al_dia";
 
       for (const loan of clientLoans) {
-        const cuotasVencidas = calcularCuotasVencidas({
-          ...loan,
-          fechaInicio: toDate(loan.fechaInicio),
-        });
-        const pagado = loan.montoTotalAPagar - (loan.saldoPendiente ?? 0);
-        const mora = calcularEstadoMora(cuotasVencidas, loan.cuota, pagado);
+        const mora = calcularMoraGlobal(loan);
         if (mora.estado === "mora") {
           worstStatus = "mora";
           break;
@@ -129,7 +122,7 @@ export default function Clientes() {
       {/* FAB */}
       <button
         onClick={() => navigate("/clientes/nuevo")}
-        className="fixed bottom-20 right-4 w-14 h-14 bg-primary-light text-white rounded-full flex items-center justify-center hover:scale-105 transition z-30"
+        className="fixed bottom-8 right-4 w-14 h-14 bg-primary-light text-white rounded-full flex items-center justify-center hover:scale-105 transition z-30"
         aria-label="Nuevo cliente"
       >
         <IconPlus size={28} stroke={2} />

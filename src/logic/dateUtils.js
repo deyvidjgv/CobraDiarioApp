@@ -28,3 +28,20 @@ export function getColombiaDateKey(dateInput = new Date()) {
 
   return `${map.year}-${map.month}-${map.day}`;
 }
+
+/** Convierte cualquier valor (Timestamp, Date, string) a Date JS sin desfases UTC */
+export function toDate(val) {
+  if (!val) return new Date();
+  if (typeof val === "object" && typeof val.toDate === "function") return val.toDate(); // Firestore Timestamp
+  if (val instanceof Date) return val;
+  if (typeof val === "string") {
+    // Si la cadena es "YYYY-MM-DD", crear la fecha en medianoche hora local sin convertir a UTC
+    const dateOnlyMatch = val.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (dateOnlyMatch) {
+      const [, year, month, day] = dateOnlyMatch;
+      return new Date(Number(year), Number(month) - 1, Number(day), 0, 0, 0);
+    }
+  }
+  const d = new Date(val);
+  return isNaN(d.getTime()) ? new Date() : d;
+}

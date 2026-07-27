@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import {
   initializeFirestore,
+  getFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
@@ -20,10 +21,16 @@ const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
 
-// Persistencia offline habilitada — la app funciona sin conexion.
-// persistentMultipleTabManager permite usar varias pestanas a la vez.
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    tabManager: persistentMultipleTabManager(),
-  }),
-});
+let db;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  });
+} catch (err) {
+  console.warn("Firestore local cache no está disponible, usando Firestore estándar:", err);
+  db = getFirestore(app);
+}
+
+export { db };

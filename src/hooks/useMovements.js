@@ -3,11 +3,10 @@ import { where, orderBy, Timestamp } from "firebase/firestore";
 import {
   subscribeToCollection,
   addDocument,
-  setDocument,
   deleteDocument,
 } from "../firebase/firestore";
 import { useAuth } from "../context/AuthContext";
-import { calcularSaldo, construirCierreDiario } from "../logic/caja";
+import { calcularSaldo, TIPOS_MOVIMIENTO } from "../logic/caja";
 
 /**
  * Hook para los movimientos de caja de un día.
@@ -46,28 +45,28 @@ export function useMovements(fechaStr = null) {
     return addDocument(orgId, "movements", data);
   }
 
-  /** Guarda el snapshot en daily_closings usando la fecha como ID */
-  async function cerrarCaja() {
-    const cierre = construirCierreDiario(movements, new Date());
-    await setDocument(orgId, "daily_closings", dateKey, cierre);
-    return cierre;
-  }
-
   /**
-   * Elimina TODOS los movimientos del día actual de Firestore.
-   * Solo borra los que fueron creados manualmente (gasto / ingreso_base).
-   * Los cobros (tipo "cobro") NO se tocan — viven en los préstamos.
-   * Si quieres limpiar TODO sin excepción pasa `soloManuales = false`.
+   * Elimina UN movimiento puntual (para corregir un error de captura).
+   * Solo permite borrar movimientos manuales (gasto / ingreso_base / ajuste).
+   * Los cobros y prestamos nuevos NUNCA se eliminan aqui - representan
+   * dinero real ya entregado o cobrado; si algo esta mal, se corrige
+   * con un movimiento de tipo "ajuste", nunca borrando el original.
    */
-  async function limpiarDia(soloManuales = true) {
-    const aEliminar = soloManuales
-      ? movements.filter(
-          (m) => m.tipo === "gasto" || m.tipo === "ingreso_base" || m.tipo === "ajuste"
-        )
-      : movements;
-
-    await Promise.all(aEliminar.map((m) => deleteDocument(orgId, "movements", m.id)));
+  async function deleteMovement(movementId) {
+    const mov = movements.find((m) => m.id === movementId);
+    if (!mov) throw new Error("Movimiento no encontrado");
+    const permitido = [
+      TIPOS_MOVIMIENTO.GASTO,
+      TIPOS_MOVIMIENTO.INGRESO_BASE,
+      TIPOS_MOVIMIENTO.AJUSTE,
+    ];
+    if (!permitido.includes(mov.tipo)) {
+      throw new Error(
+        "Solo se pueden eliminar movimientos manuales (gasto/base/ajuste). Los cobros y préstamos no se pueden borrar, para preservar el historial."
+      );
+    }
+    return deleteDocument(orgId, "movements", movementId);
   }
 
-  return { movements, loading, saldo, addMovement, cerrarCaja, limpiarDia };
+  return { movements, loading, saldo, addMovement, deleteMovement };
 }

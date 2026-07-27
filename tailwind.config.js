@@ -11,7 +11,7 @@ export default {
         gold: "#FAC775",
         // Estados de crédito
         mora: "#DC2626",
-        "al-dia": "#FAC775",
+        "al-dia": "#22C55E",
         adelanto: "#3B82F6", // blue-500
         // Superficies
         surface: "#FFFFFF",

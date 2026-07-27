@@ -10,6 +10,7 @@ import {
   onSnapshot,
   serverTimestamp,
   Timestamp,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "./config";
 
@@ -23,21 +24,54 @@ export function subCollection(orgId, sub) {
   return collection(db, "organizations", orgId, sub);
 }
 
+export function documentRef(orgId, sub, docId) {
+  return doc(db, "organizations", orgId, sub, docId);
+}
+
+export function getBatch() {
+  return writeBatch(db);
+}
+
 // ─── CRUD genérico ─────────────────────────────────────────────
+
+function sanitizeFirestoreData(value) {
+  if (value === undefined) {
+    return null;
+  }
+  if (value === null) {
+    return null;
+  }
+  if (Array.isArray(value)) {
+    return value.map(sanitizeFirestoreData);
+  }
+  if (typeof value === "object" && !(value instanceof Date) && !(value instanceof Timestamp)) {
+    return Object.entries(value).reduce((acc, [key, fieldValue]) => {
+      const sanitized = sanitizeFirestoreData(fieldValue);
+      if (sanitized !== undefined) {
+        acc[key] = sanitized;
+      }
+      return acc;
+    }, {});
+  }
+  return value;
+}
 
 export async function addDocument(orgId, sub, data) {
   const ref = subCollection(orgId, sub);
-  return addDoc(ref, { ...data, createdAt: serverTimestamp() });
+  const sanitizedData = sanitizeFirestoreData(data);
+  return addDoc(ref, { ...sanitizedData, createdAt: serverTimestamp() });
 }
 
 export async function setDocument(orgId, sub, docId, data) {
   const ref = doc(db, "organizations", orgId, sub, docId);
-  return setDoc(ref, { ...data, updatedAt: serverTimestamp() }, { merge: true });
+  const sanitizedData = sanitizeFirestoreData(data);
+  return setDoc(ref, { ...sanitizedData, updatedAt: serverTimestamp() }, { merge: true });
 }
 
 export async function updateDocument(orgId, sub, docId, data) {
   const ref = doc(db, "organizations", orgId, sub, docId);
-  return updateDoc(ref, { ...data, updatedAt: serverTimestamp() });
+  const sanitizedData = sanitizeFirestoreData(data);
+  return updateDoc(ref, { ...sanitizedData, updatedAt: serverTimestamp() });
 }
 
 export async function removeDocument(orgId, sub, docId) {

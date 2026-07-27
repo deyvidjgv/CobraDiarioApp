@@ -1,12 +1,13 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import BottomNav from "./components/layout/BottomNav";
+import { UIProvider } from "./context/UIContext";
 
 import Login from "./pages/Login/Login";
 import Inicio from "./pages/Inicio/Inicio";
 import RutaDelDia from "./pages/RutaDelDia/RutaDelDia";
 import Clientes from "./pages/Clientes/Clientes";
 import NuevoCliente from "./pages/Clientes/NuevoCliente";
+import DetalleCliente from "./pages/Clientes/DetalleCliente";
 import NuevoCredito from "./pages/Creditos/NuevoCredito";
 import DetalleCredito from "./pages/Creditos/DetalleCredito";
 import RegistrarCobro from "./pages/RegistrarCobro/RegistrarCobro";
@@ -29,11 +30,10 @@ function ProtectedLayout({ children }) {
   if (!usuario) return <Navigate to="/login" replace />;
 
   return (
-    <div className="flex-1 flex flex-col bg-surface-1 min-h-screen relative pb-20">
+    <div className="flex-1 flex flex-col bg-surface-1 min-h-screen relative">
       <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {children}
       </div>
-      <BottomNav />
     </div>
   );
 }
@@ -48,6 +48,7 @@ function AppRoutes() {
       <Route path="/cobro/:loanId" element={<ProtectedLayout><RegistrarCobro /></ProtectedLayout>} />
       <Route path="/clientes" element={<ProtectedLayout><Clientes /></ProtectedLayout>} />
       <Route path="/clientes/nuevo" element={<ProtectedLayout><NuevoCliente /></ProtectedLayout>} />
+      <Route path="/clientes/:clientId" element={<ProtectedLayout><DetalleCliente /></ProtectedLayout>} />
       <Route path="/creditos/nuevo" element={<ProtectedLayout><NuevoCredito /></ProtectedLayout>} />
       <Route path="/creditos/:loanId" element={<ProtectedLayout><DetalleCredito /></ProtectedLayout>} />
       <Route path="/reportes" element={<ProtectedLayout><Reportes /></ProtectedLayout>} />
@@ -62,11 +63,13 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <div className="min-h-screen bg-surface-1 text-gray-800 font-sans antialiased flex flex-col">
-          <AppRoutes />
-        </div>
-      </BrowserRouter>
+      <UIProvider>
+        <BrowserRouter>
+          <div className="min-h-screen bg-surface-1 text-gray-800 font-sans antialiased flex flex-col">
+            <AppRoutes />
+          </div>
+        </BrowserRouter>
+      </UIProvider>
     </AuthProvider>
   );
 }

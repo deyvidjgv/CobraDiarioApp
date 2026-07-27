@@ -11,7 +11,7 @@ import { IconMapPin, IconCurrentLocation } from "@tabler/icons-react";
 
 export default function NuevoCredito() {
   const navigate = useNavigate();
-  const { orgId } = useAuth();
+  const { orgId, usuario } = useAuth();
   const { clients, updateClient } = useClients();
   const { addLoan } = useLoans();
   const [settings, setSettings] = useState({});
@@ -29,8 +29,12 @@ export default function NuevoCredito() {
   async function handleSubmit(formData) {
     setLoading(true);
     try {
+      const client = clients.find((c) => c.id === formData.clientId);
       const loanDoc = construirCredito(formData, settings);
-      await addLoan(loanDoc);
+      await addLoan(loanDoc, {
+        clienteNombre: client?.nombre ?? null,
+        cobradorNombre: usuario?.displayName ?? null,
+      });
       navigate("/ruta", { replace: true });
     } catch (err) {
       alert("Error al crear crédito: " + err.message);

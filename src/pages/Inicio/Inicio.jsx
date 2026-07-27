@@ -1,10 +1,12 @@
 import { useNavigate } from "react-router-dom";
+import Header from "../../components/layout/Header";
 import MetricCard from "../../components/ui/MetricCard";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
 import { useMovements } from "../../hooks/useMovements";
 import { calcularCuotasVencidas } from "../../logic/frecuencia";
 import { calcularEstadoMora } from "../../logic/mora";
+import { formatearMonto } from "../../logic/formato";
 import { toDate } from "../../firebase/firestore";
 import {
   IconUserPlus,
@@ -47,7 +49,9 @@ export default function Inicio() {
   ];
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
+    <div className="pb-8">
+      <Header title="Inicio" />
+      <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-5xl mx-auto">
       {/* Saludo */}
       <div>
         <h2 className="text-2xl font-semibold text-gray-800">{saludo}</h2>
@@ -60,7 +64,7 @@ export default function Inicio() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <MetricCard
           label="Cobrado hoy"
-          value={`$${cobradoHoy.toLocaleString()}`}
+          value={`$${formatearMonto(cobradoHoy)}`}
           color="green"
         />
         <MetricCard
@@ -71,7 +75,7 @@ export default function Inicio() {
         />
         <MetricCard
           label="Saldo caja"
-          value={`$${saldo.toLocaleString()}`}
+          value={`$${formatearMonto(saldo)}`}
           color="primary"
           onClick={() => navigate("/caja")}
         />
@@ -107,6 +111,7 @@ export default function Inicio() {
             </button>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );

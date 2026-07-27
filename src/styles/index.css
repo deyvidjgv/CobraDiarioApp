@@ -8,6 +8,28 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+@media (max-width: 640px) {
+  body {
+    background-color: #F4F5FB;
+  }
+
+  .bg-primary {
+    background-color: #6F62D6;
+  }
+
+  .bg-primary-light {
+    background-color: #9E97E5;
+  }
+
+  .text-primary {
+    color: #433F92;
+  }
+
+  .border-thin {
+    border-color: #DADBE5;
+  }
+}
+
 /* Borde fino global */
 @layer utilities {
   .border-thin {
