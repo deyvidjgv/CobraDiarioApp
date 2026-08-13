@@ -622,7 +622,7 @@ El cobradiario puede consultar únicamente los reportes permitidos para su opera
 |---|---|
 | ✅ FASE 0 — Respaldo | Backup/exportación, Git commit y revisión del estado estable |
 | ✅ FASE 1 — Roles | ADMIN/COBRADIARIO, users y autorización |
-| FASE 2 — Seguridad | Firestore Security Rules y pruebas de permisos |
+| ✅ FASE 2 — Seguridad | Firestore Security Rules y pruebas de permisos |
 | FASE 3 — Cobradiarios | Crear, activar, desactivar, consultar y desempeño |
 | FASE 4 — Paneles | AdminLayout y CobradiarioLayout con rutas protegidas |
 | FASE 5 — Clientes | Nuevo modelo de cliente y compatibilidad con existentes |
@@ -735,7 +735,7 @@ La arquitectura debe quedar preparada para crecer a más cobradiarios y más org
 ## 28. Checklist final de entrega
 
 - [ ] Roles ADMIN/COBRADIARIO implementados.
-- [ ] Firestore Security Rules probadas.
+- [x] Firestore Security Rules probadas.
 - [ ] Admin puede crear y administrar cobradiarios.
 - [ ] Cobradiario tiene panel limitado.
 - [ ] Formulario de cliente completo.

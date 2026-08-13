@@ -1,64 +1,116 @@
 rules_version = '2';
 
-// Modelo: cada cobrador es una organizacion (orgId) independiente.
-// El orgId de cada organizacion es el mismo uid del usuario dueño (auth.uid),
-// asi que no hace falta un campo extra de "owner" para validar el acceso.
+// Modelo multitenant con roles (Plan Maestro, Fase 2):
+//
+// userIndex/{uid} -> { organizationId, role }
+//   Mapeo minimo para que cualquier usuario (admin o cobradiario) sepa a
+//   que organizacion pertenece y con que rol, sin depender de que su uid
+//   sea el propio orgId.
 //
 // organizations/{orgId}
-//   ├─ settings (documento unico dentro de la org)
-//   ├─ clients/{clientId}
-//   ├─ loans/{loanId}
-//   ├─ movements/{movementId}
+//   ├─ users/{uid}          ficha de cada miembro (role, estado)
+//   ├─ settings              configuracion administrativa (un doc)
+//   ├─ clients/{clientId}    cobradiarioId identifica al dueño operativo
+//   ├─ loans/{loanId}        cobradiarioId identifica al dueño operativo
+//   ├─ movements/{movementId} cobradiarioId identifica al dueño operativo
 //   └─ daily_closings/{fecha}
+//
+// Regla de negocio (seccion 10 del plan maestro): un cobradiario puede
+// crear/leer sus propios registros operativos, pero no puede editar ni
+// borrar movimientos financieros ya creados. Esa capacidad queda
+// reservada al Admin (correcciones se resuelven por flujo aparte, Fase 7).
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isOwner(orgId) {
-      return request.auth != null && request.auth.uid == orgId;
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function memberDoc(orgId, uid) {
+      return get(/databases/$(database)/documents/organizations/$(orgId)/users/$(uid)).data;
+    }
+
+    function isActiveMember(orgId) {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/organizations/$(orgId)/users/$(request.auth.uid))
+        && memberDoc(orgId, request.auth.uid).estado == "activo";
+    }
+
+    function isAdminOf(orgId) {
+      return isActiveMember(orgId) && memberDoc(orgId, request.auth.uid).role == "admin";
+    }
+
+    function isCobradiarioOf(orgId) {
+      return isActiveMember(orgId) && memberDoc(orgId, request.auth.uid).role == "cobradiario";
+    }
+
+    function ownsRecord(data) {
+      return data.cobradiarioId == request.auth.uid;
     }
 
     // userIndex/{uid}: mapeo uid -> organizationId/role.
-    // Solo se permite el auto-bootstrap (un usuario creandose a si mismo
-    // como admin de su propia organizacion). Asignar otros roles u
-    // organizaciones queda para el backend (Fase 2/3).
+    // El propio usuario puede leer su indice. La creacion solo se permite
+    // para el auto-bootstrap (un usuario creandose a si mismo como admin
+    // de su propia organizacion, ver AuthContext). Asignar cobradiarios a
+    // una organizacion existente es responsabilidad del backend (Fase 3).
     match /userIndex/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow create: if request.auth != null && request.auth.uid == uid
+      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow create: if isSignedIn() && request.auth.uid == uid
                     && request.resource.data.organizationId == uid
                     && request.resource.data.role == "admin";
       allow update, delete: if false;
     }
 
     match /organizations/{orgId} {
-      allow read, write: if isOwner(orgId);
-
-      match /settings/{docId} {
-        allow read, write: if isOwner(orgId);
-      }
+      allow read, write: if isAdminOf(orgId);
 
       match /users/{userId} {
-        allow read: if isOwner(orgId) || (request.auth != null && request.auth.uid == userId);
-        allow create: if request.auth != null && request.auth.uid == userId
+        allow read: if isAdminOf(orgId) || (isSignedIn() && request.auth.uid == userId);
+        // Auto-bootstrap (un usuario se registra como admin de su propia org).
+        allow create: if isSignedIn() && request.auth.uid == userId
                       && userId == orgId && orgId == request.auth.uid
                       && request.resource.data.role == "admin";
-        allow update, delete: if false;
+        // El Admin puede activar/desactivar o editar la ficha de un miembro.
+        allow update: if isAdminOf(orgId);
+        allow delete: if false;
+      }
+
+      match /settings/{docId} {
+        allow read: if isActiveMember(orgId);
+        allow write: if isAdminOf(orgId);
       }
 
       match /clients/{clientId} {
-        allow read, write: if isOwner(orgId);
+        allow read: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
+        allow create: if isAdminOf(orgId)
+                      || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
+        allow update: if isAdminOf(orgId)
+                      || (isCobradiarioOf(orgId) && ownsRecord(resource.data) && ownsRecord(request.resource.data));
+        allow delete: if isAdminOf(orgId);
       }
 
       match /loans/{loanId} {
-        allow read, write: if isOwner(orgId);
+        allow read: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
+        allow create: if isAdminOf(orgId)
+                      || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
+        // Las condiciones del credito quedan congeladas: el cobradiario no
+        // puede modificarlas una vez creadas (seccion 8/10 del plan maestro).
+        allow update: if isAdminOf(orgId);
+        allow delete: if isAdminOf(orgId);
       }
 
       match /movements/{movementId} {
-        allow read, write: if isOwner(orgId);
+        allow read: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
+        allow create: if isAdminOf(orgId)
+                      || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
+        // Inmutabilidad financiera: solo el Admin corrige/anula movimientos.
+        allow update, delete: if isAdminOf(orgId);
       }
 
       match /daily_closings/{fecha} {
-        allow read, write: if isOwner(orgId);
+        allow read: if isActiveMember(orgId);
+        allow write: if isAdminOf(orgId);
       }
     }
 
