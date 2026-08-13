@@ -50,15 +50,20 @@ service cloud.firestore {
     }
 
     // userIndex/{uid}: mapeo uid -> organizationId/role.
-    // El propio usuario puede leer su indice. La creacion solo se permite
-    // para el auto-bootstrap (un usuario creandose a si mismo como admin
-    // de su propia organizacion, ver AuthContext). Asignar cobradiarios a
-    // una organizacion existente es responsabilidad del backend (Fase 3).
+    // El propio usuario puede leer su indice. La creacion se permite en
+    // dos casos: (1) auto-bootstrap, un usuario creandose a si mismo como
+    // admin de su propia organizacion (ver AuthContext); (2) un admin
+    // activo registrando a un cobradiario que acaba de crear en Firebase
+    // Auth (ver secondaryAuth.js — no hay backend, Fase 3 corre 100% en
+    // el cliente). Como es "create" y no "update", nunca puede pisar un
+    // userIndex ya existente.
     match /userIndex/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
       allow create: if isSignedIn() && request.auth.uid == uid
                     && request.resource.data.organizationId == uid
                     && request.resource.data.role == "admin";
+      allow create: if request.resource.data.role == "cobradiario"
+                    && isAdminOf(request.resource.data.organizationId);
       allow update, delete: if false;
     }
 
@@ -71,6 +76,8 @@ service cloud.firestore {
         allow create: if isSignedIn() && request.auth.uid == userId
                       && userId == orgId && orgId == request.auth.uid
                       && request.resource.data.role == "admin";
+        // El Admin registra a un cobradiario que acaba de crear en Auth.
+        allow create: if isAdminOf(orgId) && request.resource.data.role == "cobradiario";
         // El Admin puede activar/desactivar o editar la ficha de un miembro.
         allow update: if isAdminOf(orgId);
         allow delete: if false;

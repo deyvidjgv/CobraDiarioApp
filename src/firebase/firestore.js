@@ -140,6 +140,33 @@ export async function bootstrapAdminUser(uid, { email, nombre }) {
   return { organizationId: uid, role: "admin" };
 }
 
+/**
+ * Registra en Firestore a un cobradiario ya creado en Firebase Auth
+ * (ver secondaryAuth.js): userIndex/{uid} + organizations/{orgId}/users/{uid}
+ * con role "cobradiario". Lo ejecuta el Admin (sesión principal), quien
+ * es el único autorizado por las reglas a escribir estos documentos para
+ * un uid que no es el suyo.
+ */
+export async function registerCobradiarioMember(orgId, uid, { email, nombre, cedula, celular, createdBy }) {
+  const batch = getBatch();
+  batch.set(userIndexRef(uid), {
+    organizationId: orgId,
+    role: "cobradiario",
+  });
+  batch.set(documentRef(orgId, "users", uid), {
+    uid,
+    email: email ?? null,
+    nombre: nombre ?? "",
+    cedula: cedula ?? "",
+    celular: celular ?? "",
+    role: "cobradiario",
+    estado: "activo",
+    createdBy,
+    createdAt: serverTimestamp(),
+  });
+  await batch.commit();
+}
+
 // ─── Settings (documento único por org) ────────────────────────
 
 export async function getSettings(orgId) {

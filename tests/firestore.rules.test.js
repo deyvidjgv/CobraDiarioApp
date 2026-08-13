@@ -240,4 +240,62 @@ describe("users (miembros de la organizacion)", () => {
       updateDoc(doc(db, "organizations", ORG_ID, "users", COBRADIARIO_UID), { role: "admin" })
     );
   });
+
+  // Fase 3 (sin backend): el admin crea la cuenta de Auth de un cobradiario
+  // con una instancia secundaria en el cliente y luego registra sus fichas
+  // (userIndex + organizations/{orgId}/users) con su propia sesión.
+  const NUEVO_COBRADIARIO_UID = "cobrador-nuevo-uid";
+
+  test("admin puede registrar userIndex + ficha de un cobradiario nuevo", async () => {
+    const ctx = testEnv.authenticatedContext(ADMIN_UID);
+    const db = ctx.firestore();
+
+    await assertSucceeds(
+      setDoc(doc(db, "userIndex", NUEVO_COBRADIARIO_UID), {
+        organizationId: ORG_ID,
+        role: "cobradiario",
+      })
+    );
+    await assertSucceeds(
+      setDoc(doc(db, "organizations", ORG_ID, "users", NUEVO_COBRADIARIO_UID), {
+        uid: NUEVO_COBRADIARIO_UID,
+        nombre: "Cobrador Nuevo",
+        role: "cobradiario",
+        estado: "activo",
+      })
+    );
+  });
+
+  test("un cobradiario NO puede registrar a otro cobradiario", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+
+    await assertFails(
+      setDoc(doc(db, "userIndex", NUEVO_COBRADIARIO_UID), {
+        organizationId: ORG_ID,
+        role: "cobradiario",
+      })
+    );
+    await assertFails(
+      setDoc(doc(db, "organizations", ORG_ID, "users", NUEVO_COBRADIARIO_UID), {
+        uid: NUEVO_COBRADIARIO_UID,
+        nombre: "Cobrador Nuevo",
+        role: "cobradiario",
+        estado: "activo",
+      })
+    );
+  });
+
+  test("admin NO puede reescribir un userIndex ya existente (es create, no update)", async () => {
+    const ctx = testEnv.authenticatedContext(ADMIN_UID);
+    const db = ctx.firestore();
+    // COBRADIARIO_UID ya tiene userIndex sembrado en beforeEach: al no ser
+    // un documento nuevo, la regla de "create" no aplica y no hay "update".
+    await assertFails(
+      setDoc(doc(db, "userIndex", COBRADIARIO_UID), {
+        organizationId: ORG_ID,
+        role: "cobradiario",
+      })
+    );
+  });
 });
