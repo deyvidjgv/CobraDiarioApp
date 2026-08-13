@@ -100,6 +100,46 @@ export function subscribeToCollection(orgId, sub, constraints, callback) {
   });
 }
 
+// ─── Roles: userIndex + miembros de la organización ────────────
+
+export function userIndexRef(uid) {
+  return doc(db, "userIndex", uid);
+}
+
+export async function getUserIndex(uid) {
+  const snap = await getDoc(userIndexRef(uid));
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function getOrgUser(orgId, uid) {
+  return getDocument(orgId, "users", uid);
+}
+
+/**
+ * Crea userIndex/{uid} y organizations/{uid}/users/{uid} con role "admin".
+ * Reproduce el comportamiento actual (1 usuario = dueño total de su org)
+ * expresado con el modelo de roles, para usuarios que ya existían antes
+ * de introducir userIndex.
+ */
+export async function bootstrapAdminUser(uid, { email, nombre }) {
+  const batch = getBatch();
+  batch.set(userIndexRef(uid), {
+    organizationId: uid,
+    role: "admin",
+  });
+  batch.set(documentRef(uid, "users", uid), {
+    uid,
+    email: email ?? null,
+    nombre: nombre ?? "",
+    role: "admin",
+    estado: "activo",
+    createdBy: uid,
+    createdAt: serverTimestamp(),
+  });
+  await batch.commit();
+  return { organizationId: uid, role: "admin" };
+}
+
 // ─── Settings (documento único por org) ────────────────────────
 
 export async function getSettings(orgId) {

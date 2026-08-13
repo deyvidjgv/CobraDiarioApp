@@ -18,11 +18,31 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == orgId;
     }
 
+    // userIndex/{uid}: mapeo uid -> organizationId/role.
+    // Solo se permite el auto-bootstrap (un usuario creandose a si mismo
+    // como admin de su propia organizacion). Asignar otros roles u
+    // organizaciones queda para el backend (Fase 2/3).
+    match /userIndex/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.organizationId == uid
+                    && request.resource.data.role == "admin";
+      allow update, delete: if false;
+    }
+
     match /organizations/{orgId} {
       allow read, write: if isOwner(orgId);
 
       match /settings/{docId} {
         allow read, write: if isOwner(orgId);
+      }
+
+      match /users/{userId} {
+        allow read: if isOwner(orgId) || (request.auth != null && request.auth.uid == userId);
+        allow create: if request.auth != null && request.auth.uid == userId
+                      && userId == orgId && orgId == request.auth.uid
+                      && request.resource.data.role == "admin";
+        allow update, delete: if false;
       }
 
       match /clients/{clientId} {
