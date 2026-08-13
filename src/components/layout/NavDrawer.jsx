@@ -10,8 +10,10 @@ import {
   IconChartBar,
   IconCoin,
   IconX,
+  IconUserCog,
 } from "@tabler/icons-react";
 import { cerrarSesion } from "../../firebase/auth";
+import { useAuth } from "../../context/AuthContext";
 
 const navItems = [
   { to: "/", label: "Inicio", Icon: IconHome, end: true },
@@ -22,6 +24,10 @@ const navItems = [
   { to: "/configuracion", label: "Ajustes", Icon: IconSettings, end: false },
 ];
 
+const adminNavItems = [
+  { to: "/cobradiarios", label: "Cobradiarios", Icon: IconUserCog, end: false },
+];
+
 /**
  * Drawer lateral de navegación principal.
  * Se controla desde fuera con `isOpen` y `onClose`.
@@ -30,6 +36,8 @@ export default function NavDrawer({ isOpen, onClose }) {
   const drawerRef = useRef(null);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { isAdmin } = useAuth();
+  const items = isAdmin ? [...navItems, ...adminNavItems] : navItems;
 
   async function handleLogout() {
     if (!confirm("¿Cerrar sesión?")) return;
@@ -123,7 +131,7 @@ export default function NavDrawer({ isOpen, onClose }) {
 
         {/* Links de navegación */}
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          {navItems.map(({ to, label, Icon, end }) => (
+          {items.map(({ to, label, Icon, end }) => (
             <NavLink
               key={to}
               to={to}

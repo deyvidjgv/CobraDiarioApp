@@ -14,6 +14,8 @@ import RegistrarCobro from "./pages/RegistrarCobro/RegistrarCobro";
 import Reportes from "./pages/Reportes/Reportes";
 import Caja from "./pages/Caja/Caja";
 import Configuracion from "./pages/Configuracion/Configuracion";
+import Cobradiarios from "./pages/Cobradiarios/Cobradiarios";
+import NuevoCobradiario from "./pages/Cobradiarios/NuevoCobradiario";
 
 function ProtectedLayout({ children }) {
   const { usuario, cargando } = useAuth();
@@ -38,6 +40,13 @@ function ProtectedLayout({ children }) {
   );
 }
 
+// Gestión de cobradiarios es exclusiva del Admin (Plan Maestro, sección 5).
+function AdminOnly({ children }) {
+  const { isAdmin } = useAuth();
+  if (!isAdmin) return <Navigate to="/" replace />;
+  return children;
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -54,6 +63,8 @@ function AppRoutes() {
       <Route path="/reportes" element={<ProtectedLayout><Reportes /></ProtectedLayout>} />
       <Route path="/caja" element={<ProtectedLayout><Caja /></ProtectedLayout>} />
       <Route path="/configuracion" element={<ProtectedLayout><Configuracion /></ProtectedLayout>} />
+      <Route path="/cobradiarios" element={<ProtectedLayout><AdminOnly><Cobradiarios /></AdminOnly></ProtectedLayout>} />
+      <Route path="/cobradiarios/nuevo" element={<ProtectedLayout><AdminOnly><NuevoCobradiario /></AdminOnly></ProtectedLayout>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

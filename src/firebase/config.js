@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
+import { getFunctions } from "firebase/functions";
 import {
   initializeFirestore,
   getFirestore,
@@ -32,5 +33,7 @@ try {
   console.warn("Firestore local cache no está disponible, usando Firestore estándar:", err);
   db = getFirestore(app);
 }
+
+export const functions = getFunctions(app);
 
 export { db };
