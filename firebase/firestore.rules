@@ -1,0 +1,50 @@
+rules_version = '2';
+
+// Modelo: cada cobrador es una organizacion (orgId) independiente.
+// El orgId de cada organizacion es el mismo uid del usuario dueño (auth.uid),
+// asi que no hace falta un campo extra de "owner" para validar el acceso.
+//
+// organizations/{orgId}
+//   ├─ settings (documento unico dentro de la org)
+//   ├─ clients/{clientId}
+//   ├─ loans/{loanId}
+//   ├─ movements/{movementId}
+//   └─ daily_closings/{fecha}
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(orgId) {
+      return request.auth != null && request.auth.uid == orgId;
+    }
+
+    match /organizations/{orgId} {
+      allow read, write: if isOwner(orgId);
+
+      match /settings/{docId} {
+        allow read, write: if isOwner(orgId);
+      }
+
+      match /clients/{clientId} {
+        allow read, write: if isOwner(orgId);
+      }
+
+      match /loans/{loanId} {
+        allow read, write: if isOwner(orgId);
+      }
+
+      match /movements/{movementId} {
+        allow read, write: if isOwner(orgId);
+      }
+
+      match /daily_closings/{fecha} {
+        allow read, write: if isOwner(orgId);
+      }
+    }
+
+    // Cualquier otra ruta no listada explicitamente queda bloqueada por defecto.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
