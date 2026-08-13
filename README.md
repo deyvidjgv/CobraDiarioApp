@@ -14,6 +14,7 @@ Construida con **React 18**, **Vite**, **Tailwind CSS** y **Firebase Firestore**
 - [Firestore y datos](#firestore-y-datos)
 - [Funciones principales](#funciones-principales)
 - [PWA e instalación](#pwa-e-instalación)
+- [Evolución Admin + Cobradiarios](#evolución-admin--cobradiarios)
 - [Mejoras recientes](#mejoras-recientes)
 - [Cómo usar](#cómo-usar)
 
@@ -88,6 +89,9 @@ npm run build
 - `src/components/` — componentes reutilizables de UI y layout
 - `src/pages/` — pantallas de la aplicación
 - `src/styles/index.css` — estilos globales
+- `firebase/firestore.rules` — reglas de seguridad de Firestore (por rol admin/cobradiario)
+- `tests/firestore.rules.test.js` — pruebas de esas reglas contra el emulador (`npm run test:rules`)
+- `Plan_Maestro_Cobro_Diario_Admin_Cobradiario.md` — plan de evolución hacia Admin + Cobradiarios y su checklist de avance
 
 ---
 
@@ -166,6 +170,61 @@ Datos clave:
 - El botón de instalación está en la pantalla de Configuración
 - Se deshabilita cuando la app ya está instalada
 - La app usa persistencia local de Firestore para funcionar offline
+
+---
+
+## Evolución Admin + Cobradiarios
+
+El proyecto está en proceso de evolucionar hacia una plataforma con un
+**Admin** central y varios **Cobradiarios** operativos, según
+[`Plan_Maestro_Cobro_Diario_Admin_Cobradiario.md`](./Plan_Maestro_Cobro_Diario_Admin_Cobradiario.md).
+Ese archivo tiene el detalle completo (15 fases) y su checklist se va
+marcando conforme se completa cada una.
+
+**Estado actual: FASE 0-3 completas.** FASE 4 en adelante, pendientes.
+
+| Fase | Estado | Qué hace |
+|---|---|---|
+| 0 — Respaldo | ✅ | Checkpoint git antes de tocar código |
+| 1 — Roles | ✅ | `userIndex/{uid}` + `organizations/{orgId}/users/{uid}` con `role: "admin" \| "cobradiario"`. Todo usuario existente se auto-registra como admin de su propia organización la primera vez que entra (sin migración manual) |
+| 2 — Seguridad | ✅ | `firebase/firestore.rules` reescrito para autorizar por rol (antes solo validaba `auth.uid == orgId`) |
+| 3 — Cobradiarios | ✅ | El Admin crea/activa/desactiva cobradiarios desde `/cobradiarios` |
+| 4-15 | ⏳ | Paneles separados, créditos con estados, cobros inmutables, auditoría, dashboard, reportes, caja, rendimiento, etc. |
+
+### Cómo se crean los cobradiarios (sin backend)
+
+El hosting es **Netlify (frontend) + Firebase en plan Spark (gratis)** —
+por eso no se usa Cloud Functions (requieren plan Blaze). Crear un
+cobradiario corre 100% en el navegador:
+
+1. `src/firebase/secondaryAuth.js` abre una **instancia secundaria** de
+   Firebase solo para crear la cuenta de Auth del cobradiario, sin cerrar
+   la sesión del Admin en la instancia principal.
+2. Con esa sesión (la del Admin, sin interrupciones) se registra la ficha
+   del cobradiario en Firestore (`registerCobradiarioMember` en
+   `src/firebase/firestore.js`).
+3. `firebase/firestore.rules` autoriza esa escritura solo si quien la hace
+   es un admin activo de esa organización, y solo puede *crear* (nunca
+   sobreescribir) esos documentos.
+
+Desactivar un cobradiario hoy es solo a nivel de datos (le bloquea el
+acceso a la organización); su cuenta de Auth sigue existiendo porque no
+hay backend para deshabilitarla — es la limitación aceptada de quedarse
+en el plan gratis.
+
+### Probar las reglas de Firestore
+
+Hay pruebas automatizadas contra el emulador real de Firestore (no
+mocks) en `tests/firestore.rules.test.js`:
+
+```bash
+npm run test:rules
+```
+
+Requiere Java (el emulador de Firestore lo necesita) y `firebase-tools`
+(ya está en `devDependencies`). Esto es **solo herramienta de
+desarrollo**: no se instala ni se despliega para los usuarios finales ni
+en Netlify.
 
 ---
 
