@@ -626,7 +626,7 @@ El cobradiario puede consultar únicamente los reportes permitidos para su opera
 | ✅ FASE 3 — Cobradiarios | Crear, activar, desactivar, consultar (desempeño detallado queda para Fase 13) |
 | ✅ FASE 4 — Paneles | AdminLayout y CobradiarioLayout con rutas protegidas |
 | ✅ FASE 5 — Clientes | Nuevo modelo de cliente y compatibilidad con existentes |
-| FASE 6 — Créditos | Modelo completo, condiciones históricas y estados |
+| ✅ FASE 6 — Créditos | Modelo completo, condiciones históricas y estados |
 | FASE 7 — Cobros | Cobros inmutables y correcciones |
 | FASE 8 — Rutas | visits/routes, GPS y resultados de visita |
 | FASE 9 — Auditoría | auditLogs y actividad |

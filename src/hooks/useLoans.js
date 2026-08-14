@@ -15,7 +15,7 @@ import { calcularRecargo, hayCorteVencidoPendiente } from "../logic/vencimiento"
 import { formatearMonto } from "../logic/formato";
 
 export function useLoans(filterActive = true) {
-  const { orgId } = useAuth();
+  const { orgId, usuario } = useAuth();
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,7 +35,15 @@ export function useLoans(filterActive = true) {
   /** Crea el crédito y registra el movimiento prestamo_nuevo en el ledger */
   async function addLoan(loanData, extra = {}) {
     const { clienteNombre = null, cobradorNombre = null, skipPrestamoMovimiento = false } = extra;
-    const loanRef = await addDocument(orgId, "loans", loanData);
+    // cobradiarioId identifica al dueño operativo del crédito (Plan Maestro,
+    // sección 6); las condiciones (capital, interés, cuotas...) quedan
+    // congeladas desde aquí — updateLoan solo lo puede llamar el Admin
+    // (firestore.rules, inmutabilidad financiera).
+    const loanRef = await addDocument(orgId, "loans", {
+      ...loanData,
+      cobradiarioId: loanData.cobradiarioId || usuario.uid,
+      createdBy: usuario.uid,
+    });
 
     if (!skipPrestamoMovimiento) {
       const movPrestamo = construirMovimiento({
