@@ -624,7 +624,7 @@ El cobradiario puede consultar únicamente los reportes permitidos para su opera
 | ✅ FASE 1 — Roles | ADMIN/COBRADIARIO, users y autorización |
 | ✅ FASE 2 — Seguridad | Firestore Security Rules y pruebas de permisos |
 | ✅ FASE 3 — Cobradiarios | Crear, activar, desactivar, consultar (desempeño detallado queda para Fase 13) |
-| FASE 4 — Paneles | AdminLayout y CobradiarioLayout con rutas protegidas |
+| ✅ FASE 4 — Paneles | AdminLayout y CobradiarioLayout con rutas protegidas |
 | FASE 5 — Clientes | Nuevo modelo de cliente y compatibilidad con existentes |
 | FASE 6 — Créditos | Modelo completo, condiciones históricas y estados |
 | FASE 7 — Cobros | Cobros inmutables y correcciones |
