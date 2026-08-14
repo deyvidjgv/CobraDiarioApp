@@ -625,7 +625,7 @@ El cobradiario puede consultar únicamente los reportes permitidos para su opera
 | ✅ FASE 2 — Seguridad | Firestore Security Rules y pruebas de permisos |
 | ✅ FASE 3 — Cobradiarios | Crear, activar, desactivar, consultar (desempeño detallado queda para Fase 13) |
 | ✅ FASE 4 — Paneles | AdminLayout y CobradiarioLayout con rutas protegidas |
-| FASE 5 — Clientes | Nuevo modelo de cliente y compatibilidad con existentes |
+| ✅ FASE 5 — Clientes | Nuevo modelo de cliente y compatibilidad con existentes |
 | FASE 6 — Créditos | Modelo completo, condiciones históricas y estados |
 | FASE 7 — Cobros | Cobros inmutables y correcciones |
 | FASE 8 — Rutas | visits/routes, GPS y resultados de visita |
@@ -738,7 +738,7 @@ La arquitectura debe quedar preparada para crecer a más cobradiarios y más org
 - [x] Firestore Security Rules probadas.
 - [x] Admin puede crear y administrar cobradiarios.
 - [ ] Cobradiario tiene panel limitado.
-- [ ] Formulario de cliente completo.
+- [x] Formulario de cliente completo.
 - [ ] Créditos conservan condiciones históricas.
 - [ ] Cobros son auditables e inmutables.
 - [ ] Correcciones funcionan mediante solicitud.

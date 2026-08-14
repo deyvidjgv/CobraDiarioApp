@@ -40,7 +40,8 @@ export default function Clientes() {
     const matchesSearch =
       !search ||
       c.nombre?.toLowerCase().includes(search.toLowerCase()) ||
-      c.telefono?.includes(search);
+      c.telefono?.includes(search) ||
+      c.cedula?.includes(search);
 
     const matchesFilter =
       filter === "todos" ||

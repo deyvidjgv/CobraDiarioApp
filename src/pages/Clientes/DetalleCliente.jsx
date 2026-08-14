@@ -129,12 +129,26 @@ export default function DetalleCliente() {
 
               <div className="pt-3 border-t border-[#E5E5EA] space-y-3 text-sm">
                 <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Cédula</p>
+                  <p className="text-gray-700">{client.cedula || "—"}</p>
+                </div>
+                <div>
                   <p className="text-xs text-gray-400 mb-0.5">Dirección</p>
                   <p className="text-gray-700">{client.direccion || "—"}</p>
                 </div>
                 <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Barrio</p>
+                  <p className="text-gray-700">{client.barrio || "—"}</p>
+                </div>
+                <div>
                   <p className="text-xs text-gray-400 mb-0.5">Referencia</p>
                   <p className="text-gray-700">{client.referencia || "—"}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 mb-0.5">Autorización de datos</p>
+                  <p className="text-gray-700">
+                    {client.consentimientoDatos?.autorizado ? "Autorizado" : "No registrada"}
+                  </p>
                 </div>
               </div>
 
