@@ -299,3 +299,75 @@ describe("users (miembros de la organizacion)", () => {
     );
   });
 });
+
+describe("correctionRequests (Fase 7)", () => {
+  test("cobradiario puede crear una solicitud de correccion propia", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertSucceeds(
+      setDoc(doc(db, "organizations", ORG_ID, "correctionRequests", "req-1"), {
+        movementId: "mov-1",
+        valorOriginal: 40000,
+        valorCorrecto: 35000,
+        motivo: "Se digito mal el valor",
+        estado: "pendiente",
+        createdBy: COBRADIARIO_UID,
+      })
+    );
+  });
+
+  test("cobradiario NO puede crear una solicitud a nombre de otro usuario", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      setDoc(doc(db, "organizations", ORG_ID, "correctionRequests", "req-2"), {
+        movementId: "mov-1",
+        valorOriginal: 40000,
+        valorCorrecto: 35000,
+        motivo: "Suplantando a otro",
+        estado: "pendiente",
+        createdBy: OTHER_COBRADIARIO_UID,
+      })
+    );
+  });
+
+  test("cobradiario NO puede aprobar su propia solicitud (update)", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "organizations", ORG_ID, "correctionRequests", "req-3"), {
+        movementId: "mov-1",
+        valorOriginal: 40000,
+        valorCorrecto: 35000,
+        motivo: "Error de digitacion",
+        estado: "pendiente",
+        createdBy: COBRADIARIO_UID,
+      });
+    });
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      updateDoc(doc(db, "organizations", ORG_ID, "correctionRequests", "req-3"), { estado: "aprobada" })
+    );
+  });
+
+  test("admin SI puede aprobar una solicitud pendiente", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "organizations", ORG_ID, "correctionRequests", "req-4"), {
+        movementId: "mov-1",
+        valorOriginal: 40000,
+        valorCorrecto: 35000,
+        motivo: "Error de digitacion",
+        estado: "pendiente",
+        createdBy: COBRADIARIO_UID,
+      });
+    });
+    const ctx = testEnv.authenticatedContext(ADMIN_UID);
+    const db = ctx.firestore();
+    await assertSucceeds(
+      updateDoc(doc(db, "organizations", ORG_ID, "correctionRequests", "req-4"), {
+        estado: "aprobada",
+        resolvedBy: ADMIN_UID,
+      })
+    );
+  });
+});
+

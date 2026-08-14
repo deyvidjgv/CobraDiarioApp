@@ -11,6 +11,7 @@ import {
   IconCoin,
   IconX,
   IconUserCog,
+  IconClipboardCheck,
 } from "@tabler/icons-react";
 import { cerrarSesion } from "../../firebase/auth";
 import { useAuth } from "../../context/AuthContext";
@@ -26,6 +27,7 @@ const navItems = [
 
 const adminNavItems = [
   { to: "/cobradiarios", label: "Cobradiarios", Icon: IconUserCog, end: false },
+  { to: "/correcciones", label: "Correcciones", Icon: IconClipboardCheck, end: false },
 ];
 
 /**

@@ -119,6 +119,22 @@ service cloud.firestore {
         allow read: if isActiveMember(orgId);
         allow write: if isAdminOf(orgId);
       }
+
+      // Solicitudes de corrección (Fase 7, seccion 11 del plan maestro):
+      // un cobro/movimiento no se edita ni se borra directamente, se pide
+      // una correccion que el Admin aprueba o rechaza. El original nunca
+      // se toca; la aprobacion crea un movimiento de ajuste aparte
+      // (ver useCorrections.js) y deja trazabilidad completa.
+      match /correctionRequests/{reqId} {
+        allow read: if isAdminOf(orgId)
+                    || (isSignedIn() && resource.data.createdBy == request.auth.uid);
+        allow create: if request.resource.data.createdBy == request.auth.uid
+                      && request.resource.data.estado == "pendiente"
+                      && (isAdminOf(orgId) || isCobradiarioOf(orgId));
+        // Solo el Admin resuelve (aprueba/rechaza) una solicitud.
+        allow update: if isAdminOf(orgId) && resource.data.estado == "pendiente";
+        allow delete: if false;
+      }
     }
 
     // Cualquier otra ruta no listada explicitamente queda bloqueada por defecto.

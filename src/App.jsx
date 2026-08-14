@@ -18,6 +18,7 @@ import Caja from "./pages/Caja/Caja";
 import Configuracion from "./pages/Configuracion/Configuracion";
 import Cobradiarios from "./pages/Cobradiarios/Cobradiarios";
 import NuevoCobradiario from "./pages/Cobradiarios/NuevoCobradiario";
+import Correcciones from "./pages/Correcciones/Correcciones";
 
 function AppRoutes() {
   return (
@@ -41,6 +42,7 @@ function AppRoutes() {
       {/* Panel exclusivo del Admin (Plan Maestro, sección 5). */}
       <Route path="/cobradiarios" element={<AdminLayout><Cobradiarios /></AdminLayout>} />
       <Route path="/cobradiarios/nuevo" element={<AdminLayout><NuevoCobradiario /></AdminLayout>} />
+      <Route path="/correcciones" element={<AdminLayout><Correcciones /></AdminLayout>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

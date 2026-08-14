@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from "../../components/layout/Header";
 import { useMovements } from "../../hooks/useMovements";
+import { useCorrections } from "../../hooks/useCorrections";
 import { construirMovimiento, TIPOS_MOVIMIENTO } from "../../logic/caja";
 import { formatearMonto, limpiarMonto, bloquearEntradaSoloNumeros } from "../../logic/formato";
 import { getColombiaDateKey } from "../../logic/dateUtils";
@@ -17,6 +18,7 @@ import {
   IconChevronDown,
   IconCalendar,
   IconAlertOctagon,
+  IconEdit,
 } from "@tabler/icons-react";
 
 export default function Caja() {
@@ -25,6 +27,7 @@ export default function Caja() {
   const isHoy = selectedDate === getColombiaDateKey();
 
   const { movements, loading, saldo, addMovement, deleteMovement } = useMovements(selectedDate);
+  const { solicitarCorreccion } = useCorrections();
   const [modalType, setModalType] = useState(null); // "gasto" | "base" | null
   const [monto, setMonto] = useState("");
   const [nota, setNota] = useState("");
@@ -34,6 +37,34 @@ export default function Caja() {
   // Eliminar un movimiento puntual (solo manuales)
   const [movimientoAEliminar, setMovimientoAEliminar] = useState(null);
   const [passwordError, setPasswordError] = useState("");
+
+  // Solicitar corrección sobre un movimiento ya registrado (no se edita/borra directo)
+  const [movimientoACorregir, setMovimientoACorregir] = useState(null);
+  const [valorCorrecto, setValorCorrecto] = useState("");
+  const [motivoCorreccion, setMotivoCorreccion] = useState("");
+  const [enviandoCorreccion, setEnviandoCorreccion] = useState(false);
+
+  async function handleSolicitarCorreccion(e) {
+    e.preventDefault();
+    if (!valorCorrecto || !motivoCorreccion) return;
+    setEnviandoCorreccion(true);
+    try {
+      await solicitarCorreccion({
+        movementId: movimientoACorregir.id,
+        valorOriginal: movimientoACorregir.monto,
+        valorCorrecto: limpiarMonto(valorCorrecto),
+        motivo: motivoCorreccion,
+      });
+      setMovimientoACorregir(null);
+      setValorCorrecto("");
+      setMotivoCorreccion("");
+      alert("Solicitud de corrección enviada. El Admin debe aprobarla.");
+    } catch (err) {
+      alert("Error al enviar la solicitud: " + err.message);
+    } finally {
+      setEnviandoCorreccion(false);
+    }
+  }
 
   const entradas = movements.filter((m) => m.monto > 0).reduce((a, m) => a + m.monto, 0);
   const salidas = Math.abs(movements.filter((m) => m.monto < 0).reduce((a, m) => a + m.monto, 0));
@@ -272,6 +303,64 @@ export default function Caja() {
           confirmText="Eliminar movimiento"
         />
 
+        {/* Modal: solicitar corrección de un movimiento (no se edita/borra directo) */}
+        {movimientoACorregir && (
+          <form
+            onSubmit={handleSolicitarCorreccion}
+            className="bg-white rounded-2xl p-5 border border-[#E5E5EA] space-y-4 shadow-md max-w-lg mx-auto"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold text-amber-600">✏️ Solicitar corrección</h3>
+              <button
+                type="button"
+                onClick={() => { setMovimientoACorregir(null); setValorCorrecto(""); setMotivoCorreccion(""); }}
+                className="p-1 rounded-lg hover:bg-gray-100 transition text-gray-400"
+              >
+                <IconX size={20} stroke={1.5} />
+              </button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Valor registrado: <strong>${formatearMonto(Math.abs(movimientoACorregir.monto))}</strong>. El
+              Admin revisará esta solicitud antes de aplicar el ajuste; el movimiento original no se
+              modifica.
+            </p>
+            <input
+              type="text"
+              inputMode="numeric"
+              required
+              placeholder="Valor correcto ($)"
+              value={valorCorrecto ? formatearMonto(valorCorrecto) : ""}
+              onChange={(e) => setValorCorrecto(limpiarMonto(e.target.value))}
+              onKeyDown={bloquearEntradaSoloNumeros}
+              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+            />
+            <textarea
+              required
+              placeholder="Motivo de la corrección"
+              value={motivoCorreccion}
+              onChange={(e) => setMotivoCorreccion(e.target.value)}
+              rows={2}
+              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+            />
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => { setMovimientoACorregir(null); setValorCorrecto(""); setMotivoCorreccion(""); }}
+                className="flex-1 py-3 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={enviandoCorreccion}
+                className="flex-1 py-3 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition disabled:opacity-50"
+              >
+                {enviandoCorreccion ? "Enviando..." : "Enviar solicitud"}
+              </button>
+            </div>
+          </form>
+        )}
+
         {/* Lista de movimientos (tarjetas desplegables) */}
         <div className="bg-white rounded-2xl p-5 border border-[#E5E5EA] shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -392,7 +481,7 @@ export default function Caja() {
                             <span className="text-gray-700 text-right">{m.nota}</span>
                           </div>
                         )}
-                        {esEliminable(m.tipo) && (
+                        {esEliminable(m.tipo) ? (
                           <button
                             onClick={() => setMovimientoAEliminar(m)}
                             className="mt-2 flex items-center gap-1.5 text-xs font-medium text-red-500 hover:text-red-600"
@@ -400,6 +489,16 @@ export default function Caja() {
                             <IconTrash size={14} stroke={2} />
                             Eliminar este movimiento
                           </button>
+                        ) : (
+                          m.tipo === TIPOS_MOVIMIENTO.COBRO && (
+                            <button
+                              onClick={() => setMovimientoACorregir(m)}
+                              className="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700"
+                            >
+                              <IconEdit size={14} stroke={2} />
+                              Solicitar corrección
+                            </button>
+                          )
                         )}
                       </div>
                     )}

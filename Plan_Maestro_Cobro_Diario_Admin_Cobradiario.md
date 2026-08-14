@@ -627,7 +627,7 @@ El cobradiario puede consultar únicamente los reportes permitidos para su opera
 | ✅ FASE 4 — Paneles | AdminLayout y CobradiarioLayout con rutas protegidas |
 | ✅ FASE 5 — Clientes | Nuevo modelo de cliente y compatibilidad con existentes |
 | ✅ FASE 6 — Créditos | Modelo completo, condiciones históricas y estados |
-| FASE 7 — Cobros | Cobros inmutables y correcciones |
+| ✅ FASE 7 — Cobros | Cobros inmutables y correcciones |
 | FASE 8 — Rutas | visits/routes, GPS y resultados de visita |
 | FASE 9 — Auditoría | auditLogs y actividad |
 | FASE 10 — Dashboard | KPIs, cartera y rendimiento |
@@ -741,7 +741,7 @@ La arquitectura debe quedar preparada para crecer a más cobradiarios y más org
 - [x] Formulario de cliente completo.
 - [ ] Créditos conservan condiciones históricas.
 - [ ] Cobros son auditables e inmutables.
-- [ ] Correcciones funcionan mediante solicitud.
+- [x] Correcciones funcionan mediante solicitud.
 - [ ] Rutas y visitas registran GPS.
 - [ ] Auditoría registra acciones críticas.
 - [ ] Dashboard financiero Admin.
