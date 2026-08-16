@@ -8,18 +8,20 @@ import { useClients } from "../../hooks/useClients";
 import { usePaymentHistory } from "../../hooks/usePaymentHistory";
 import { useVisits, RESULTADOS_VISITA } from "../../hooks/useVisits";
 import { calcularMoraGlobal } from "../../logic/mora";
-import { calcularRecargo, esCreditoVencido, hayCorteVencidoPendiente, construirVencimientoInicial } from "../../logic/vencimiento";
-import { calcularTotalesCredito } from "../../logic/credito";
+import { calcularRecargo, esCreditoVencido, hayCorteVencidoPendiente } from "../../logic/vencimiento";
+import { calcularTotalesCredito, construirCredito } from "../../logic/credito";
+import { calcularSeguro } from "../../logic/seguro";
+import { construirMovimiento, TIPOS_MOVIMIENTO } from "../../logic/caja";
 import { formatearMonto, formatearFecha, limpiarMonto, bloquearEntradaSoloNumeros } from "../../logic/formato";
-import { getDocument } from "../../firebase/firestore";
+import { getDocument, addDocument, getSettings } from "../../firebase/firestore";
 import { useAuth } from "../../context/AuthContext";
-import { IconCheck, IconMapPin, IconAlertTriangle } from "@tabler/icons-react";
+import { IconCheck, IconMapPin, IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 
 export default function RegistrarCobro() {
   const { loanId } = useParams();
   const navigate = useNavigate();
-  const { orgId, usuario } = useAuth();
-  const { registerPayment, aplicarRecargoVencimiento, addLoan, updateLoan } = useLoans();
+  const { orgId, usuario, isAdmin } = useAuth();
+  const { registerPayment, addLoan, updateLoan } = useLoans();
   const { clients, updateClient } = useClients();
   const { payments, loading: paymentsLoading } = usePaymentHistory(loanId);
   const { registrarVisita } = useVisits();
@@ -33,10 +35,15 @@ export default function RegistrarCobro() {
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState(false);
   const [capturingGps, setCapturingGps] = useState(false);
-  const [recargoAplicado, setRecargoAplicado] = useState(null);
   const [validacionRecargo, setValidacionRecargo] = useState(null);
-  const [accionVencido, setAccionVencido] = useState(null);
+  const [settings, setSettings] = useState({});
+  const [montoSolicitado, setMontoSolicitado] = useState("");
   const [renewCuotas, setRenewCuotas] = useState(1);
+
+  useEffect(() => {
+    if (!orgId) return;
+    getSettings(orgId).then((s) => setSettings(s || {}));
+  }, [orgId]);
 
   useEffect(() => {
     if (!orgId || !loanId) return;
@@ -49,25 +56,14 @@ export default function RegistrarCobro() {
           return;
         }
 
-        // Verificar si hay vencimiento pendiente
-        if (hayCorteVencidoPendiente(doc)) {
-          setLoan(doc);
-          setRecargoAplicado(null);
-          if (doc && !montoInicializado.current) {
-            setMonto(String(doc.saldoPendiente ?? 0));
-            setRenewCuotas(doc.numeroCuotas ?? 1);
-            montoInicializado.current = true;
-          }
-        } else {
-          setLoan(doc);
-          setRecargoAplicado(null);
-          if (doc && !montoInicializado.current) {
-            const mora = calcularMoraGlobal(doc);
-            const saldoReal = doc.saldoPendiente ?? 0;
-            const montoSugerido = esCreditoVencido(doc) ? saldoReal : mora.estado === "mora" ? mora.deficit : doc.cuota;
-            setMonto(String(Math.min(montoSugerido, saldoReal)));
-            montoInicializado.current = true;
-          }
+        setLoan(doc);
+        if (doc && !montoInicializado.current) {
+          const mora = calcularMoraGlobal(doc);
+          const saldoReal = doc.saldoPendiente ?? 0;
+          const montoSugerido = esCreditoVencido(doc) ? saldoReal : mora.estado === "mora" ? mora.deficit : doc.cuota;
+          setMonto(String(Math.min(montoSugerido, saldoReal)));
+          setRenewCuotas(doc.numeroCuotas ?? 1);
+          montoInicializado.current = true;
         }
       } catch (err) {
         console.error("Error cargando crédito:", err);
@@ -84,10 +80,21 @@ export default function RegistrarCobro() {
   const recargoPendiente = loan ? hayCorteVencidoPendiente(loan) : false;
   const recargoPorcentaje = loan?.vencimiento?.porcentaje ?? 0;
   const recargoCalculado = loan ? calcularRecargo(loan.saldoPendiente ?? 0, recargoPorcentaje) : 0;
-  const totalConRecargo = loan ? (loan.saldoPendiente ?? 0) + recargoCalculado : 0;
-  const nuevosTotalesRenovacion = loan && renewCuotas > 0
-    ? calcularTotalesCredito(loan.saldoPendiente ?? 0, recargoPorcentaje, renewCuotas)
-    : null;
+
+  // ─── Renovación de cartulina (disponible en cualquier momento) ───
+  // Entrega = monto nuevo solicitado − saldo pendiente − seguro (sobre el
+  // monto nuevo). La nueva cartulina se crea por el monto solicitado.
+  const montoNuevo = montoSolicitado ? Number(montoSolicitado) || 0 : 0;
+  const saldoActualRenov = loan?.saldoPendiente ?? 0;
+  const seguroRenovConfig = settings.seguroActivo
+    ? { activo: true, tipo: settings.seguroTipo, valor: settings.seguroValor }
+    : { activo: false };
+  const { seguroMonto: seguroRenov } = calcularSeguro(montoNuevo, seguroRenovConfig);
+  const entregaRenov = montoNuevo > 0 ? montoNuevo - saldoActualRenov - seguroRenov : null;
+  const totalesRenovacion =
+    montoNuevo > 0 && renewCuotas > 0
+      ? calcularTotalesCredito(montoNuevo, settings.interesDefault ?? 20, renewCuotas)
+      : null;
 
   function handleCaptureCurrentGps() {
     if (!client?.id) return;
@@ -140,87 +147,93 @@ export default function RegistrarCobro() {
     });
   }
 
-  function seleccionarPagoCompleto() {
-    setAccionVencido("pagoCompleto");
-    if (loan) {
-      setMonto(String(loan.saldoPendiente ?? 0));
-    }
-  }
-
-  function seleccionarRenovacion() {
-    setAccionVencido("renovacion");
-    if (loan) {
-      setRenewCuotas(loan.numeroCuotas ?? 1);
-    }
-  }
-
-  function crearCreditoRenovado(baseLoan, cuotas) {
-    const capital = baseLoan.saldoPendiente ?? 0;
-    const interesAplicado = baseLoan.vencimiento?.porcentaje ?? 0;
-    const { montoTotalAPagar, cuota, saldoPendiente } = calcularTotalesCredito(
-      capital,
-      interesAplicado,
-      cuotas
-    );
-
-    const loanBase = {
-      clientId: baseLoan.clientId,
-      capital,
-      interesAplicado,
-      numeroCuotas: cuotas,
-      frecuencia: baseLoan.frecuencia,
-      diasHabiles: baseLoan.diasHabiles ?? [1, 2, 3, 4, 5, 6],
-      diaSemana: baseLoan.diaSemana ?? null,
-      intervaloDias: baseLoan.intervaloDias ?? null,
-      fechaInicio: new Date().toISOString(),
-      montoTotalAPagar,
-      cuota,
-      saldoPendiente,
-      estado: "activo",
-      seguro: null,
-    };
-
-    const vencimientoConfig = {
-      activo: baseLoan.vencimiento?.activo ?? false,
-      modoInicial: baseLoan.vencimiento?.modoInicial ?? "al_vencer",
-      porcentaje: interesAplicado,
-    };
-
-    return {
-      ...loanBase,
-      vencimiento: construirVencimientoInicial(vencimientoConfig, loanBase),
-    };
-  }
-
-  async function handleRenovacion() {
+  /**
+   * Renovar cartulina: cierra este crédito y crea uno nuevo por el monto
+   * solicitado. El cliente recibe en efectivo el monto nuevo MENOS el
+   * saldo pendiente y el seguro (calculado sobre el monto nuevo).
+   * Disponible en cualquier momento — no exige esperar el vencimiento.
+   */
+  async function handleRenovarCartulina() {
     if (!loan) return;
-    const capital = loan.saldoPendiente ?? 0;
-    if (capital <= 0) {
-      alert("No hay saldo pendiente para renovar.");
+    const nuevo = montoSolicitado ? Number(montoSolicitado) : 0;
+    const saldo = loan.saldoPendiente ?? 0;
+
+    if (!nuevo || nuevo <= 0) {
+      alert("Ingresa el monto nuevo solicitado.");
+      return;
+    }
+    if (nuevo < saldo) {
+      alert(
+        `El monto nuevo ($${formatearMonto(nuevo)}) no puede ser menor que el saldo pendiente ($${formatearMonto(saldo)}).`
+      );
       return;
     }
     if (!renewCuotas || renewCuotas < 1) {
-      alert("Indica el número de cuotas para la renovación.");
+      alert("Indica el número de cuotas de la nueva cartulina.");
       return;
     }
 
     setSaving(true);
     try {
-      const newLoan = crearCreditoRenovado(loan, renewCuotas);
-      const client = clients.find((c) => c.id === loan.clientId);
-      await addLoan(newLoan, {
+      const vencimientoConfig = settings.vencimientoActivo
+        ? {
+            activo: true,
+            modoInicial: settings.vencimientoModoInicial,
+            porcentaje: settings.vencimientoPorcentaje,
+          }
+        : { activo: false };
+
+      const nuevoLoan = construirCredito(
+        {
+          clientId: loan.clientId,
+          capital: nuevo,
+          interes: settings.interesDefault,
+          numeroCuotas: renewCuotas,
+          frecuencia: loan.frecuencia,
+          diasHabiles: loan.diasHabiles ?? [1, 2, 3, 4, 5, 6],
+          fechaInicio: new Date().toISOString(),
+          seguro: seguroRenovConfig,
+          vencimiento: vencimientoConfig,
+        },
+        settings
+      );
+
+      const ref = await addLoan(nuevoLoan, {
         clienteNombre: client?.nombre ?? null,
         cobradorNombre: usuario?.displayName ?? null,
         skipPrestamoMovimiento: true,
       });
-      await updateLoan(loanId, {
-        estado: "completado",
-        saldoPendiente: 0,
-      });
-      alert("Se creó la renovación y se cerró el crédito anterior como completado.");
+
+      // De caja solo sale lo entregado: monto nuevo − saldo pendiente.
+      // (El seguro lo registra addLoan como entrada aparte.)
+      const entregaBruta = nuevo - saldo;
+      await addDocument(
+        orgId,
+        "movements",
+        construirMovimiento({
+          tipo: TIPOS_MOVIMIENTO.PRESTAMO_NUEVO,
+          monto: entregaBruta,
+          orgId,
+          referencia: ref.id,
+          nota: `Renovación cartulina — solicitado $${formatearMonto(nuevo)} − saldo $${formatearMonto(saldo)}`,
+          clienteNombre: client?.nombre ?? null,
+          cobradorNombre: usuario?.displayName ?? null,
+          clientId: loan.clientId,
+          cobradiarioId: loan.cobradiarioId || usuario.uid,
+          createdBy: usuario.uid,
+        })
+      );
+
+      await updateLoan(loanId, { estado: "completado", saldoPendiente: 0 });
+
+      alert(
+        `Cartulina renovada. Entrega al cliente: $${formatearMonto(entregaBruta - seguroRenov)}${
+          seguroRenov > 0 ? ` (neto tras seguro de $${formatearMonto(seguroRenov)})` : ""
+        }.`
+      );
       navigate("/ruta", { replace: true });
     } catch (err) {
-      alert("Error al renovar crédito: " + err.message);
+      alert("Error al renovar cartulina: " + err.message);
     } finally {
       setSaving(false);
     }
@@ -232,29 +245,12 @@ export default function RegistrarCobro() {
     const montoReal = limpiarMonto(monto);
     if (!montoReal || Number(montoReal) <= 0) return;
 
-    if (recargoPendiente && !accionVencido) {
-      alert("Selecciona si deseas pagar completo o renovar el crédito vencido.");
-      return;
-    }
-
-    if (recargoPendiente && accionVencido === "renovacion") {
-      alert("Para renovar el crédito vencido usa el botón de creación de renovación.");
-      return;
-    }
-
-    if (recargoPendiente && accionVencido === "pagoCompleto"
-      && Math.abs(montoReal - Number(loan?.saldoPendiente ?? 0)) >= 0.01) {
-      alert("Para cerrar el crédito vencido debe pagar el saldo pendiente completo.");
-      return;
-    }
-
     setSaving(true);
     try {
       await registerPayment(loanId, montoReal, {
         clienteNombre: client?.nombre ?? null,
         cobradorNombre: usuario?.displayName ?? null,
         metodoPago,
-        skipVencimientoRecargo: recargoPendiente && accionVencido === "pagoCompleto",
       });
 
       // Visita de ruta (Fase 8): la gestión queda registrada con GPS.
@@ -458,113 +454,110 @@ export default function RegistrarCobro() {
           )}
         </div>
 
-        {/* Aviso de recargo aplicado */}
-        {(recargoAplicado || recargoPendiente) && (
+        {/* Aviso de crédito vencido (informativo; el cobro es libre) */}
+        {recargoPendiente && (
           <div className="bg-amber-50 border-thin border-amber-200 rounded-xl p-4 flex items-start gap-3">
             <IconAlertTriangle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" stroke={2} />
-            <div>
-              <p className="text-sm font-medium text-amber-900">
-                {recargoPendiente ? "Crédito vencido" : "Recargo por mora aplicado"}
+            <div className="text-sm text-amber-800">
+              <p className="font-medium text-amber-900">Crédito vencido</p>
+              <p className="mt-1">
+                Al registrar el próximo cobro se aplicará el recargo de {recargoPorcentaje}% (
+                <span className="font-semibold">${formatearMonto(recargoCalculado)}</span>) sobre el
+                saldo de ${formatearMonto(loan.saldoPendiente ?? 0)}. También puedes renovar la
+                cartulina en cualquier momento con el botón de abajo.
               </p>
-              {recargoPendiente ? (
-                <div className="space-y-2">
-                  <p className="text-sm text-amber-700 mt-1">
-                    Este crédito venció y ahora debe cobrar el saldo restante de <span className="font-semibold">${formatearMonto(loan.saldoPendiente ?? 0)}</span>.
-                  </p>
-                  <p className="text-sm text-amber-700">
-                    Se calcula como saldo pendiente + {recargoPorcentaje}% de recargo:
-                  </p>
-                  <p className="text-sm text-amber-700">
-                    <span className="font-medium">Saldo pendiente:</span> ${formatearMonto(loan.saldoPendiente ?? 0)}
-                  </p>
-                  <p className="text-sm text-amber-700">
-                    <span className="font-medium">Recargo {recargoPorcentaje}%:</span> ${formatearMonto(recargoCalculado)}
-                  </p>
-                  <p className="text-sm text-amber-700">
-                    <span className="font-semibold">Total con recargo:</span> ${formatearMonto(totalConRecargo)}
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-amber-700 mt-1">
-                  Se aplicó un recargo del {recargoAplicado.porcentaje}% por vencimiento:
-                  <span className="font-semibold"> ${formatearMonto(recargoAplicado.monto)}</span>
-                </p>
-              )}
             </div>
           </div>
         )}
 
-        {recargoPendiente && (
-          <div className="bg-white rounded-xl p-4 border-thin space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-900">Resolver crédito vencido</p>
-                <p className="text-xs text-gray-500">Elige pagar el saldo completo ahora o crear una renovación.</p>
-              </div>
+        {/* Renovar cartulina — disponible en cualquier momento (cobradiario) */}
+        {loan.estado === "activo" && !isAdmin && (
+          <div className="card p-4 space-y-4">
+            <div>
+              <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                <IconRefresh size={18} stroke={1.5} className="text-primary" />
+                Renovar cartulina
+              </p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Cierra este crédito y crea uno nuevo por el monto solicitado. Al cliente se le
+                entrega el monto nuevo menos el saldo pendiente
+                {seguroRenov > 0 || settings.seguroActivo ? " y el seguro" : ""}.
+              </p>
             </div>
 
-            <div className="grid gap-3 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={seleccionarPagoCompleto}
-                className={`rounded-xl border px-4 py-4 text-left transition ${accionVencido === "pagoCompleto"
-                  ? "border-primary bg-primary-light/10"
-                  : "border-surface-2 bg-white"}`}
-              >
-                <p className="font-semibold">Pagar saldo completo</p>
-                <p className="text-xs text-gray-500 mt-1">Cierra el crédito vencido sin aplicar el recargo adicional.</p>
-              </button>
-
-              <button
-                type="button"
-                onClick={seleccionarRenovacion}
-                className={`rounded-xl border px-4 py-4 text-left transition ${accionVencido === "renovacion"
-                  ? "border-primary bg-primary-light/10"
-                  : "border-surface-2 bg-white"}`}
-              >
-                <p className="font-semibold">Renovación</p>
-                <p className="text-xs text-gray-500 mt-1">Crea un nuevo crédito sobre el saldo pendiente + recargo.</p>
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="block">
+                <span className="text-sm font-medium text-gray-700">Monto nuevo solicitado ($)</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={montoSolicitado}
+                  onChange={(e) => setMontoSolicitado(e.target.value.replace(/\D/g, ""))}
+                  onKeyDown={bloquearEntradaSoloNumeros}
+                  placeholder="Ej. 500000"
+                  className="mt-1 block w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-gray-700">Cuotas</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={renewCuotas}
+                  onChange={(e) => setRenewCuotas(Number(e.target.value) || 1)}
+                  className="mt-1 block w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm text-gray-800 focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+                />
+              </label>
             </div>
 
-            {accionVencido === "pagoCompleto" && (
-              <div className="rounded-xl bg-surface-2 p-4 text-sm text-gray-700">
-                <p className="font-medium">Monto a cobrar ahora</p>
-                <p className="text-lg font-semibold">${formatearMonto(loan.saldoPendiente ?? 0)}</p>
-              </div>
-            )}
-
-            {accionVencido === "renovacion" && (
-              <div className="space-y-4">
-                <div className="rounded-xl bg-surface-2 p-4 text-sm text-gray-700 space-y-2">
-                  <p className="font-medium">Saldo pendiente actual</p>
-                  <p>${formatearMonto(loan.saldoPendiente ?? 0)}</p>
-                  <p className="text-xs text-gray-500">Renovación calculada con {recargoPorcentaje}% de interés sobre el saldo pendiente.</p>
-                  <p className="font-medium mt-2">Total a pagar en nuevo crédito</p>
-                  <p className="text-lg font-semibold">${formatearMonto(nuevosTotalesRenovacion?.montoTotalAPagar ?? 0)}</p>
+            {montoNuevo > 0 && (
+              <div className="rounded-xl bg-surface-1 p-4 text-sm space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Monto nuevo solicitado</span>
+                  <span className="text-gray-800" translate="no">${formatearMonto(montoNuevo)}</span>
                 </div>
-
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700">Cuotas de renovación</span>
-                  <input
-                    type="number"
-                    min="1"
-                    value={renewCuotas}
-                    onChange={(e) => setRenewCuotas(Number(e.target.value) || 1)}
-                    className="mt-1 block w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-base text-gray-800 focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={handleRenovacion}
-                  disabled={saving}
-                  className="w-full bg-[#26215C] hover:bg-[#26215C]/90 text-white font-medium rounded-xl py-4 text-lg transition disabled:opacity-50"
-                >
-                  {saving ? "Procesando renovación..." : "Crear renovación"}
-                </button>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">(−) Saldo pendiente actual</span>
+                  <span className="text-gray-800" translate="no">${formatearMonto(saldoActualRenov)}</span>
+                </div>
+                {seguroRenov > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">(−) Seguro sobre monto nuevo</span>
+                    <span className="text-gray-800" translate="no">${formatearMonto(seguroRenov)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between border-t border-[#E5E5EA] pt-2">
+                  <span className="font-medium text-gray-700">Entrega al cliente</span>
+                  <span
+                    className={`font-bold translate-y-0 ${entregaRenov != null && entregaRenov >= 0 ? "text-emerald-600" : "text-red-600"}`}
+                    translate="no"
+                  >
+                    ${formatearMonto(entregaRenov ?? 0)}
+                  </span>
+                </div>
+                {totalesRenovacion && (
+                  <p className="text-xs text-gray-400 pt-1">
+                    Nueva cartulina: total ${formatearMonto(totalesRenovacion.montoTotalAPagar)} en{" "}
+                    {renewCuotas} cuotas de ${formatearMonto(totalesRenovacion.cuota)} (
+                    {settings.interesDefault ?? 20}% de interés).
+                  </p>
+                )}
+                {entregaRenov != null && entregaRenov < 0 && (
+                  <p className="text-xs text-red-600">
+                    El monto solicitado no cubre el saldo pendiente: súbelo para poder renovar.
+                  </p>
+                )}
               </div>
             )}
+
+            <button
+              type="button"
+              onClick={handleRenovarCartulina}
+              disabled={saving || !montoNuevo || entregaRenov == null || entregaRenov < 0}
+              className="w-full bg-primary hover:bg-primary-light text-white font-medium rounded-xl py-3.5 transition disabled:opacity-50"
+            >
+              {saving ? "Procesando renovación..." : "Renovar cartulina"}
+            </button>
           </div>
         )}
 
@@ -612,10 +605,10 @@ export default function RegistrarCobro() {
 
             <button
               type="submit"
-              disabled={saving || (recargoPendiente && accionVencido !== "pagoCompleto")}
+              disabled={saving}
               className="w-full bg-[#26215C] hover:bg-[#26215C]/90 text-white font-medium rounded-xl py-4 text-lg transition disabled:opacity-50"
             >
-              {saving ? "Registrando..." : recargoPendiente && accionVencido !== "pagoCompleto" ? "Selecciona una opción" : "Confirmar cobro"}
+              {saving ? "Registrando..." : "Confirmar cobro"}
             </button>
 
             {done && (

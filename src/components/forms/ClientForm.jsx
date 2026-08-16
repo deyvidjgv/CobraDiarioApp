@@ -80,14 +80,19 @@ export default function ClientForm({ initial = null, onSubmit, loading = false }
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-gray-700">Cédula</span>
+        <span className="text-sm font-medium text-gray-700">Cédula *</span>
         <input
           type="text"
+          required
+          inputMode="numeric"
           value={form.cedula}
           onChange={set("cedula")}
           className="mt-1 block w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           placeholder="1094220549"
         />
+        <p className="text-xs text-gray-400 mt-1">
+          Identifica al cliente: no pueden existir dos clientes con la misma cédula.
+        </p>
       </label>
 
       <label className="block">
