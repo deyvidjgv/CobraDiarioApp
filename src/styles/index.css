@@ -66,3 +66,13 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #C5C5D6;
 }
+
+/* iOS: los campos con fuente < 16px disparan el zoom automático al
+   enfocar. En móvil se fuerza 16px para escribir sin zoom. */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import {
+import { NavLink, useLocation } from "react-router-dom";import {
   IconHome,
   IconMapPin,
   IconUsers,
@@ -130,6 +129,14 @@ export default function SideNav() {
     setDrawerOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  // Bloquea el scroll del fondo mientras el drawer móvil está abierto
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [drawerOpen]);
 
   return (
     <>

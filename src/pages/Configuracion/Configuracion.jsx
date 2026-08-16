@@ -4,6 +4,12 @@ import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
 import { useAuth } from "../../context/AuthContext";
 import { getSettings, saveSettings } from "../../firebase/firestore";
 import { cerrarSesion, cambiarPassword, verificarPassword } from "../../firebase/auth";
+import {
+  getEstado,
+  suscribirInstalacion,
+  pedirInstalacion,
+  esIOS,
+} from "../../pwa/installPrompt";
 import { useNavigate } from "react-router-dom";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
@@ -49,9 +55,7 @@ export default function Configuracion() {
   const [filtroClient, setFiltroClient] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [processingDelete, setProcessingDelete] = useState(false);
-  const [installEvent, setInstallEvent] = useState(null);
-  const [installAvailable, setInstallAvailable] = useState(false);
-  const [installed, setInstalled] = useState(false);
+  const [installState, setInstallState] = useState(getEstado());
   const [loans, setLoans] = useState([]);
   const { clients } = useClients();
   const { loans: activeLoans } = useLoans(true);
@@ -89,35 +93,16 @@ export default function Configuracion() {
     }
   }
 
+  // Estado de instalación de la PWA (store global, el evento se captura
+  // desde el arranque de la app — ver pwa/installPrompt.js)
   useEffect(() => {
-    const handleBeforeInstallPrompt = (event) => {
-      event.preventDefault();
-      setInstallEvent(event);
-      setInstallAvailable(true);
-    };
-
-    const handleAppInstalled = () => {
-      setInstalled(true);
-      setInstallAvailable(false);
-      setInstallEvent(null);
-    };
-
-    if (typeof window !== "undefined") {
-      if (
-        window.matchMedia?.("(display-mode: standalone)")?.matches ||
-        window.navigator.standalone
-      ) {
-        setInstalled(true);
-      }
-      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.addEventListener("appinstalled", handleAppInstalled);
-    }
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-      window.removeEventListener("appinstalled", handleAppInstalled);
-    };
+    const unsub = suscribirInstalacion((estado) => setInstallState(estado));
+    return unsub;
   }, []);
+
+  async function handleInstallApp() {
+    await pedirInstalacion();
+  }
 
   useEffect(() => {
     setLoans(activeLoans || []);
@@ -163,17 +148,6 @@ export default function Configuracion() {
       }
     } finally {
       setCambiandoPwd(false);
-    }
-  }
-
-  async function handleInstallApp() {
-    if (!installEvent) return;
-    installEvent.prompt();
-    const choice = await installEvent.userChoice;
-    if (choice.outcome === "accepted") {
-      setInstalled(true);
-      setInstallAvailable(false);
-      setInstallEvent(null);
     }
   }
 
@@ -530,26 +504,43 @@ export default function Configuracion() {
           <h3 className="section-title">
             <IconDeviceMobile size={16} stroke={2} className="text-primary" /> Aplicación
           </h3>
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-xs text-gray-500 flex-1">
-              Instala la app como PWA para usarla desde tu dispositivo como aplicación nativa.
-            </p>
-            <button
-              type="button"
-              onClick={handleInstallApp}
-              disabled={!installAvailable || installed}
-              className={`rounded-xl px-4 py-2 text-sm font-medium transition shrink-0 ${
-                installed
-                  ? "bg-surface text-gray-500 border border-[#E5E5EA]"
-                  : "bg-primary text-white hover:bg-primary-light"
-              } ${!installAvailable && !installed ? "opacity-50 cursor-not-allowed" : ""}`}
-            >
-              {installed ? "Instalada" : "Instalar app"}
-            </button>
-          </div>
-          {!installed && !installAvailable && (
+
+          {installState.instalada ? (
+            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 text-emerald-700 px-3 py-2.5 text-sm">
+              <IconCheck size={18} stroke={2} />
+              La app está instalada en este dispositivo.
+            </div>
+          ) : installState.puedeInstalar ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-gray-500 flex-1">
+                Instala la app para usarla como aplicación nativa: icono en el inicio, pantalla
+                completa y apertura sin navegador.
+              </p>
+              <button
+                type="button"
+                onClick={handleInstallApp}
+                className="rounded-xl bg-primary text-white px-4 py-2.5 text-sm font-medium hover:bg-primary-light transition shrink-0"
+              >
+                Instalar app
+              </button>
+            </div>
+          ) : esIOS() ? (
+            <div className="rounded-xl bg-surface-1 p-3 space-y-2">
+              <p className="text-xs text-gray-600 font-medium">
+                En iPhone/iPad la instalación es manual:
+              </p>
+              <ol className="text-xs text-gray-500 list-decimal list-inside space-y-1">
+                <li>Abre este sitio en el navegador Safari</li>
+                <li>Toca el botón <strong>Compartir</strong> (cuadro con flecha arriba)</li>
+                <li>Elige <strong>"Agregar a pantalla de inicio"</strong></li>
+                <li>Confirma con <strong>"Agregar"</strong></li>
+              </ol>
+            </div>
+          ) : (
             <p className="text-xs text-gray-400">
-              La instalación estará disponible en navegadores compatibles cuando el dispositivo lo permita.
+              La instalación estará disponible en navegadores compatibles cuando el dispositivo lo
+              permita (Chrome/Edge en Android, o cualquier navegador de escritorio moderno desde el
+              menú del navegador → "Instalar aplicación").
             </p>
           )}
         </section>

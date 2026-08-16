@@ -16,13 +16,15 @@ export default defineConfig({
         name: "Cobro Diario",
         short_name: "Cobro Diario",
         description: "Gestion de clientes, creditos y cobros diarios",
-        theme_color: "#1F3A5F",
-        background_color: "#F1EFE8",
+        theme_color: "#3B348C",
+        background_color: "#F4F5FC",
         display: "standalone",
+        orientation: "portrait",
         start_url: "/",
         icons: [
           { src: "icons/icon-192.png", sizes: "192x192", type: "image/png" },
           { src: "icons/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
         ],
       },
       workbox: {

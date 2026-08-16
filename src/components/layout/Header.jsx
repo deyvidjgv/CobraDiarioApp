@@ -55,7 +55,7 @@ export default function Header({
           <div className="w-[30px]" aria-hidden="true" />
         )}
 
-        <h1 className="text-lg font-semibold flex-1 text-white tracking-tight">{title}</h1>
+        <h1 className="text-lg font-semibold flex-1 text-white tracking-tight truncate">{title}</h1>
 
         {/* Derecha: contenido personalizado o botón ☰ (solo móvil; en
             escritorio la navegación es la barra lateral estática) */}
