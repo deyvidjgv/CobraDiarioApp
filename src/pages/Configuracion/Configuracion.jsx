@@ -34,8 +34,6 @@ export default function Configuracion() {
   const { orgId, usuario, isAdmin } = useAuth();
   const [form, setForm] = useState({
     interesDefault: 20,
-    diasHabilesDefault: [1, 2, 3, 4, 5, 6],
-    moneda: "COP",
     seguroActivo: false,
     seguroTipo: "porcentaje",
     seguroValor: 5,
@@ -173,28 +171,6 @@ export default function Configuracion() {
     setShowDeleteCredit(false);
     setSelectedLoanId("");
     alert("Crédito eliminado correctamente.");
-  }
-
-  const diasSemana = [
-    { value: 0, label: "Dom" },
-    { value: 1, label: "Lun" },
-    { value: 2, label: "Mar" },
-    { value: 3, label: "Mié" },
-    { value: 4, label: "Jue" },
-    { value: 5, label: "Vie" },
-    { value: 6, label: "Sáb" },
-  ];
-
-  function toggleDia(dia) {
-    setForm((f) => {
-      const actual = f.diasHabilesDefault || [];
-      return {
-        ...f,
-        diasHabilesDefault: actual.includes(dia)
-          ? actual.filter((d) => d !== dia)
-          : [...actual, dia].sort(),
-      };
-    });
   }
 
   const inputCls =
@@ -346,7 +322,7 @@ export default function Configuracion() {
           <form onSubmit={handleSave} className="space-y-5">
             {/* Interés */}
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Interés por defecto (%)</span>
+              <span className="text-sm font-medium text-gray-700">Porcentaje de cobro (interés %)</span>
               <input
                 type="number"
                 min="0"
@@ -358,45 +334,8 @@ export default function Configuracion() {
                 className={inputCls}
               />
               <p className="text-xs text-gray-400 mt-1">
-                Se usará como plantilla al crear créditos nuevos. No afecta créditos existentes.
+                Valor por defecto al crear créditos nuevos. No afecta créditos existentes.
               </p>
-            </label>
-
-            {/* Días hábiles */}
-            <div>
-              <span className="text-sm font-medium text-gray-700 block mb-2">Días de cobro por defecto</span>
-              <div className="flex gap-1.5">
-                {diasSemana.map((d) => (
-                  <button
-                    key={d.value}
-                    type="button"
-                    disabled={!isAdmin}
-                    onClick={() => toggleDia(d.value)}
-                    className={`flex-1 py-2 rounded-lg text-xs font-medium transition disabled:cursor-not-allowed ${
-                      (form.diasHabilesDefault || []).includes(d.value)
-                        ? "bg-primary-light text-white"
-                        : "bg-gray-100 text-gray-400"
-                    }`}
-                  >
-                    {d.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Moneda */}
-            <label className="block">
-              <span className="text-sm font-medium text-gray-700">Moneda</span>
-              <select
-                value={form.moneda}
-                disabled={!isAdmin}
-                onChange={(e) => setForm({ ...form, moneda: e.target.value })}
-                className={inputCls + " bg-white"}
-              >
-                <option value="COP">COP — Peso colombiano</option>
-                <option value="USD">USD — Dólar</option>
-                <option value="MXN">MXN — Peso mexicano</option>
-              </select>
             </label>
 
             {/* Seguro */}
