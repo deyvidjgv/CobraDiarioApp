@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import LoanForm from "../../components/forms/LoanForm";
 import { useClients } from "../../hooks/useClients";
@@ -11,13 +11,17 @@ import { IconMapPin, IconCurrentLocation } from "@tabler/icons-react";
 
 export default function NuevoCredito() {
   const navigate = useNavigate();
-  const { orgId, usuario } = useAuth();
+  const { orgId, usuario, isAdmin } = useAuth();
   const { clients, updateClient } = useClients();
   const { addLoan } = useLoans();
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(false);
   // Estado React: clientId seleccionado en el formulario (fuente única de verdad)
   const [selectedClientId, setSelectedClientId] = useState("");
+
+  // Prestar es operación de cobradiario (Plan Maestro, sección 5): el Admin
+  // controla el dinero y a los cobradiarios, pero no entrega créditos.
+  if (isAdmin) return <Navigate to="/" replace />;
 
   useEffect(() => {
     if (!orgId) return;

@@ -13,6 +13,14 @@ export function formatearMonto(numero) {
 }
 
 /**
+ * Redondea a 2 decimales. Única implementación compartida para toda la
+ * lógica financiera (caja, mora, créditos, correcciones).
+ */
+export function round2(n) {
+  return Math.round(n * 100) / 100;
+}
+
+/**
  * Recibe un string formateado (ej. "1.500.000" o "1,500,000") y devuelve el número entero.
  */
 export function limpiarMonto(montoStr) {

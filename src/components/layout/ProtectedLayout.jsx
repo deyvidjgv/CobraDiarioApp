@@ -1,14 +1,25 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useUI } from "../../context/UIContext";
+import SideNav from "./SideNav";
 
 /**
  * Layout base para cualquier ruta que requiera sesión activa.
  * Solo valida autenticación (no rol) — AdminLayout y CobradiarioLayout
  * lo envuelven para agregar la restricción de rol correspondiente
  * (Plan Maestro, Fase 4).
+ *
+ * Incluye la navegación lateral: estática en escritorio (el contenido se
+ * desplaza según esté expandida o colapsada) y overlay en móvil.
+ *
+ * OJO: el desplazamiento (md:pl) va en un contenedor dedicado, separado
+ * del contenedor con padding horizontal y max-w. Si se combinan en el
+ * mismo elemento, lg:px-8 sobrescribe el padding-left y la página queda
+ * debajo del menú.
  */
 export default function ProtectedLayout({ children }) {
   const { usuario, cargando } = useAuth();
+  const { navCollapsed } = useUI();
 
   if (cargando)
     return (
@@ -23,8 +34,14 @@ export default function ProtectedLayout({ children }) {
 
   return (
     <div className="flex-1 flex flex-col bg-surface-1 min-h-screen relative">
-      <div className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {children}
+      <SideNav />
+      {/* Desplazamiento según el estado de la barra lateral estática */}
+      <div
+        className={`flex-1 w-full transition-[padding] duration-200 ${
+          navCollapsed ? "md:pl-[76px]" : "md:pl-[288px]"
+        }`}
+      >
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">{children}</div>
       </div>
     </div>
   );

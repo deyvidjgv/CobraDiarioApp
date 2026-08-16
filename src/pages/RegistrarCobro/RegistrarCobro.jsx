@@ -6,6 +6,7 @@ import PaymentHistoryList from "../../components/ui/PaymentHistoryList";
 import { useLoans } from "../../hooks/useLoans";
 import { useClients } from "../../hooks/useClients";
 import { usePaymentHistory } from "../../hooks/usePaymentHistory";
+import { useVisits, RESULTADOS_VISITA } from "../../hooks/useVisits";
 import { calcularMoraGlobal } from "../../logic/mora";
 import { calcularRecargo, esCreditoVencido, hayCorteVencidoPendiente, construirVencimientoInicial } from "../../logic/vencimiento";
 import { calcularTotalesCredito } from "../../logic/credito";
@@ -21,6 +22,7 @@ export default function RegistrarCobro() {
   const { registerPayment, aplicarRecargoVencimiento, addLoan, updateLoan } = useLoans();
   const { clients, updateClient } = useClients();
   const { payments, loading: paymentsLoading } = usePaymentHistory(loanId);
+  const { registrarVisita } = useVisits();
 
   const [loan, setLoan] = useState(null);
   const [monto, setMonto] = useState("");
@@ -240,7 +242,8 @@ export default function RegistrarCobro() {
       return;
     }
 
-    if (recargoPendiente && accionVencido === "pagoCompleto" && montoReal !== Number(loan?.saldoPendiente ?? 0)) {
+    if (recargoPendiente && accionVencido === "pagoCompleto"
+      && Math.abs(montoReal - Number(loan?.saldoPendiente ?? 0)) >= 0.01) {
       alert("Para cerrar el crédito vencido debe pagar el saldo pendiente completo.");
       return;
     }
@@ -253,6 +256,19 @@ export default function RegistrarCobro() {
         metodoPago,
         skipVencimientoRecargo: recargoPendiente && accionVencido === "pagoCompleto",
       });
+
+      // Visita de ruta (Fase 8): la gestión queda registrada con GPS.
+      // Si falla no bloquea el cobro, que ya quedó registrado.
+      try {
+        await registrarVisita({
+          clientId: loan?.clientId ?? null,
+          loanId,
+          resultado: RESULTADOS_VISITA.COBRO,
+          nota: `Cobro de $${formatearMonto(montoReal)} (${metodoPago})`,
+        });
+      } catch (visitErr) {
+        console.warn("No se pudo registrar la visita:", visitErr);
+      }
 
       const updatedLoan = await getDocument(orgId, "loans", loanId);
       if (updatedLoan) {

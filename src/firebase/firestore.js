@@ -179,13 +179,9 @@ export async function saveSettings(orgId, data) {
 
 // ─── Helpers de fecha ──────────────────────────────────────────
 
-/** Convierte cualquier valor (Timestamp, Date, string) a Date JS */
-export function toDate(val) {
-  if (!val) return new Date();
-  if (val.toDate) return val.toDate(); // Firestore Timestamp
-  if (val instanceof Date) return val;
-  return new Date(val);
-}
+// toDate vive en logic/dateUtils (única implementación, maneja strings
+// "YYYY-MM-DD" sin desfases UTC); se re-exporta aquí por comodidad.
+export { toDate } from "../logic/dateUtils";
 
 /** Rango de Timestamps de un día completo (para queries) */
 export function dayRange(date = new Date()) {

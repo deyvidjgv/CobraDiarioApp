@@ -12,25 +12,29 @@ import { useAuth } from "../context/AuthContext";
 import { construirMovimiento, TIPOS_MOVIMIENTO } from "../logic/caja";
 import { calcularMoraGlobal } from "../logic/mora";
 import { calcularRecargo, hayCorteVencidoPendiente } from "../logic/vencimiento";
-import { formatearMonto } from "../logic/formato";
+import { formatearMonto, round2 } from "../logic/formato";
+import { useAudit, ACCIONES_AUDIT } from "./useAudit";
 
 export function useLoans(filterActive = true) {
-  const { orgId, usuario } = useAuth();
+  const { orgId, usuario, isCobradiario } = useAuth();
+  const { registrarEvento } = useAudit();
   const [loans, setLoans] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!orgId) return;
-    const constraints = filterActive
-      ? [where("estado", "==", "activo"), orderBy("fechaInicio", "desc")]
-      : [orderBy("fechaInicio", "desc")];
+    const constraints = [
+      ...(filterActive ? [where("estado", "==", "activo")] : []),
+      ...(isCobradiario ? [where("cobradiarioId", "==", usuario.uid)] : []),
+      orderBy("fechaInicio", "desc"),
+    ];
 
     const unsub = subscribeToCollection(orgId, "loans", constraints, (docs) => {
       setLoans(docs);
       setLoading(false);
     });
     return unsub;
-  }, [orgId, filterActive]);
+  }, [orgId, filterActive, isCobradiario, usuario?.uid]);
 
   /** Crea el crédito y registra el movimiento prestamo_nuevo en el ledger */
   async function addLoan(loanData, extra = {}) {
@@ -45,6 +49,18 @@ export function useLoans(filterActive = true) {
       createdBy: usuario.uid,
     });
 
+    registrarEvento(ACCIONES_AUDIT.CREDITO_CREADO, {
+      entidad: "loans",
+      entidadId: loanRef.id,
+      detalle: clienteNombre ? `Crédito de ${clienteNombre} — $${formatearMonto(loanData.capital)}` : null,
+    });
+
+    const tracing = {
+      clientId: loanData.clientId || null,
+      cobradiarioId: loanData.cobradiarioId || usuario.uid,
+      createdBy: usuario.uid,
+    };
+
     if (!skipPrestamoMovimiento) {
       const movPrestamo = construirMovimiento({
         tipo: TIPOS_MOVIMIENTO.PRESTAMO_NUEVO,
@@ -56,6 +72,7 @@ export function useLoans(filterActive = true) {
           : `Nuevo crédito — Capital: $${formatearMonto(loanData.capital)}`,
         clienteNombre,
         cobradorNombre: cobradorNombre || null,
+        ...tracing,
       });
       await addDocument(orgId, "movements", movPrestamo);
     }
@@ -70,6 +87,7 @@ export function useLoans(filterActive = true) {
         nota: clienteNombre ? `Seguro crédito - ${clienteNombre}` : "Seguro crédito",
         clienteNombre,
         cobradorNombre: cobradorNombre || null,
+        ...tracing,
       });
       await addDocument(orgId, "movements", movSeguro);
     }
@@ -153,6 +171,9 @@ export function useLoans(filterActive = true) {
       nota: clienteNombre ? `Cobro crédito - ${clienteNombre}` : "Cobro crédito",
       clienteNombre,
       cobradorNombre: cobradorNombre || null,
+      clientId: loan.clientId || null,
+      cobradiarioId: loan.cobradiarioId || usuario.uid,
+      createdBy: usuario.uid,
     });
 
     mov.tipoPago = tipoPago;
@@ -163,6 +184,12 @@ export function useLoans(filterActive = true) {
     mov.metodoPago = metodoPago;
 
     await addDocument(orgId, "movements", mov);
+
+    registrarEvento(ACCIONES_AUDIT.COBRO_REGISTRADO, {
+      entidad: "loans",
+      entidadId: loanId,
+      detalle: `$${formatearMonto(monto)} — ${clienteNombre ?? "sin nombre"}`,
+    });
   }
 
   async function updateLoan(id, data) {
@@ -197,6 +224,9 @@ export function useLoans(filterActive = true) {
       nota: clienteNombre ? `Recargo por mora - ${clienteNombre}` : "Recargo por mora",
       clienteNombre,
       cobradorNombre: cobradorNombre || null,
+      clientId: loan.clientId || null,
+      cobradiarioId: loan.cobradiarioId || usuario.uid,
+      createdBy: usuario.uid,
     });
     mov.montoRecargo = recargoMonto;
     
@@ -220,8 +250,4 @@ export function useLoans(filterActive = true) {
     aplicarRecargoVencimiento,
     perdonarRecargoVencimiento
   };
-}
-
-function round2(n) {
-  return Math.round(n * 100) / 100;
 }

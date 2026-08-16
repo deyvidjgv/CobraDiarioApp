@@ -628,14 +628,14 @@ El cobradiario puede consultar únicamente los reportes permitidos para su opera
 | ✅ FASE 5 — Clientes | Nuevo modelo de cliente y compatibilidad con existentes |
 | ✅ FASE 6 — Créditos | Modelo completo, condiciones históricas y estados |
 | ✅ FASE 7 — Cobros | Cobros inmutables y correcciones |
-| FASE 8 — Rutas | visits/routes, GPS y resultados de visita |
-| FASE 9 — Auditoría | auditLogs y actividad |
-| FASE 10 — Dashboard | KPIs, cartera y rendimiento |
-| FASE 11 — Reportes | Filtros, cierres y PDF |
-| FASE 12 — Caja | Control financiero global y por cobradiario |
-| FASE 13 — Desempeño | Efectividad, mora y productividad |
-| FASE 14 — Ver operación | Vista administrativa auditada |
-| FASE 15 — QA | Pruebas integrales y regresión |
+| ✅ FASE 8 — Rutas | visits/routes, GPS y resultados de visita |
+| ✅ FASE 9 — Auditoría | auditLogs y actividad |
+| ✅ FASE 10 — Dashboard | KPIs, cartera y rendimiento |
+| ✅ FASE 11 — Reportes | Filtros, cierres y PDF |
+| ✅ FASE 12 — Caja | Control financiero global y por cobradiario |
+| ✅ FASE 13 — Desempeño | Efectividad, mora y productividad |
+| ✅ FASE 14 — Ver operación | Vista administrativa auditada |
+| ✅ FASE 15 — QA | Pruebas de lógica y reglas (tests/logic + tests/rules) |
 
 ---
 

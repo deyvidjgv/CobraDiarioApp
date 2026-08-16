@@ -4,6 +4,7 @@
 
 import { calcularSeguro } from "./seguro";
 import { construirVencimientoInicial } from "./vencimiento";
+import { round2 } from "./formato";
 
 /**
  * Calcula los totales de un credito nuevo a partir del capital,
@@ -76,8 +77,4 @@ export function construirCredito(input, settings) {
     // Solo informativo, para mostrar en NuevoCredito/DetalleCredito cuanto salio de caja neto
     totalARecibirCliente,
   };
-}
-
-function round2(n) {
-  return Math.round(n * 100) / 100;
 }

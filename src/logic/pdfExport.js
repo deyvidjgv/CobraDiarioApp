@@ -66,7 +66,7 @@ function ensurePageBreak(doc, currentY, minSpace, pageHeight, margin = 14) {
  * Genera un PDF de cierre diario profesional y estructurado.
  * Reporte mejorado con 11 secciones claramente definidas.
  */
-export function exportarCierreDiarioPDF(cierre) {
+export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -106,6 +106,12 @@ export function exportarCierreDiarioPDF(cierre) {
   };
 
   // ==================== 1. ENCABEZADO ====================
+  if (nombreNegocio) {
+    doc.setFontSize(12);
+    doc.setTextColor(...colors.lightGray);
+    doc.text(nombreNegocio, margin, currentY);
+    currentY += 6;
+  }
   doc.setFontSize(18);
   doc.setTextColor(...colors.primary);
   doc.text("Reporte de Cierre Diario", margin, currentY);
@@ -160,11 +166,62 @@ export function exportarCierreDiarioPDF(cierre) {
   });
   currentY = doc.lastAutoTable.finalY + 8;
 
-  // ==================== 3. RESUMEN POR MÉTODO DE PAGO ====================
+  // ==================== 3. EFECTIVIDAD DE COBRO DEL DÍA ====================
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("3. Resumen por Método de Pago", margin, currentY);
+  doc.text("3. Efectividad de Cobro del Día", margin, currentY);
+  currentY += 5;
+
+  const efe = cierre.efectividad || {};
+  const efectividadData = [
+    ["Valor esperado (cuotas del día)", `$${formatearMonto(efe.esperadoHoy || 0)}`],
+    ["Valor cobrado", `$${formatearMonto(efe.cobradoHoy || 0)}`],
+    ["No cobrado", `$${formatearMonto(efe.noCobrado || 0)}`],
+    ["Efectividad (cobrado / esperado)", efe.porcentaje != null ? `${efe.porcentaje.toFixed(1)}%` : "—"],
+  ];
+
+  doc.autoTable({
+    startY: currentY,
+    head: [["Indicador", "Valor"]],
+    body: efectividadData,
+    ...tableStyles,
+  });
+  currentY = doc.lastAutoTable.finalY + 8;
+
+  // ==================== 4. ARQUEO DE CAJA ====================
+  currentY = ensurePageBreak(doc, currentY, 50, pageHeight, margin);
+  doc.setFontSize(11);
+  doc.setTextColor(...colors.primary);
+  doc.text("4. Arqueo de Caja (Cuadre del Día)", margin, currentY);
+  currentY += 5;
+
+  const arq = cierre.arqueo || {};
+  const diferenciaTxt = arq.diferencia !== null && arq.diferencia !== undefined
+    ? `$${formatearMonto(arq.diferencia)}${Math.abs(arq.diferencia) >= 1 ? " ⚠ revisar" : " ✓ cuadrado"}`
+    : "No reportado";
+  const arqueoData = [
+    ["Base inicial", `$${formatearMonto(arq.baseInicial || 0)}`],
+    ["Total entradas", `$${formatearMonto(cierre.totalEntradas)}`],
+    ["Total salidas", `$${formatearMonto(cierre.totalSalidas)}`],
+    ["Saldo esperado en caja", `$${formatearMonto(arq.saldoEsperado ?? cierre.saldoNeto)}`],
+    ["Efectivo contado (arqueo físico)", arq.saldoContado !== null && arq.saldoContado !== undefined ? `$${formatearMonto(arq.saldoContado)}` : "No reportado"],
+    ["Diferencia", diferenciaTxt],
+  ];
+
+  doc.autoTable({
+    startY: currentY,
+    head: [["Concepto", "Valor"]],
+    body: arqueoData,
+    ...tableStyles,
+  });
+  currentY = doc.lastAutoTable.finalY + 8;
+
+  // ==================== 5. RESUMEN POR MÉTODO DE PAGO ====================
+  currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
+  doc.setFontSize(11);
+  doc.setTextColor(...colors.primary);
+  doc.text("5. Resumen por Método de Pago", margin, currentY);
   currentY += 5;
 
   // Calcular totales por método de pago
@@ -192,7 +249,7 @@ export function exportarCierreDiarioPDF(cierre) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("4. Cobros Realizados", margin, currentY);
+  doc.text("6. Cobros Realizados", margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.cobros?.length > 0) {
@@ -223,7 +280,7 @@ export function exportarCierreDiarioPDF(cierre) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("5. Movimientos de Caja", margin, currentY);
+  doc.text("7. Movimientos de Caja", margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.caja?.length > 0) {
@@ -256,7 +313,7 @@ export function exportarCierreDiarioPDF(cierre) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("6. Clientes en Mora", margin, currentY);
+  doc.text("8. Clientes en Mora", margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.mora?.length > 0) {
@@ -280,11 +337,34 @@ export function exportarCierreDiarioPDF(cierre) {
     currentY += 6;
   }
 
+  // ==================== 9. MORA POR ANTIGÜEDAD (AGING) ====================
+  if (cierre.moraAging && cierre.moraAging.length > 0) {
+    currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.primary);
+    doc.text("9. Mora por Antigüedad", margin, currentY);
+    currentY += 5;
+
+    const agingBody = cierre.moraAging.map((t) => [
+      t.tramo,
+      String(t.clientes),
+      `$${formatearMonto(t.deficit)}`,
+    ]);
+
+    doc.autoTable({
+      startY: currentY,
+      head: [["Tramo de días", "Clientes", "Déficit"]],
+      body: agingBody,
+      ...tableStyles,
+    });
+    currentY = doc.lastAutoTable.finalY + 8;
+  }
+
   // ==================== 7. CRÉDITOS CREADOS ====================
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("7. Créditos Creados Durante el Día", margin, currentY);
+  doc.text("10. Créditos Creados Durante el Día", margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.nuevosCreditos?.length > 0) {
@@ -314,7 +394,7 @@ export function exportarCierreDiarioPDF(cierre) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("8. Estado General de la Cartera", margin, currentY);
+  doc.text("11. Estado General de la Cartera", margin, currentY);
   currentY += 5;
 
   const carteraData = [
@@ -338,7 +418,7 @@ export function exportarCierreDiarioPDF(cierre) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("9. Penalidades Aplicadas", margin, currentY);
+  doc.text("12. Penalidades Aplicadas", margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.recargos?.length > 0) {
@@ -368,7 +448,7 @@ export function exportarCierreDiarioPDF(cierre) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("10. Nuevos Clientes Registrados", margin, currentY);
+  doc.text("13. Nuevos Clientes Registrados", margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.nuevosClientes?.length > 0) {
@@ -396,7 +476,7 @@ export function exportarCierreDiarioPDF(cierre) {
   currentY += 4;
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("11. Observaciones", margin, currentY);
+  doc.text("14. Observaciones", margin, currentY);
   currentY += 5;
 
   doc.setFontSize(9);
@@ -424,6 +504,33 @@ export function exportarCierreDiarioPDF(cierre) {
     doc.text(obs, margin + 2, currentY);
     currentY += 5;
   });
+
+  // ==================== 15. FIRMAS DE RESPONSABILIDAD ====================
+  currentY = ensurePageBreak(doc, currentY, 48, pageHeight, margin);
+  currentY += 6;
+  doc.setFontSize(11);
+  doc.setTextColor(...colors.primary);
+  doc.text("15. Firmas de Responsabilidad", margin, currentY);
+  currentY += 16;
+
+  const firmaWidth = (contentWidth - 20) / 2;
+  const firmaY = currentY + 10;
+
+  // Líneas de firma (cobrador izquierda, administrador derecha)
+  doc.setDrawColor(...colors.darkGray);
+  doc.setLineWidth(0.4);
+  doc.line(margin, firmaY, margin + firmaWidth, firmaY);
+  doc.line(margin + firmaWidth + 20, firmaY, pageWidth - margin, firmaY);
+
+  doc.setFontSize(8);
+  doc.setTextColor(...colors.lightGray);
+  doc.text("Elaborado por (Cobrador)", margin, firmaY + 5);
+  doc.text(
+    "Revisado por (Administrador)",
+    margin + firmaWidth + 20,
+    firmaY + 5
+  );
+  currentY = firmaY + 12;
 
   // ==================== PIE DE DOCUMENTO ====================
   const pageCount = doc.internal.getNumberOfPages();
@@ -479,7 +586,7 @@ function getTipoMovimientoLabel(tipo) {
  * Genera un PDF profesional de Cartera Global
  * Reporte gerencial con análisis estratégico de la cartera
  */
-export function exportarCarteraGlobalPDF(datosCartera) {
+export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -518,6 +625,12 @@ export function exportarCarteraGlobalPDF(datosCartera) {
   };
 
   // ==================== 1. ENCABEZADO ====================
+  if (nombreNegocio) {
+    doc.setFontSize(12);
+    doc.setTextColor(...colors.lightGray);
+    doc.text(nombreNegocio, margin, currentY);
+    currentY += 6;
+  }
   doc.setFontSize(18);
   doc.setTextColor(...colors.primary);
   doc.text("Reporte de Cartera Global", margin, currentY);
@@ -585,11 +698,57 @@ export function exportarCarteraGlobalPDF(datosCartera) {
   });
   currentY = doc.lastAutoTable.finalY + 8;
 
-  // ==================== 3. DISTRIBUCIÓN POR FRECUENCIA ====================
+  // ==================== 3. ÍNDICE DE MORA (PAR) Y ANTIGÜEDAD ====================
+  if (datosCartera.indiceMora) {
+    currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
+    doc.setFontSize(11);
+    doc.setTextColor(...colors.primary);
+    doc.text("3. Índice de Mora (Cartera en Riesgo)", margin, currentY);
+    currentY += 5;
+
+    const im = datosCartera.indiceMora;
+    const parData = [
+      ["Cartera activa total", `$${formatearMonto(im.carteraActiva || 0)}`],
+      ["Cartera en riesgo (créditos con mora)", `$${formatearMonto(im.carteraEnRiesgo || 0)}`],
+      ["Índice de mora — PAR", `${(im.porcentaje || 0).toFixed(1)}%`],
+      ["Clientes en mora", String(im.clientesEnMora || 0)],
+    ];
+
+    doc.autoTable({
+      startY: currentY,
+      head: [["Indicador", "Valor"]],
+      body: parData,
+      ...tableStyles,
+    });
+    currentY = doc.lastAutoTable.finalY + 8;
+
+    if (datosCartera.moraAging && datosCartera.moraAging.length > 0) {
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.primary);
+      doc.text("Antigüedad de la mora", margin, currentY);
+      currentY += 5;
+
+      const agingBody = datosCartera.moraAging.map((t) => [
+        t.tramo,
+        String(t.clientes),
+        `$${formatearMonto(t.deficit)}`,
+      ]);
+
+      doc.autoTable({
+        startY: currentY,
+        head: [["Tramo de días", "Clientes", "Déficit"]],
+        body: agingBody,
+        ...tableStyles,
+      });
+      currentY = doc.lastAutoTable.finalY + 8;
+    }
+  }
+
+  // ==================== 4. DISTRIBUCIÓN POR FRECUENCIA ====================
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("3. Distribución por Frecuencia", margin, currentY);
+  doc.text("4. Distribución por Frecuencia", margin, currentY);
   currentY += 5;
 
   const frecuenciaBody = Object.entries(datosCartera.distribucionFrecuencia).map(([freq, data]) => [
@@ -612,7 +771,7 @@ export function exportarCarteraGlobalPDF(datosCartera) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("4. Distribución por Estado", margin, currentY);
+  doc.text("5. Distribución por Estado", margin, currentY);
   currentY += 5;
 
   const estadoBody = [
@@ -633,7 +792,7 @@ export function exportarCarteraGlobalPDF(datosCartera) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("5. Clientes con Mayor Saldo Pendiente", margin, currentY);
+  doc.text("6. Clientes con Mayor Saldo Pendiente", margin, currentY);
   currentY += 5;
 
   if (datosCartera.top10Clientes && datosCartera.top10Clientes.length > 0) {
@@ -661,7 +820,7 @@ export function exportarCarteraGlobalPDF(datosCartera) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("6. Resumen Consolidado por Cliente", margin, currentY);
+  doc.text("7. Resumen Consolidado por Cliente", margin, currentY);
   currentY += 5;
 
   if (datosCartera.resumenClientes && datosCartera.resumenClientes.length > 0) {
@@ -693,7 +852,7 @@ export function exportarCarteraGlobalPDF(datosCartera) {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("7. Detalle Completo de Créditos", margin, currentY);
+  doc.text("8. Detalle Completo de Créditos", margin, currentY);
   currentY += 5;
 
   if (datosCartera.filas && datosCartera.filas.length > 0) {

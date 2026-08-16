@@ -5,12 +5,17 @@ import { crearCuentaCobradiario } from "../firebase/secondaryAuth";
 import { useAuth } from "../context/AuthContext";
 
 export function useCobradiarios() {
-  const { orgId, usuario } = useAuth();
+  const { orgId, usuario, isAdmin } = useAuth();
   const [cobradiarios, setCobradiarios] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!orgId) return;
+    // La lista de miembros solo la puede leer el Admin (firestore.rules);
+    // para un cobradiario el hook queda vacío en lugar de reventar.
+    if (!orgId || !isAdmin) {
+      setLoading(false);
+      return;
+    }
     const unsub = subscribeToCollection(
       orgId,
       "users",
@@ -21,7 +26,7 @@ export function useCobradiarios() {
       }
     );
     return unsub;
-  }, [orgId]);
+  }, [orgId, isAdmin]);
 
   // Crea la cuenta de Auth (instancia secundaria, no afecta la sesión del
   // Admin) y luego registra su ficha en Firestore con la sesión principal.

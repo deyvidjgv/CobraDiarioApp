@@ -4,15 +4,17 @@ import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
 import { useMovements } from "../../hooks/useMovements";
 import { calcularMoraGlobal } from "../../logic/mora";
-import { toDate, getDocument, setDocument } from "../../firebase/firestore";
+import { toDate, getDocument, setDocument, getSettings } from "../../firebase/firestore";
 import { exportarPDF, exportarCierreDiarioPDF, exportarCarteraGlobalPDF } from "../../logic/pdfExport";
+import { exportarCarteraExcel, exportarCierreExcel } from "../../logic/excelExport";
 import { getColombiaDateKey } from "../../logic/dateUtils";
 import { construirCierreDiario } from "../../logic/caja";
-import { formatearMonto } from "../../logic/formato";
+import { formatearMonto, round2 } from "../../logic/formato";
 import { useAuth } from "../../context/AuthContext";
 import {
   IconCheck,
   IconFileTypePdf,
+  IconFileSpreadsheet,
   IconRefresh,
   IconDownload,
   IconChartPie,
@@ -24,6 +26,8 @@ export default function Reportes() {
   const [cierreGuardado, setCierreGuardado] = useState(null);
   const [loadingCierre, setLoadingCierre] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [saldoContado, setSaldoContado] = useState("");
+  const [nombreNegocio, setNombreNegocio] = useState("");
 
   const { clients } = useClients();
   const { loans } = useLoans(false); 
@@ -38,6 +42,12 @@ export default function Reportes() {
       setLoadingCierre(false);
     });
   }, [orgId, selectedDate]);
+
+  // Nombre del negocio para los encabezados de los reportes
+  useEffect(() => {
+    if (!orgId) return;
+    getSettings(orgId).then((s) => setNombreNegocio(s?.nombreNegocio || ""));
+  }, [orgId]);
 
   const clientMap = useMemo(() => {
     return Object.fromEntries(clients.map((c) => [c.id, c]));
@@ -63,6 +73,47 @@ export default function Reportes() {
   const cobradoFecha = movements
     .filter((m) => m.tipo === "cobro")
     .reduce((acc, m) => acc + m.monto, 0);
+
+  // Esperado del día: una cuota por crédito activo (tope al saldo)
+  const esperadoHoy = loans
+    .filter((l) => l.estado === "activo")
+    .reduce((acc, l) => acc + Math.min(l.cuota || 0, l.saldoPendiente ?? (l.cuota ?? 0)), 0);
+  const noCobradoHoy = Math.max(0, esperadoHoy - cobradoFecha);
+  const efectividadDia = esperadoHoy > 0 ? round2((cobradoFecha / esperadoHoy) * 100) : null;
+
+  // Mora por antigüedad (aging): aproxima días de mora según frecuencia
+  const DIAS_POR_CUOTA = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 };
+  const tramosAging = useMemo(() => {
+    const tramos = [
+      { tramo: "1-15 días", min: 1, max: 15, clientes: 0, deficit: 0 },
+      { tramo: "16-30 días", min: 16, max: 30, clientes: 0, deficit: 0 },
+      { tramo: "31-60 días", min: 31, max: 60, clientes: 0, deficit: 0 },
+      { tramo: "Más de 60 días", min: 61, max: Infinity, clientes: 0, deficit: 0 },
+    ];
+    rankingMora.forEach(({ loan, mora }) => {
+      const dias = Math.round((mora.cuotasMora || 0) * (DIAS_POR_CUOTA[loan.frecuencia] || 1));
+      const tramo = tramos.find((t) => dias >= t.min && dias <= t.max);
+      if (tramo) {
+        tramo.clientes++;
+        tramo.deficit += mora.deficit || 0;
+      }
+    });
+    return tramos.filter((t) => t.clientes > 0);
+  }, [rankingMora]);
+
+  // Índice de mora (PAR): saldo de créditos con mora / cartera activa
+  const indiceMora = useMemo(() => {
+    const carteraEnRiesgo = rankingMora.reduce(
+      (acc, item) => acc + (item.loan.saldoPendiente || 0),
+      0
+    );
+    return {
+      carteraActiva: totalPorCobrar,
+      carteraEnRiesgo,
+      porcentaje: totalPorCobrar > 0 ? round2((carteraEnRiesgo / totalPorCobrar) * 100) : 0,
+      clientesEnMora: rankingMora.length,
+    };
+  }, [rankingMora, totalPorCobrar]);
 
   // Enriquecer movimientos de cobro para el cierre y para el historial visible
   const movimientosEnriquecidos = useMemo(() => {
@@ -125,6 +176,15 @@ export default function Reportes() {
         creditosActivos: loans.filter((l) => l.estado === "activo").length,
         creditosFinalizados: loans.filter((l) => l.estado === "completado").length,
         creditosVencidos: rankingMora.length,
+        // Efectividad, arqueo y aging para el reporte
+        efectividad: {
+          esperadoHoy,
+          cobradoHoy: cobradoFecha,
+          noCobrado: noCobradoHoy,
+          porcentaje: efectividadDia,
+        },
+        saldoContado: saldoContado !== "" ? Number(saldoContado) || 0 : null,
+        moraAging: tramosAging,
       };
 
       // Enriquecer nuevosCreditos con nombre del cliente
@@ -154,10 +214,15 @@ export default function Reportes() {
 
   function handleDescargarCierre() {
     if (!cierreGuardado) return;
-    exportarCierreDiarioPDF(cierreGuardado);
+    exportarCierreDiarioPDF(cierreGuardado, nombreNegocio);
   }
 
-  function exportarCartera() {
+  function handleDescargarCierreExcel() {
+    if (!cierreGuardado) return;
+    exportarCierreExcel(cierreGuardado, nombreNegocio);
+  }
+
+  function exportarCartera(formato = "pdf") {
     // Calcular todos los datos necesarios para el reporte gerencial
     const totalCreditos = loans.length;
     const creditosActivos = loans.filter((l) => l.estado === "activo").length;
@@ -260,7 +325,7 @@ export default function Reportes() {
     });
 
     // Llamar la nueva función mejorada
-    exportarCarteraGlobalPDF({
+    const datos = {
       fecha: getColombiaDateKey(),
       resumenGeneral: {
         totalCreditos,
@@ -273,12 +338,20 @@ export default function Reportes() {
         saldoPendiente,
         porcentajeRecuperacion,
       },
+      indiceMora,
+      moraAging: tramosAging,
       distribucionFrecuencia,
       distribucionEstado,
       top10Clientes,
       resumenClientes,
       filas,
-    });
+    };
+
+    if (formato === "excel") {
+      exportarCarteraExcel(datos, nombreNegocio);
+    } else {
+      exportarCarteraGlobalPDF(datos, nombreNegocio);
+    }
   }
 
 
@@ -288,9 +361,9 @@ export default function Reportes() {
 
       <div className="p-4 space-y-5">
         {/* Selector de fecha */}
-        <div className="bg-white rounded-xl p-4 border-thin">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Seleccionar Fecha de Cierre</label>
-          <input 
+        <div className="card p-4">
+          <label className="section-title mb-2">Fecha de cierre</label>
+          <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
@@ -298,33 +371,100 @@ export default function Reportes() {
           />
         </div>
 
-        {/* Resumen Global (Arriba) */}
+        {/* Resumen Global */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Resumen Global</h3>
+          <h3 className="section-title mb-3">Resumen del día</h3>
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-white rounded-xl p-4 border-thin">
-              <p className="text-xs text-gray-400">Total prestado</p>
-              <p className="text-lg font-medium text-primary mt-1" translate="no">${formatearMonto(totalPrestado)}</p>
+            <div className="card p-4 bg-gradient-to-br from-white to-primary-bg/40">
+              <p className="text-xs text-gray-400">Esperado hoy</p>
+              <p className="text-lg font-semibold text-primary mt-1" translate="no">${formatearMonto(esperadoHoy)}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 border-thin">
-              <p className="text-xs text-gray-400">Por cobrar</p>
-              <p className="text-lg font-medium text-red-600 mt-1" translate="no">${formatearMonto(totalPorCobrar)}</p>
-            </div>
-            <div className="bg-white rounded-xl p-4 border-thin">
+            <div className="card p-4 bg-gradient-to-br from-white to-emerald-50">
               <p className="text-xs text-gray-400">Cobrado ({selectedDate})</p>
-              <p className="text-lg font-medium text-emerald-600 mt-1" translate="no">${formatearMonto(cobradoFecha)}</p>
+              <p className="text-lg font-semibold text-emerald-600 mt-1" translate="no">${formatearMonto(cobradoFecha)}</p>
             </div>
-            <div className="bg-white rounded-xl p-4 border-thin">
-              <p className="text-xs text-gray-400">Saldo caja ({selectedDate})</p>
-              <p className="text-lg font-medium text-primary mt-1" translate="no">${formatearMonto(saldo)}</p>
+            <div className="card p-4">
+              <p className="text-xs text-gray-400">Efectividad</p>
+              <p className={`text-lg font-semibold mt-1 ${efectividadDia >= 80 ? "text-emerald-600" : efectividadDia >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                {efectividadDia !== null ? `${efectividadDia.toFixed(1)}%` : "—"}
+              </p>
+            </div>
+            <div className="card p-4">
+              <p className="text-xs text-gray-400">Saldo caja</p>
+              <p className="text-lg font-semibold text-primary mt-1" translate="no">${formatearMonto(saldo)}</p>
+            </div>
+            <div className="card p-4">
+              <p className="text-xs text-gray-400">Total prestado</p>
+              <p className="text-lg font-semibold text-primary mt-1" translate="no">${formatearMonto(totalPrestado)}</p>
+            </div>
+            <div className="card p-4">
+              <p className="text-xs text-gray-400">Por cobrar (cartera)</p>
+              <p className="text-lg font-semibold text-red-600 mt-1" translate="no">${formatearMonto(totalPorCobrar)}</p>
             </div>
           </div>
         </div>
 
+        {/* Índice de mora + aging */}
+        <div className="card p-4 space-y-3">
+          <h3 className="section-title">Índice de mora (PAR)</h3>
+          <div className="flex items-baseline justify-between text-sm">
+            <span className="text-gray-500">Cartera en riesgo</span>
+            <span className="font-semibold text-gray-800" translate="no">
+              ${formatearMonto(indiceMora.carteraEnRiesgo)} / ${formatearMonto(indiceMora.carteraActiva)}
+            </span>
+          </div>
+          <div className="h-2.5 rounded-full bg-surface-2 overflow-hidden">
+            <div
+              className={`h-2.5 rounded-full transition-all ${indiceMora.porcentaje <= 10 ? "bg-emerald-500" : indiceMora.porcentaje <= 25 ? "bg-amber-500" : "bg-red-500"}`}
+              style={{ width: `${Math.min(100, indiceMora.porcentaje)}%` }}
+            />
+          </div>
+          <p className="text-xs text-gray-400">
+            {indiceMora.porcentaje.toFixed(1)}% de la cartera activa está en riesgo ·{" "}
+            {indiceMora.clientesEnMora} cliente(s) en mora
+          </p>
+          {tramosAging.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              {tramosAging.map((t) => (
+                <div key={t.tramo} className="rounded-xl bg-surface-1 px-3 py-2">
+                  <p className="text-[11px] text-gray-400">{t.tramo}</p>
+                  <p className="text-sm font-medium text-gray-700">
+                    {t.clientes} · ${formatearMonto(t.deficit)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Cierre diario */}
-        <div className="bg-white rounded-xl p-4 border-thin">
-          <h3 className="text-sm font-medium text-primary mb-3">Reporte Diario ({selectedDate})</h3>
-          
+        <div className="card p-4 space-y-3">
+          <h3 className="section-title">Reporte diario ({selectedDate})</h3>
+
+          {/* Arqueo de caja */}
+          <div className="rounded-xl bg-surface-1 p-3 space-y-2">
+            <p className="text-xs font-medium text-gray-600">
+              Arqueo de caja — efectivo contado (opcional)
+            </p>
+            <input
+              type="number"
+              min="0"
+              inputMode="numeric"
+              placeholder="Conteo físico del efectivo ($)"
+              value={saldoContado}
+              onChange={(e) => setSaldoContado(e.target.value)}
+              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-2.5 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            />
+            {saldoContado !== "" && (
+              <p className={`text-xs ${Math.abs(Number(saldoContado) - saldo) < 1 ? "text-emerald-600" : "text-amber-600"}`}>
+                Esperado ${formatearMonto(saldo)} ·{" "}
+                {Math.abs(Number(saldoContado) - saldo) < 1
+                  ? "cuadrado ✓"
+                  : `diferencia ${formatearMonto(Number(saldoContado) - saldo)}`}
+              </p>
+            )}
+          </div>
+
           {loadingCierre ? (
             <p className="text-sm text-gray-400">Cargando estado...</p>
           ) : cierreGuardado ? (
@@ -343,6 +483,13 @@ export default function Reportes() {
                 >
                   <IconFileTypePdf size={20} stroke={1.5} />
                   Descargar PDF
+                </button>
+                <button
+                  onClick={handleDescargarCierreExcel}
+                  title="Excel para trabajar los números (el PDF con firmas es el comprobante)"
+                  className="bg-surface-1 border-thin text-emerald-700 font-medium rounded-xl px-4 py-3 hover:bg-surface-2 transition"
+                >
+                  <IconFileSpreadsheet size={20} stroke={1.5} />
                 </button>
                 <button
                   onClick={handleGenerarCierre}
@@ -372,13 +519,22 @@ export default function Reportes() {
         </div>
 
         {/* Exportar cartera */}
-        <button
-          onClick={exportarCartera}
-          className="w-full bg-white border-thin text-primary font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-surface-1 transition"
-        >
-          <IconChartPie size={20} stroke={1.5} />
-          Exportar cartera global (PDF)
-        </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            onClick={() => exportarCartera("pdf")}
+            className="w-full bg-white border-thin text-primary font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-surface-1 transition shadow-[0_1px_3px_rgba(38,33,92,0.05)]"
+          >
+            <IconChartPie size={20} stroke={1.5} />
+            Cartera en PDF
+          </button>
+          <button
+            onClick={() => exportarCartera("excel")}
+            className="w-full bg-white border-thin text-emerald-700 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-surface-1 transition shadow-[0_1px_3px_rgba(38,33,92,0.05)]"
+          >
+            <IconFileSpreadsheet size={20} stroke={1.5} />
+            Cartera en Excel
+          </button>
+        </div>
       </div>
     </div>
   );

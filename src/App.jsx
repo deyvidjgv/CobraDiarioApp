@@ -5,6 +5,7 @@ import AdminLayout from "./components/layout/AdminLayout";
 import CobradiarioLayout from "./components/layout/CobradiarioLayout";
 
 import Login from "./pages/Login/Login";
+import Registro from "./pages/Registro/Registro";
 import Inicio from "./pages/Inicio/Inicio";
 import RutaDelDia from "./pages/RutaDelDia/RutaDelDia";
 import Clientes from "./pages/Clientes/Clientes";
@@ -19,11 +20,16 @@ import Configuracion from "./pages/Configuracion/Configuracion";
 import Cobradiarios from "./pages/Cobradiarios/Cobradiarios";
 import NuevoCobradiario from "./pages/Cobradiarios/NuevoCobradiario";
 import Correcciones from "./pages/Correcciones/Correcciones";
+import Auditoria from "./pages/Auditoria/Auditoria";
+import Dashboard from "./pages/Dashboard/Dashboard";
+import Desempeno from "./pages/Desempeno/Desempeno";
+import OperacionCobradiario from "./pages/OperacionCobradiario/OperacionCobradiario";
 
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/registro" element={<Registro />} />
 
       {/* Panel operativo: hoy lo usan Admin y Cobradiario por igual, el
           filtrado de datos por rol se agrega página a página (Fase 5-8). */}
@@ -40,9 +46,13 @@ function AppRoutes() {
       <Route path="/configuracion" element={<CobradiarioLayout><Configuracion /></CobradiarioLayout>} />
 
       {/* Panel exclusivo del Admin (Plan Maestro, sección 5). */}
+      <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
       <Route path="/cobradiarios" element={<AdminLayout><Cobradiarios /></AdminLayout>} />
       <Route path="/cobradiarios/nuevo" element={<AdminLayout><NuevoCobradiario /></AdminLayout>} />
+      <Route path="/cobradiarios/operacion/:uid" element={<AdminLayout><OperacionCobradiario /></AdminLayout>} />
       <Route path="/correcciones" element={<AdminLayout><Correcciones /></AdminLayout>} />
+      <Route path="/auditoria" element={<AdminLayout><Auditoria /></AdminLayout>} />
+      <Route path="/desempeno" element={<AdminLayout><Desempeno /></AdminLayout>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

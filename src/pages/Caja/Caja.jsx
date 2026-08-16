@@ -7,6 +7,7 @@ import { formatearMonto, limpiarMonto, bloquearEntradaSoloNumeros } from "../../
 import { getColombiaDateKey } from "../../logic/dateUtils";
 import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
 import { useAuth } from "../../context/AuthContext";
+import { useCobradiarios } from "../../hooks/useCobradiarios";
 import { verificarPassword } from "../../firebase/auth";
 import {
   IconArrowUpRight,
@@ -22,11 +23,16 @@ import {
 } from "@tabler/icons-react";
 
 export default function Caja() {
-  const { orgId, usuario } = useAuth();
+  const { orgId, usuario, isAdmin } = useAuth();
   const [selectedDate, setSelectedDate] = useState(getColombiaDateKey());
+  const [filtroCobradiario, setFiltroCobradiario] = useState("");
   const isHoy = selectedDate === getColombiaDateKey();
 
-  const { movements, loading, saldo, addMovement, deleteMovement } = useMovements(selectedDate);
+  const { movements, loading, saldo, addMovement, deleteMovement } = useMovements(
+    selectedDate,
+    isAdmin ? filtroCobradiario || null : null
+  );
+  const { cobradiarios } = useCobradiarios();
   const { solicitarCorreccion } = useCorrections();
   const [modalType, setModalType] = useState(null); // "gasto" | "base" | null
   const [monto, setMonto] = useState("");
@@ -183,6 +189,25 @@ export default function Caja() {
             </button>
           )}
         </div>
+
+        {/* Filtro por cobradiario (solo Admin, Plan Maestro sección 16) */}
+        {isAdmin && (
+          <div className="bg-white rounded-xl p-4 border border-[#E5E5EA] flex items-center gap-3">
+            <IconChevronDown size={20} stroke={1.5} className="text-gray-400 shrink-0" />
+            <select
+              value={filtroCobradiario}
+              onChange={(e) => setFiltroCobradiario(e.target.value)}
+              className="flex-1 text-sm bg-transparent focus:outline-none"
+            >
+              <option value="">Caja global (todos)</option>
+              {cobradiarios.map((c) => (
+                <option key={c.uid} value={c.uid}>
+                  {c.nombre || c.email}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Saldo y Acciones principales */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">

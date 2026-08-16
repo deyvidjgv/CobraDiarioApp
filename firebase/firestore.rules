@@ -49,6 +49,18 @@ service cloud.firestore {
       return data.cobradiarioId == request.auth.uid;
     }
 
+    // Congela las condiciones sensibles del vencimiento: el cobradiario
+    // solo puede mover recargosAcumulados/fechaUltimoRecargo/continuacion.
+    function vencimientoCongelado(before, after) {
+      return (before == null && after == null)
+        || (before != null && after != null
+            && after.porcentaje == before.porcentaje
+            && after.activo == before.activo
+            && after.proximoCorte == before.proximoCorte
+            && after.modoInicial == before.modoInicial
+            && after.fechaVencimientoTotal == before.fechaVencimientoTotal);
+    }
+
     // userIndex/{uid}: mapeo uid -> organizationId/role.
     // El propio usuario puede leer su indice. La creacion se permite en
     // dos casos: (1) auto-bootstrap, un usuario creandose a si mismo como
@@ -101,9 +113,21 @@ service cloud.firestore {
         allow read: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
         allow create: if isAdminOf(orgId)
                       || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
-        // Las condiciones del credito quedan congeladas: el cobradiario no
-        // puede modificarlas una vez creadas (seccion 8/10 del plan maestro).
-        allow update: if isAdminOf(orgId);
+        // Condiciones del credito CONGELADAS: el cobradiario dueno solo
+        // puede tocar los campos del ciclo de pago (saldo/estado/recargos
+        // que fluyen al registrar un cobro o aplicar un recargo). Capital,
+        // interes, cuotas, frecuencia, fecha de inicio, cliente y dueno
+        // nunca son modificables por el — solo el Admin puede cambiarlos.
+        allow update: if isAdminOf(orgId)
+                      || (isCobradiarioOf(orgId)
+                          && ownsRecord(resource.data)
+                          && request.resource.data.diff(resource.data).affectedKeys()
+                             .hasOnly(["saldoPendiente", "estado", "montoTotalAPagar",
+                                       "vencimiento", "updatedAt"])
+                          && (request.resource.data.estado == resource.data.estado
+                              || request.resource.data.estado == "completado")
+                          && vencimientoCongelado(resource.data.vencimiento,
+                                                  request.resource.data.vencimiento));
         allow delete: if isAdminOf(orgId);
       }
 
@@ -134,6 +158,24 @@ service cloud.firestore {
         // Solo el Admin resuelve (aprueba/rechaza) una solicitud.
         allow update: if isAdminOf(orgId) && resource.data.estado == "pendiente";
         allow delete: if false;
+      }
+
+      // Visitas de ruta (Fase 8): cada gestion presencial queda registrada
+      // con GPS y resultado (Plan Maestro, seccion "visits"). Como los
+      // movimientos financieros, son inmutables: se crean, no se editan.
+      match /visits/{visitId} {
+        allow read: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
+        allow create: if isAdminOf(orgId)
+                      || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
+        allow update, delete: if false;
+      }
+
+      // Auditoria (Fase 9): append-only, solo el Admin consulta.
+      match /auditLogs/{logId} {
+        allow read: if isAdminOf(orgId);
+        allow create: if isActiveMember(orgId)
+                      && request.resource.data.actorId == request.auth.uid;
+        allow update, delete: if false;
       }
     }
 

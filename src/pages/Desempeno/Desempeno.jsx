@@ -1,0 +1,146 @@
+import { useMemo } from "react";
+import Header from "../../components/layout/Header";
+import { useLoans } from "../../hooks/useLoans";
+import { useClients } from "../../hooks/useClients";
+import { useCobradiarios } from "../../hooks/useCobradiarios";
+import { useMovements } from "../../hooks/useMovements";
+import { calcularMoraGlobal } from "../../logic/mora";
+import { TIPOS_MOVIMIENTO } from "../../logic/caja";
+import { formatearMonto, round2 } from "../../logic/formato";
+import { IconChartBar } from "@tabler/icons-react";
+
+/**
+ * Rendimiento por cobradiario (Plan Maestro, sección 14).
+ * Fórmula base: efectividad = (cobrado / esperado) × 100
+ */
+export default function Desempeno() {
+  const { cobradiarios, loading: usersLoading } = useCobradiarios();
+  const { loans, loading: loansLoading } = useLoans(false);
+  const { clients, loading: clientsLoading } = useClients();
+  const { movements, loading: movsLoading } = useMovements(); // movimientos de hoy
+
+  const loading = usersLoading || loansLoading || clientsLoading || movsLoading;
+
+  const filas = useMemo(() => {
+    const cobrosHoy = movements.filter((m) => m.tipo === TIPOS_MOVIMIENTO.COBRO);
+
+    return cobradiarios.map((cob) => {
+      const uid = cob.uid;
+      const misClientes = clients.filter((c) => c.cobradiarioId === uid);
+      const misLoans = loans.filter((l) => l.cobradiarioId === uid);
+      const activos = misLoans.filter((l) => l.estado === "activo");
+
+      // Valor esperado hoy: una cuota por crédito activo
+      const esperado = round2(
+        activos.reduce((acc, l) => acc + Math.min(l.cuota ?? 0, l.saldoPendiente ?? l.cuota ?? 0), 0)
+      );
+
+      // Valor cobrado hoy por este cobradiario
+      const cobrado = round2(
+        cobrosHoy.filter((m) => m.cobradiarioId === uid).reduce((acc, m) => acc + (m.monto ?? 0), 0)
+      );
+
+      const efectividad = esperado > 0 ? round2((cobrado / esperado) * 100) : null;
+
+      const enMora = activos.filter((l) => calcularMoraGlobal(l).estado === "mora");
+      const moraTotal = round2(enMora.reduce((acc, l) => acc + calcularMoraGlobal(l).deficit, 0));
+
+      return {
+        uid,
+        nombre: cob.nombre || cob.email || uid,
+        estado: cob.estado,
+        clientes: misClientes.length,
+        creditosActivos: activos.length,
+        creditosNuevos: misLoans.filter((l) => {
+          const creado = l.createdAt?.toDate ? l.createdAt.toDate() : null;
+          if (!creado) return false;
+          const hoy = new Date();
+          return creado.toDateString() === hoy.toDateString();
+        }).length,
+        esperado,
+        cobrado,
+        efectividad,
+        creditosEnMora: enMora.length,
+        moraTotal,
+      };
+    });
+  }, [cobradiarios, clients, loans, movements]);
+
+  return (
+    <div className="pb-24">
+      <Header title="Desempeño" />
+
+      <div className="p-4 space-y-4">
+        <p className="text-xs text-gray-400">
+          Efectividad de hoy = (cobrado / esperado) × 100. El valor esperado es una cuota por
+          crédito activo.
+        </p>
+
+        {loading ? (
+          <p className="text-sm text-gray-400 py-10 text-center">Cargando desempeño...</p>
+        ) : filas.length === 0 ? (
+          <div className="text-center py-16 flex flex-col items-center">
+            <IconChartBar size={48} stroke={1.5} className="text-gray-300 mb-3" />
+            <p className="text-gray-500 text-sm">No hay cobradiarios registrados</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filas.map((f) => (
+              <div key={f.uid} className="bg-white rounded-xl border border-[#E5E5EA] p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-800">{f.nombre}</p>
+                  {f.efectividad !== null ? (
+                    <span
+                      className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                        f.efectividad >= 80
+                          ? "bg-emerald-50 text-emerald-600"
+                          : f.efectividad >= 50
+                          ? "bg-amber-50 text-amber-600"
+                          : "bg-red-50 text-red-600"
+                      }`}
+                    >
+                      {f.efectividad}% efectividad
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-gray-400 px-2 py-1 rounded-full bg-gray-100">
+                      Sin cartera
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Clientes</span>
+                    <span className="text-gray-700 font-medium">{f.clientes}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Créditos activos</span>
+                    <span className="text-gray-700 font-medium">{f.creditosActivos}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Esperado hoy</span>
+                    <span className="text-gray-700 font-medium">${formatearMonto(f.esperado)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Cobrado hoy</span>
+                    <span className="text-emerald-600 font-medium">${formatearMonto(f.cobrado)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Créditos nuevos hoy</span>
+                    <span className="text-gray-700 font-medium">{f.creditosNuevos}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">En mora</span>
+                    <span className={f.creditosEnMora > 0 ? "text-red-600 font-medium" : "text-gray-700 font-medium"}>
+                      {f.creditosEnMora} · ${formatearMonto(f.moraTotal)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

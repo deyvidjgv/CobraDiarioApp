@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import { useCobradiarios } from "../../hooks/useCobradiarios";
-import { IconUsersGroup, IconPlus, IconPower } from "@tabler/icons-react";
+import { IconUsersGroup, IconPlus, IconPower, IconEye } from "@tabler/icons-react";
 
 export default function Cobradiarios() {
   const navigate = useNavigate();
@@ -63,6 +63,15 @@ export default function Cobradiarios() {
                 >
                   {c.estado === "activo" ? "Activo" : "Inactivo"}
                 </span>
+
+                <button
+                  type="button"
+                  onClick={() => navigate(`/cobradiarios/operacion/${c.uid}`)}
+                  title="Ver operación (solo lectura, auditado)"
+                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary-bg/50 rounded-lg transition shrink-0"
+                >
+                  <IconEye size={18} stroke={1.5} />
+                </button>
 
                 <button
                   type="button"

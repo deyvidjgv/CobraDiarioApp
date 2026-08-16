@@ -1,13 +1,19 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import ClientForm from "../../components/forms/ClientForm";
 import { useClients } from "../../hooks/useClients";
+import { useAuth } from "../../context/AuthContext";
 
 export default function NuevoCliente() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { addClient } = useClients();
   const [loading, setLoading] = useState(false);
+
+  // Registrar clientes es operación de cobradiario (Plan Maestro, sección 5);
+  // el Admin solo consulta y controla.
+  if (isAdmin) return <Navigate to="/clientes" replace />;
 
   async function handleSubmit(data) {
     setLoading(true);

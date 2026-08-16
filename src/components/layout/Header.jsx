@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { IconChevronLeft, IconMenu2, IconLoader2 } from "@tabler/icons-react";
-import NavDrawer from "./NavDrawer";
 import { useUI } from "../../context/UIContext";
 import { useAndroidBack } from "../../hooks/useAndroidBack";
 
@@ -31,7 +30,7 @@ export default function Header({
 
   return (
     <>
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-sm px-4 py-3 flex items-center gap-3 border-b border-[#E5E5EA]">
+      <header className="sticky top-0 z-40 bg-gradient-to-r from-[#3B348C] to-primary-light px-4 py-3.5 flex items-center gap-3 shadow-md shadow-primary-light/20">
         {showBack ? (
           /* Botón volver a la izquierda */
           <button
@@ -46,22 +45,23 @@ export default function Header({
             }}
             disabled={loading}
             aria-disabled={loading}
-            className={`p-1 -ml-1 rounded-lg transition ${loading ? "opacity-40 cursor-not-allowed" : "hover:bg-surface-2"}`}
+            className={`p-1 -ml-1 rounded-lg transition ${loading ? "opacity-40 cursor-not-allowed" : "hover:bg-white/15"}`}
             aria-label="Volver"
           >
-            <IconChevronLeft size={22} stroke={1.5} className="text-primary" />
+            <IconChevronLeft size={22} stroke={1.5} className="text-white" />
           </button>
         ) : (
           /* Espacio reservado para mantener el título alineado */
           <div className="w-[30px]" aria-hidden="true" />
         )}
 
-        <h1 className="text-lg font-medium flex-1 text-primary">{title}</h1>
+        <h1 className="text-lg font-semibold flex-1 text-white tracking-tight">{title}</h1>
 
-        {/* Derecha: contenido personalizado o botón ☰ (siempre visible) */}
+        {/* Derecha: contenido personalizado o botón ☰ (solo móvil; en
+            escritorio la navegación es la barra lateral estática) */}
         <div className="flex items-center gap-2">
           {loading && (
-            <IconLoader2 size={20} stroke={1.5} className="text-primary animate-spin" />
+            <IconLoader2 size={20} stroke={1.5} className="text-white animate-spin" />
           )}
           {right ? (
             <div>{right}</div>
@@ -69,22 +69,16 @@ export default function Header({
             <button
               id="nav-menu-toggle"
               onClick={() => setDrawerOpen(true)}
-              className="p-1 -mr-1 rounded-lg hover:bg-surface-2 transition"
+              className="md:hidden p-1 -mr-1 rounded-lg hover:bg-white/15 transition"
               aria-label="Abrir menú"
               aria-expanded={drawerOpen}
               aria-controls="nav-drawer"
             >
-              <IconMenu2 size={22} stroke={1.5} className="text-primary" />
+              <IconMenu2 size={22} stroke={1.5} className="text-white" />
             </button>
           )}
         </div>
       </header>
-
-      {/* Drawer de navegación — se monta fuera del header pero controlado aquí */}
-      <NavDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
     </>
   );
 }

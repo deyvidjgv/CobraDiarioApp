@@ -4,11 +4,13 @@ import Header from "../../components/layout/Header";
 import ClientRow from "../../components/ui/ClientRow";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
+import { useAuth } from "../../context/AuthContext";
 import { calcularMoraGlobal } from "../../logic/mora";
 import { IconUsersGroup, IconPlus } from "@tabler/icons-react";
 
 export default function Clientes() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { clients, loading } = useClients();
   const { loans } = useLoans();
   const [search, setSearch] = useState("");
@@ -120,14 +122,16 @@ export default function Clientes() {
         )}
       </div>
 
-      {/* FAB */}
-      <button
-        onClick={() => navigate("/clientes/nuevo")}
-        className="fixed bottom-8 right-4 w-14 h-14 bg-primary-light text-white rounded-full flex items-center justify-center hover:scale-105 transition z-30"
-        aria-label="Nuevo cliente"
-      >
-        <IconPlus size={28} stroke={2} />
-      </button>
+      {/* FAB — solo cobradiario: el Admin consulta pero no registra clientes */}
+      {!isAdmin && (
+        <button
+          onClick={() => navigate("/clientes/nuevo")}
+          className="fixed bottom-8 right-4 w-14 h-14 bg-primary-light text-white rounded-full flex items-center justify-center hover:scale-105 transition z-30"
+          aria-label="Nuevo cliente"
+        >
+          <IconPlus size={28} stroke={2} />
+        </button>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@
  * Siempre se calcula sumando movimientos, para poder auditar
  * cualquier dia pasado sin margen de error.
  */
+import { round2 } from "./formato";
 
 export const TIPOS_MOVIMIENTO = {
   COBRO: "cobro", // entrada (+)
@@ -20,6 +21,12 @@ export const TIPOS_MOVIMIENTO = {
  * Construye un movimiento listo para guardar en Firestore.
  * clienteNombre y cobradorNombre se guardan de una vez (denormalizado)
  * para no tener que volver a leer clientes/creditos al mostrar el detalle.
+ *
+ * cobradiarioId/createdBy/clientId son obligatorios para la trazabilidad
+ * (Plan Maestro, seccion 6): las reglas de Firestore exigen que el
+ * cobradiarioId coincida con quien escribe cuando el rol es "cobradiario",
+ * y sin ese campo el cobradiario no puede crear NI volver a leer sus
+ * propios movimientos.
  */
 export function construirMovimiento({
   tipo,
@@ -29,6 +36,9 @@ export function construirMovimiento({
   nota = null,
   clienteNombre = null,
   cobradorNombre = null,
+  clientId = null,
+  cobradiarioId = null,
+  createdBy = null,
 }) {
   const signo = (tipo === TIPOS_MOVIMIENTO.COBRO || tipo === TIPOS_MOVIMIENTO.INGRESO_BASE || tipo === TIPOS_MOVIMIENTO.SEGURO) ? 1 : -1;
   const montoFirmado = (tipo === TIPOS_MOVIMIENTO.AJUSTE || tipo === TIPOS_MOVIMIENTO.RECARGO_VENCIMIENTO) ? monto : signo * Math.abs(monto);
@@ -41,6 +51,9 @@ export function construirMovimiento({
     nota,
     clienteNombre,
     cobradorNombre,
+    clientId,
+    cobradiarioId,
+    createdBy,
     fecha: new Date(),
   };
 }
@@ -51,7 +64,7 @@ export function construirMovimiento({
  * para recalcular a partir de un snapshot de daily_closings.
  */
 export function calcularSaldo(movimientos) {
-  return round2(movimientos.reduce((acc, m) => acc + m.monto, 0));
+  return round2(movimientos.reduce((acc, m) => acc + (m.monto ?? 0), 0));
 }
 
 /**
@@ -68,7 +81,6 @@ export function construirCierreDiario(
 ) {
   const entradas = movimientosDelDia.filter((m) => m.monto > 0);
   const salidas = movimientosDelDia.filter((m) => m.monto < 0);
-
   // Clasificamos movimientos
   const cobros = movimientosDelDia
     .filter((m) => m.tipo === TIPOS_MOVIMIENTO.COBRO)
@@ -103,12 +115,43 @@ export function construirCierreDiario(
       fecha: m.fecha ?? null,
     }));
 
+  // Cuadre de arqueo: el saldo esperado es el neto del ledger; el efectivo
+  // contado lo aporta el usuario al generar el cierre (práctica estándar de
+  // arqueo de caja con doble verificación).
+  const saldoEsperado = round2(entradas.reduce((acc, m) => acc + m.monto, 0) + salidas.reduce((acc, m) => acc + m.monto, 0));
+  const baseInicial = round2(
+    movimientosDelDia
+      .filter((m) => m.tipo === TIPOS_MOVIMIENTO.INGRESO_BASE)
+      .reduce((acc, m) => acc + (m.monto ?? 0), 0)
+  );
+  const saldoContado = datosCartera.saldoContado ?? null;
+
   return {
     fecha: fechaStr,
     totalEntradas: round2(entradas.reduce((acc, m) => acc + m.monto, 0)),
     totalSalidas: round2(Math.abs(salidas.reduce((acc, m) => acc + m.monto, 0))),
     saldoNeto: calcularSaldo(movimientosDelDia),
     cantidadMovimientos: movimientosDelDia.length,
+
+    // Efectividad de cobro del día (Plan Maestro, sección 14):
+    // esperado = una cuota por crédito activo; cobrado = cobros del día.
+    efectividad: datosCartera.efectividad || {
+      esperadoHoy: 0,
+      cobradoHoy: 0,
+      noCobrado: 0,
+      porcentaje: null,
+    },
+
+    // Arqueo de caja (cuadre contable vs físico)
+    arqueo: {
+      baseInicial,
+      saldoEsperado,
+      saldoContado,
+      diferencia: saldoContado !== null ? round2(saldoContado - saldoEsperado) : null,
+    },
+
+    // Mora por antigüedad (aging por tramos de días)
+    moraAging: datosCartera.moraAging || [],
 
     // Datos enriquecidos de cartera
     cartera: {
@@ -137,8 +180,4 @@ export function construirCierreDiario(
       mora: listaMora.map((m) => ({ nombre: m.nombre, cuotasMora: m.cuotasMora, deficit: m.deficit })),
     },
   };
-}
-
-function round2(n) {
-  return Math.round(n * 100) / 100;
 }

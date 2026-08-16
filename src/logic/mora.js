@@ -10,6 +10,7 @@
  */
 import { toDate } from "./dateUtils";
 import { calcularCuotasVencidas } from "./frecuencia";
+import { round2 } from "./formato";
 
 /**
  * Calcula el estado de un credito: cuanto deberia llevar pagado,
@@ -68,8 +69,4 @@ export function calcularMoraGlobal(loan) {
   });
   const pagado = loan.montoTotalAPagar - (loan.saldoPendiente ?? 0);
   return calcularEstadoMora(cuotasVencidas, loan.cuota, pagado, loan.saldoPendiente);
-}
-
-function round2(n) {
-  return Math.round(n * 100) / 100;
 }

@@ -3,16 +3,15 @@
 @tailwind utilities;
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #F9F9FB;
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: #F4F5FC;
+  /* Tinte índigo sutil en la parte superior que se funde con el fondo base */
+  background-image: linear-gradient(180deg, #E9EAFB 0%, #F4F5FC 340px);
+  background-repeat: no-repeat;
   -webkit-font-smoothing: antialiased;
 }
 
 @media (max-width: 640px) {
-  body {
-    background-color: #F4F5FB;
-  }
-
   .bg-primary {
     background-color: #6F62D6;
   }
@@ -36,4 +35,34 @@ body {
     border-width: 0.5px;
     border-color: #E5E5EA;
   }
+
+  /* Tarjeta base con sombra suave (consistencia visual en toda la app) */
+  .card {
+    @apply bg-white rounded-2xl border border-[#E5E5EA] shadow-[0_1px_3px_rgba(38,33,92,0.05)];
+  }
+
+  /* Encabezado de sección con acento de color a la izquierda */
+  .section-title {
+    @apply text-sm font-semibold text-gray-800 flex items-center gap-2;
+  }
+  .section-title::before {
+    content: "";
+    @apply inline-block w-1 h-4 rounded-full bg-primary-light;
+  }
+}
+
+/* Scrollbar discreto */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #D9D9E3;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #C5C5D6;
 }

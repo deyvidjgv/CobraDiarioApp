@@ -1,4 +1,5 @@
 import { addDays } from "date-fns";
+import { round2 } from "./formato";
 
 export function calcularFechaVencimientoTotal(loanBase) {
   const { fechaInicio, numeroCuotas, frecuencia, diasHabiles } = loanBase;
@@ -100,5 +101,5 @@ export function esCreditoVencido(loan, hoy = new Date()) {
  */
 export function calcularRecargo(saldoPendiente, porcentaje) {
   const recargo = (saldoPendiente * porcentaje) / 100;
-  return Math.round(recargo * 100) / 100;
+  return round2(recargo);
 }

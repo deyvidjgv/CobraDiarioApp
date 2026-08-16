@@ -61,9 +61,29 @@ beforeEach(async () => {
     });
 
     await setDoc(doc(db, "organizations", ORG_ID, "movements", "mov-1"), {
-      type: "cobro",
-      amount: 40000,
+      tipo: "cobro",
+      monto: 40000,
       cobradiarioId: COBRADIARIO_UID,
+    });
+
+    // Crédito del cobradiario para probar actualizaciones por campo
+    await setDoc(doc(db, "organizations", ORG_ID, "loans", "loan-1"), {
+      estado: "activo",
+      capital: 100000,
+      interesAplicado: 20,
+      cuota: 4000,
+      saldoPendiente: 80000,
+      fechaInicio: new Date().toISOString(),
+      cobradiarioId: COBRADIARIO_UID,
+      vencimiento: {
+        activo: true,
+        porcentaje: 20,
+        modoInicial: "al_vencer",
+        proximoCorte: "2026-12-01",
+        fechaVencimientoTotal: "2026-12-01",
+        recargosAcumulados: 0,
+        fechaUltimoRecargo: null,
+      },
     });
   });
 });
@@ -170,8 +190,8 @@ describe("movements (inmutabilidad financiera)", () => {
     const db = ctx.firestore();
     await assertSucceeds(
       addDoc(collection(db, "organizations", ORG_ID, "movements"), {
-        type: "cobro",
-        amount: 20000,
+        tipo: "cobro",
+        monto: 20000,
         cobradiarioId: COBRADIARIO_UID,
       })
     );
@@ -181,7 +201,7 @@ describe("movements (inmutabilidad financiera)", () => {
     const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
     const db = ctx.firestore();
     await assertFails(
-      updateDoc(doc(db, "organizations", ORG_ID, "movements", "mov-1"), { amount: 99999 })
+      updateDoc(doc(db, "organizations", ORG_ID, "movements", "mov-1"), { monto: 99999 })
     );
   });
 
@@ -367,6 +387,203 @@ describe("correctionRequests (Fase 7)", () => {
         estado: "aprobada",
         resolvedBy: ADMIN_UID,
       })
+    );
+  });
+});
+
+describe("loans (actualizaciones por campo)", () => {
+  const loanPath = ["organizations", ORG_ID, "loans", "loan-1"];
+
+  test("cobradiario puede actualizar saldo/estado al registrar un cobro", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertSucceeds(
+      updateDoc(doc(db, ...loanPath), { saldoPendiente: 76000, estado: "activo" })
+    );
+  });
+
+  test("cobradiario puede marcar el crédito como completado (renovación/cierre)", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertSucceeds(
+      updateDoc(doc(db, ...loanPath), { saldoPendiente: 0, estado: "completado" })
+    );
+  });
+
+  test("cobradiario puede aplicar recargo (campos operativos del vencimiento)", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertSucceeds(
+      updateDoc(doc(db, ...loanPath), {
+        saldoPendiente: 96000,
+        montoTotalAPagar: 96000,
+        "vencimiento.recargosAcumulados": 16000,
+        "vencimiento.fechaUltimoRecargo": new Date().toISOString(),
+      })
+    );
+  });
+
+  test("cobradiario NO puede cambiar las condiciones (capital/interés/cuota)", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      updateDoc(doc(db, ...loanPath), { capital: 999999, saldoPendiente: 0 })
+    );
+    await assertFails(
+      updateDoc(doc(db, ...loanPath), { interesAplicado: 0 })
+    );
+    await assertFails(
+      updateDoc(doc(db, ...loanPath), { cuota: 1 })
+    );
+  });
+
+  test("cobradiario NO puede falsificar el porcentaje del vencimiento", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      updateDoc(doc(db, ...loanPath), {
+        saldoPendiente: 0,
+        "vencimiento.porcentaje": 0,
+      })
+    );
+  });
+
+  test("cobradiario NO puede anular el crédito (solo Admin)", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      updateDoc(doc(db, ...loanPath), { estado: "anulado" })
+    );
+  });
+
+  test("otro cobradiario NO puede tocar un crédito ajeno", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "organizations", ORG_ID, "users", OTHER_COBRADIARIO_UID), {
+        uid: OTHER_COBRADIARIO_UID,
+        role: "cobradiario",
+        estado: "activo",
+      });
+    });
+    const ctx = testEnv.authenticatedContext(OTHER_COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      updateDoc(doc(db, ...loanPath), { saldoPendiente: 0 })
+    );
+  });
+
+  test("admin puede modificar todo el crédito", async () => {
+    const ctx = testEnv.authenticatedContext(ADMIN_UID);
+    const db = ctx.firestore();
+    await assertSucceeds(
+      updateDoc(doc(db, ...loanPath), { estado: "anulado", nota: "ajuste admin" })
+    );
+  });
+});
+
+describe("visits (Fase 8)", () => {
+  test("cobradiario puede crear una visita propia con GPS", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertSucceeds(
+      setDoc(doc(db, "organizations", ORG_ID, "visits", "vis-1"), {
+        clientId: "cliente-1",
+        loanId: null,
+        resultado: "no_pago",
+        ubicacion: { lat: 4.6, lng: -74.1 },
+        fecha: "2026-08-16",
+        cobradiarioId: COBRADIARIO_UID,
+        createdBy: COBRADIARIO_UID,
+      })
+    );
+  });
+
+  test("cobradiario NO puede crear una visita a nombre de otro", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      setDoc(doc(db, "organizations", ORG_ID, "visits", "vis-2"), {
+        clientId: "cliente-1",
+        resultado: "no_pago",
+        cobradiarioId: OTHER_COBRADIARIO_UID,
+        createdBy: COBRADIARIO_UID,
+      })
+    );
+  });
+
+  test("las visitas son inmutables (ni el propio cobradiario las edita)", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "organizations", ORG_ID, "visits", "vis-3"), {
+        clientId: "cliente-1",
+        resultado: "no_pago",
+        cobradiarioId: COBRADIARIO_UID,
+      });
+    });
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      updateDoc(doc(db, "organizations", ORG_ID, "visits", "vis-3"), { resultado: "cobro" })
+    );
+    await assertFails(deleteDoc(doc(db, "organizations", ORG_ID, "visits", "vis-3")));
+  });
+
+  test("cobradiario puede leer sus visitas y admin puede leer todas", async () => {
+    const cobCtx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    await assertSucceeds(
+      getDoc(doc(cobCtx.firestore(), "organizations", ORG_ID, "visits", "vis-3"))
+    );
+    const adminCtx = testEnv.authenticatedContext(ADMIN_UID);
+    await assertSucceeds(
+      getDoc(doc(adminCtx.firestore(), "organizations", ORG_ID, "visits", "vis-3"))
+    );
+  });
+});
+
+describe("auditLogs (Fase 9)", () => {
+  test("miembro activo puede registrar un evento con su propio actorId", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertSucceeds(
+      setDoc(doc(db, "organizations", ORG_ID, "auditLogs", "log-1"), {
+        accion: "cobro_registrado",
+        actorId: COBRADIARIO_UID,
+        detalle: "$40000",
+        createdAt: new Date().toISOString(),
+      })
+    );
+  });
+
+  test("no puede registrar eventos a nombre de otro actor", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      setDoc(doc(db, "organizations", ORG_ID, "auditLogs", "log-2"), {
+        accion: "credito_eliminado",
+        actorId: ADMIN_UID,
+        createdAt: new Date().toISOString(),
+      })
+    );
+  });
+
+  test("los logs son append-only y solo el Admin los lee", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "organizations", ORG_ID, "auditLogs", "log-3"), {
+        accion: "cobro_registrado",
+        actorId: COBRADIARIO_UID,
+      });
+    });
+    const adminCtx = testEnv.authenticatedContext(ADMIN_UID);
+    await assertSucceeds(
+      getDoc(doc(adminCtx.firestore(), "organizations", ORG_ID, "auditLogs", "log-3"))
+    );
+    const cobCtx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    await assertFails(
+      getDoc(doc(cobCtx.firestore(), "organizations", ORG_ID, "auditLogs", "log-3"))
+    );
+    await assertFails(
+      updateDoc(doc(adminCtx.firestore(), "organizations", ORG_ID, "auditLogs", "log-3"), { detalle: "x" })
+    );
+    await assertFails(
+      deleteDoc(doc(adminCtx.firestore(), "organizations", ORG_ID, "auditLogs", "log-3"))
     );
   });
 });

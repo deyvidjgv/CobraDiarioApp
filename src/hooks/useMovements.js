@@ -11,13 +11,16 @@ import { calcularSaldo, TIPOS_MOVIMIENTO } from "../logic/caja";
 /**
  * Hook para los movimientos de caja de un día.
  * @param {string|null} fechaStr — "YYYY-MM-DD" o null para hoy
+ * @param {string|null} cobradiarioUid — filtro del Admin por cobradiario
+ *   (los cobradiarios siempre ven solo los suyos, por rol)
  */
-export function useMovements(fechaStr = null) {
-  const { orgId } = useAuth();
+export function useMovements(fechaStr = null, cobradiarioUid = null) {
+  const { orgId, usuario, isCobradiario } = useAuth();
   const [movements, setMovements] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const dateKey = fechaStr || new Date().toISOString().split("T")[0];
+  const dueno = isCobradiario ? usuario.uid : cobradiarioUid;
 
   useEffect(() => {
     if (!orgId) return;
@@ -29,6 +32,7 @@ export function useMovements(fechaStr = null) {
     const constraints = [
       where("fecha", ">=", Timestamp.fromDate(start)),
       where("fecha", "<", Timestamp.fromDate(end)),
+      ...(dueno ? [where("cobradiarioId", "==", dueno)] : []),
       orderBy("fecha", "desc"),
     ];
 
@@ -37,12 +41,17 @@ export function useMovements(fechaStr = null) {
       setLoading(false);
     });
     return unsub;
-  }, [orgId, dateKey]);
+  }, [orgId, dateKey, dueno]);
 
   const saldo = calcularSaldo(movements);
 
   async function addMovement(data) {
-    return addDocument(orgId, "movements", data);
+    const enriched = {
+      ...data,
+      cobradiarioId: data.cobradiarioId || usuario.uid,
+      createdBy: data.createdBy || usuario.uid,
+    };
+    return addDocument(orgId, "movements", enriched);
   }
 
   /**

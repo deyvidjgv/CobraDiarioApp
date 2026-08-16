@@ -8,16 +8,22 @@ import { calcularCuotasVencidas } from "../../logic/frecuencia";
 import { calcularEstadoMora } from "../../logic/mora";
 import { formatearMonto } from "../../logic/formato";
 import { toDate } from "../../firebase/firestore";
+import { useAuth } from "../../context/AuthContext";
 import {
   IconUserPlus,
   IconFileText,
   IconChartBar,
   IconSettings,
   IconMapPin,
+  IconUserCog,
+  IconClipboardCheck,
+  IconHistory,
+  IconLayoutDashboard,
 } from "@tabler/icons-react";
 
 export default function Inicio() {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { clients } = useClients();
   const { loans } = useLoans();
   const { saldo, movements } = useMovements();
@@ -41,12 +47,21 @@ export default function Inicio() {
   const hoy = new Date();
   const saludo = hoy.getHours() < 12 ? "Buenos días" : hoy.getHours() < 18 ? "Buenas tardes" : "Buenas noches";
 
-  const acciones = [
-    { label: "Nuevo cliente", Icon: IconUserPlus, to: "/clientes/nuevo" },
-    { label: "Nuevo crédito", Icon: IconFileText, to: "/creditos/nuevo" },
-    { label: "Reportes", Icon: IconChartBar, to: "/reportes" },
-    { label: "Configuración", Icon: IconSettings, to: "/configuracion" },
-  ];
+  // El Admin no opera préstamos ni clientes: sus accesos rápidos son de
+  // gestión y control (Plan Maestro, sección 5).
+  const acciones = isAdmin
+    ? [
+        { label: "Dashboard", Icon: IconLayoutDashboard, to: "/dashboard" },
+        { label: "Cobradiarios", Icon: IconUserCog, to: "/cobradiarios" },
+        { label: "Correcciones", Icon: IconClipboardCheck, to: "/correcciones" },
+        { label: "Auditoría", Icon: IconHistory, to: "/auditoria" },
+      ]
+    : [
+        { label: "Nuevo cliente", Icon: IconUserPlus, to: "/clientes/nuevo" },
+        { label: "Nuevo crédito", Icon: IconFileText, to: "/creditos/nuevo" },
+        { label: "Reportes", Icon: IconChartBar, to: "/reportes" },
+        { label: "Configuración", Icon: IconSettings, to: "/configuracion" },
+      ];
 
   return (
     <div className="pb-8">
@@ -89,11 +104,11 @@ export default function Inicio() {
 
       {/* CTA Principal */}
       <button
-        onClick={() => navigate("/ruta")}
+        onClick={() => navigate(isAdmin ? "/dashboard" : "/ruta")}
         className="w-full bg-primary-light hover:bg-primary-light/90 text-white font-medium rounded-2xl py-4 px-6 flex items-center justify-center gap-2 transition shadow-md shadow-primary-light/20 text-base"
       >
-        <IconMapPin size={22} stroke={1.5} />
-        Ir a la ruta de hoy
+        {isAdmin ? <IconLayoutDashboard size={22} stroke={1.5} /> : <IconMapPin size={22} stroke={1.5} />}
+        {isAdmin ? "Ver dashboard de la organización" : "Ir a la ruta de hoy"}
       </button>
 
       {/* Acciones rápidas */}

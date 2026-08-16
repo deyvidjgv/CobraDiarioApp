@@ -39,15 +39,15 @@ export function calcularCuotasVencidas(loan, hoy = new Date()) {
       break;
 
     case "semanal":
-      calculadas = Math.floor(diffDias(inicio, fin) / 7);
+      calculadas = Math.floor(diffDias(inicio, ayer) / 7);
       break;
 
     case "quincenal":
-      calculadas = Math.floor(diffDias(inicio, fin) / 15);
+      calculadas = Math.floor(diffDias(inicio, ayer) / 15);
       break;
 
     case "mensual":
-      calculadas = Math.floor(diffDias(inicio, fin) / 30);
+      calculadas = Math.floor(diffDias(inicio, ayer) / 30);
       break;
 
     default:

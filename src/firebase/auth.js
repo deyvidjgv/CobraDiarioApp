@@ -6,6 +6,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
   updateProfile,
+  updatePassword,
 } from "firebase/auth";
 import { auth } from "./config";
 
@@ -37,5 +38,20 @@ export async function verificarPassword(password) {
   if (!user || !user.email) throw new Error("No hay usuario autenticado");
   const credential = EmailAuthProvider.credential(user.email, password);
   return reauthenticateWithCredential(user, credential);
+}
+
+/**
+ * Cambia la contraseña del usuario en sesión. Firebase exige
+ * reautenticación reciente: se pide la contraseña actual, se verifica
+ * y luego se actualiza (Panel de Seguridad, Configuración).
+ */
+export async function cambiarPassword(actual, nueva) {
+  const user = auth.currentUser;
+  if (!user || !user.email) throw new Error("No hay usuario autenticado");
+  await verificarPassword(actual);
+  if (!nueva || nueva.length < 6) {
+    throw new Error("La nueva contraseña debe tener al menos 6 caracteres.");
+  }
+  return updatePassword(user, nueva);
 }
 

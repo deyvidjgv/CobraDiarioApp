@@ -15,8 +15,8 @@ import { IconAlertTriangle, IconCheck, IconTrash, IconBan } from "@tabler/icons-
 export default function DetalleCredito() {
   const { loanId } = useParams();
   const navigate = useNavigate();
-  const { orgId } = useAuth();
-  const { deleteLoan } = useLoanActions();
+  const { orgId, isAdmin } = useAuth();
+  const { deleteLoan, anularLoan } = useLoanActions();
   const [loan, setLoan] = useState(null);
   const [client, setClient] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -74,6 +74,16 @@ export default function DetalleCredito() {
   const progreso = Math.min(100, Math.round((pagado / loan.montoTotalAPagar) * 100));
   const mora = calcularMoraGlobal(loan);
   const hasPayments = payments.length > 0;
+
+  async function handleAnular() {
+    if (!confirm("¿Anular este crédito? El crédito queda inactivo pero TODO su historial de pagos y movimientos se conserva.")) return;
+    try {
+      await anularLoan(loanId);
+      navigate(client?.id ? `/clientes/${client.id}` : "/clientes", { replace: true });
+    } catch (err) {
+      alert("Error al anular: " + err.message);
+    }
+  }
 
   const handleAction = async (password) => {
     setPasswordError("");
@@ -198,16 +208,25 @@ export default function DetalleCredito() {
           )}
         </div>
         
-        {/* Zona Peligrosa */}
-        <div className="pt-6">
+        {/* Zona Peligrosa — solo visible para Admin (inmutabilidad financiera) */}
+        {isAdmin && loan.estado === "activo" && (
+        <div className="pt-6 space-y-2">
+          <button
+            onClick={handleAnular}
+            className="w-full bg-amber-50 border border-amber-200 text-amber-700 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-amber-100 transition"
+          >
+            <IconBan size={18} stroke={1.5} />
+            Anular crédito (conserva historial)
+          </button>
           <button
             onClick={() => setShowConfirm(true)}
             className="w-full bg-red-50 border border-red-100 text-red-600 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-red-100 transition"
           >
             <IconTrash size={18} stroke={1.5} />
-            Eliminar Crédito
+            Eliminar crédito y sus movimientos
           </button>
         </div>
+        )}
       </div>
 
       <ConfirmarPasswordModal
