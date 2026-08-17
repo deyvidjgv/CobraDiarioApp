@@ -2,7 +2,8 @@ import { describe, expect, test } from "vitest";
 import { round2, formatearMonto, limpiarMonto } from "../src/logic/formato";
 import { construirMovimiento, calcularSaldo, TIPOS_MOVIMIENTO } from "../src/logic/caja";
 import { calcularRecargo, hayCorteVencidoPendiente } from "../src/logic/vencimiento";
-import { calcularCuotasVencidas } from "../src/logic/frecuencia";
+import { calcularCuotasVencidas, esDiaDeCobro } from "../src/logic/frecuencia";
+import { calcularMoraGlobal, calcularMoraGlobalAlCierre } from "../src/logic/mora";
 
 describe("round2", () => {
   test("redondea a dos decimales sin errores de coma flotante", () => {
@@ -135,5 +136,67 @@ describe("frecuencia (cuotas vencidas cuentan hasta ayer)", () => {
     expect(
       calcularCuotasVencidas({ fechaInicio: new Date(2026, 7, 16), frecuencia: "diario" }, hoy)
     ).toBe(0);
+  });
+});
+
+describe("esDiaDeCobro (ruta del día)", () => {
+  const hoy = new Date(2026, 7, 16, 10, 0, 0); // domingo 16 ago 2026
+
+  test("domingo no es día de cobro para un diario L-S", () => {
+    expect(
+      esDiaDeCobro({ fechaInicio: new Date(2026, 7, 6), frecuencia: "diario" }, hoy)
+    ).toBe(false);
+  });
+
+  test("domingo sí es día de cobro si está entre los días hábiles", () => {
+    expect(
+      esDiaDeCobro(
+        { fechaInicio: new Date(2026, 7, 6), frecuencia: "diario", diasHabiles: [0, 1, 2, 3, 4, 5, 6] },
+        hoy
+      )
+    ).toBe(true);
+  });
+
+  test("semanal: toca cuando se cumple una semana exacta", () => {
+    expect(esDiaDeCobro({ fechaInicio: new Date(2026, 7, 9), frecuencia: "semanal" }, hoy)).toBe(true);
+    expect(esDiaDeCobro({ fechaInicio: new Date(2026, 7, 8), frecuencia: "semanal" }, hoy)).toBe(false);
+  });
+
+  test("pasada la última cuota ya no hay día de cobro", () => {
+    const base = { fechaInicio: new Date(2026, 7, 5), frecuencia: "diario", diasHabiles: [0, 1, 2, 3, 4, 5, 6] };
+    expect(esDiaDeCobro({ ...base, numeroCuotas: 12 }, hoy)).toBe(true); // hoy es la última
+    expect(esDiaDeCobro({ ...base, numeroCuotas: 11 }, hoy)).toBe(false); // calendario agotado
+  });
+});
+
+describe("calcularMoraGlobalAlCierre (incluye la cuota de hoy)", () => {
+  const hoy = new Date(2026, 7, 16, 10, 0, 0); // domingo 16 ago 2026
+
+  test("al día hasta ayer pero con cuota pendiente hoy ⇒ deficit al cierre", () => {
+    const loan = {
+      fechaInicio: new Date(2026, 7, 6),
+      frecuencia: "diario",
+      diasHabiles: [0, 1, 2, 3, 4, 5, 6], // calendario continuo: 10 cuotas hasta ayer
+      cuota: 10000,
+      montoTotalAPagar: 200000,
+      saldoPendiente: 100000, // pagado 100000 = 10 cuotas exactas
+    };
+    expect(calcularMoraGlobal(loan, hoy).estado).toBe("al_dia");
+    const alCierre = calcularMoraGlobalAlCierre(loan, hoy);
+    expect(alCierre.deficit).toBe(10000); // la cuota de hoy
+  });
+
+  test("un adelanto que cubre la cuota de hoy deja deficit en cero o negativo", () => {
+    const loan = {
+      fechaInicio: new Date(2026, 7, 6),
+      frecuencia: "diario",
+      diasHabiles: [0, 1, 2, 3, 4, 5, 6],
+      cuota: 10000,
+      montoTotalAPagar: 200000,
+      saldoPendiente: 80000, // pagado 120000 = 12 cuotas, una de más
+    };
+    const alCierre = calcularMoraGlobalAlCierre(loan, hoy);
+    expect(alCierre.estado).toBe("adelantado");
+    expect(alCierre.deficit).toBe(-10000);
   });
 });

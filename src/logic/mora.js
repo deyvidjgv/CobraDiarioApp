@@ -62,11 +62,29 @@ export function calcularEstadoMora(cuotasVencidas, cuota, pagadoAcumulado, saldo
  * convirtiendo su fecha de inicio si es necesario.
  * @param {object} loan 
  */
-export function calcularMoraGlobal(loan) {
-  const cuotasVencidas = calcularCuotasVencidas({
-    ...loan,
-    fechaInicio: toDate(loan.fechaInicio),
-  });
+export function calcularMoraGlobal(loan, hoy = new Date()) {
+  const cuotasVencidas = calcularCuotasVencidas(
+    {
+      ...loan,
+      fechaInicio: toDate(loan.fechaInicio),
+    },
+    hoy
+  );
   const pagado = loan.montoTotalAPagar - (loan.saldoPendiente ?? 0);
   return calcularEstadoMora(cuotasVencidas, loan.cuota, pagado, loan.saldoPendiente);
+}
+
+/**
+ * Estado de mora proyectado al cierre de HOY: igual que calcularMoraGlobal
+ * pero contando también la cuota de hoy en lo esperado (si hoy es día de
+ * cobro). La ruta del día lo usa para distinguir a quién falta cobrarle
+ * (deficit > 0) de quien ya cubrió la cuota con un adelanto.
+ *
+ * @param {object} loan
+ * @param {Date} [hoy]
+ */
+export function calcularMoraGlobalAlCierre(loan, hoy = new Date()) {
+  const manana = new Date(hoy);
+  manana.setDate(manana.getDate() + 1);
+  return calcularMoraGlobal(loan, manana);
 }

@@ -6,7 +6,8 @@ import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
 import { useVisits, RESULTADOS_VISITA } from "../../hooks/useVisits";
 import { useAuth } from "../../context/AuthContext";
-import { calcularMoraGlobal } from "../../logic/mora";
+import { calcularMoraGlobal, calcularMoraGlobalAlCierre } from "../../logic/mora";
+import { esDiaDeCobro } from "../../logic/frecuencia";
 import { formatearMonto } from "../../logic/formato";
 import { IconCheck, IconX, IconUserOff, IconCalendarHeart, IconSearch } from "@tabler/icons-react";
 
@@ -16,6 +17,14 @@ const accionesVisita = [
   { resultado: RESULTADOS_VISITA.PROMESA_PAGO, label: "Promesa", Icon: IconCalendarHeart, clase: "text-amber-600 hover:bg-amber-50" },
 ];
 
+// Prioridad de visita: 1º mora, 2º cuota de hoy pendiente, 3º al día, 4º adelantado
+function prioridadDe(item) {
+  if (item.mora.estado === "mora") return 0;
+  if (item.faltaCobrarHoy) return 1;
+  if (item.mora.estado === "al_dia") return 2;
+  return 3;
+}
+
 export default function RutaDelDia() {
   const navigate = useNavigate();
   const { isAdmin } = useAuth();
@@ -23,7 +32,7 @@ export default function RutaDelDia() {
   const { loans, loading } = useLoans();
   const { visits, registrarVisita } = useVisits();
   const [visitando, setVisitando] = useState(null); // loanId con visita en curso
-  const [filtro, setFiltro] = useState("general"); // general | mora | cobrados
+  const [filtro, setFiltro] = useState("hoy"); // hoy | mora | cobrados | general
   const [busqueda, setBusqueda] = useState("");
 
   // Visitas de hoy indexadas por loanId para marcar gestiones ya realizadas
@@ -31,21 +40,28 @@ export default function RutaDelDia() {
     return Object.fromEntries(visits.map((v) => [v.loanId, v]));
   }, [visits]);
 
-  // Enriquecer cada crédito activo con su estado de mora y datos del cliente
+  // Enriquecer cada crédito con mora, cuota programada hoy y datos del cliente
   const rutaOrdenada = useMemo(() => {
     const clientMap = Object.fromEntries(clients.map((c) => [c.id, c]));
 
     return loans
       .map((loan) => {
         const mora = calcularMoraGlobal(loan);
+        // Deficit al cierre de hoy: incluye la cuota de hoy en lo esperado,
+        // así un adelanto que ya la cubre no genera visita innecesaria.
+        const alCierre = calcularMoraGlobalAlCierre(loan);
+        const programadoHoy = esDiaDeCobro(loan);
+        const faltaCobrarHoy = programadoHoy && alCierre.deficit > 0;
         const client = clientMap[loan.clientId] || {};
 
-        return { ...loan, mora, client };
+        return { ...loan, mora, programadoHoy, faltaCobrarHoy, client };
       })
       .sort((a, b) => {
-        // mora primero, luego al_dia, luego adelantado
-        const order = { mora: 0, al_dia: 1, adelantado: 2 };
-        return (order[a.mora.estado] ?? 3) - (order[b.mora.estado] ?? 3);
+        const prioridad = prioridadDe(a) - prioridadDe(b);
+        if (prioridad !== 0) return prioridad;
+        // A igual prioridad, la mora más grande primero y luego por nombre
+        if (a.mora.deficit !== b.mora.deficit) return b.mora.deficit - a.mora.deficit;
+        return (a.client.nombre || "").localeCompare(b.client.nombre || "");
       });
   }, [loans, clients]);
 
@@ -61,8 +77,14 @@ export default function RutaDelDia() {
   // Lista según filtro activo + búsqueda por nombre, cédula o teléfono
   const rutaFiltrada = useMemo(() => {
     let lista = rutaOrdenada;
-    if (filtro === "mora") lista = lista.filter((i) => i.mora.estado === "mora");
-    else if (filtro === "cobrados") lista = lista.filter((i) => cobradosHoyIds.has(i.id));
+    if (filtro === "hoy") {
+      // Ruta principal: cuota programada hoy, sin contar los ya cobrados
+      lista = lista.filter((i) => i.faltaCobrarHoy && !cobradosHoyIds.has(i.id));
+    } else if (filtro === "mora") {
+      lista = lista.filter((i) => i.mora.estado === "mora");
+    } else if (filtro === "cobrados") {
+      lista = lista.filter((i) => cobradosHoyIds.has(i.id));
+    }
 
     const q = busqueda.trim().toLowerCase();
     if (q) {
@@ -76,9 +98,14 @@ export default function RutaDelDia() {
   }, [rutaOrdenada, filtro, busqueda, cobradosHoyIds]);
 
   const chips = [
+    {
+      id: "hoy",
+      label: "Cobro hoy",
+      count: rutaOrdenada.filter((i) => i.faltaCobrarHoy && !cobradosHoyIds.has(i.id)).length,
+    },
+    { id: "mora", label: "Mora", count: rutaOrdenada.filter((i) => i.mora.estado === "mora").length },
+    { id: "cobrados", label: "Cobrados", count: rutaOrdenada.filter((i) => cobradosHoyIds.has(i.id)).length },
     { id: "general", label: "General", count: rutaOrdenada.length },
-    { id: "mora", label: "En mora", count: rutaOrdenada.filter((i) => i.mora.estado === "mora").length },
-    { id: "cobrados", label: "Cobrados hoy", count: rutaOrdenada.filter((i) => cobradosHoyIds.has(i.id)).length },
   ];
 
   async function handleRegistrarVisita(item, resultado) {
@@ -157,11 +184,21 @@ export default function RutaDelDia() {
         ) : rutaFiltrada.length === 0 ? (
           <div className="text-center py-12">
             <span className="text-4xl block mb-3">
-              {filtro === "mora" ? "🎉" : filtro === "cobrados" ? "💸" : "🔍"}
+              {filtro === "hoy"
+                ? "📅"
+                : filtro === "mora"
+                ? "🎉"
+                : filtro === "cobrados"
+                ? "💸"
+                : "🔍"}
             </span>
             <p className="text-gray-500 text-sm">
               {busqueda.trim()
                 ? `Sin resultados para "${busqueda.trim()}"`
+                : filtro === "hoy"
+                ? rutaOrdenada.some((i) => cobradosHoyIds.has(i.id))
+                  ? "¡Buen trabajo! Ya cobraste lo programado de hoy"
+                  : "No hay cobros programados para hoy"
                 : filtro === "mora"
                 ? "No hay clientes en mora"
                 : filtro === "cobrados"

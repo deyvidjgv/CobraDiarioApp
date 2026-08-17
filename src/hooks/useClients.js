@@ -48,7 +48,15 @@ export function useClients() {
     };
     const cedulaId = (data.cedula || "").replace(/\D/g, "");
     if (cedulaId) {
-      const existe = await getDocument(orgId, "clients", cedulaId);
+      let existe = null;
+      try {
+        existe = await getDocument(orgId, "clients", cedulaId);
+      } catch {
+        // Las reglas solo niegan este get cuando la cédula ya existe pero
+        // pertenece a otro cobrador (los documentos inexistentes sí se
+        // pueden leer, precisamente para este chequeo).
+        throw new Error(`La cédula ${data.cedula} ya está registrada por otro cobrador`);
+      }
       if (existe) {
         throw new Error(`Ya existe un cliente con la cédula ${data.cedula}`);
       }

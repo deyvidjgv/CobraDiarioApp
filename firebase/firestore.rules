@@ -101,7 +101,17 @@ service cloud.firestore {
       }
 
       match /clients/{clientId} {
-        allow read: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
+        // get y list por separado: la cédula del cliente ES el id del
+        // documento, así que antes de crear se hace un get de comprobación
+        // sobre un documento que aún no existe. Ese get se permite cuando
+        // el documento no existe; si existe, aplica el dueño operativo.
+        // Así el chequeo de cédula duplicada funciona sin exponer los
+        // clientes de otros cobradores en las consultas (list).
+        allow get: if isAdminOf(orgId)
+                    || (isCobradiarioOf(orgId)
+                        && (!exists(/databases/$(database)/documents/organizations/$(orgId)/clients/$(clientId))
+                            || ownsRecord(resource.data)));
+        allow list: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
         allow create: if isAdminOf(orgId)
                       || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
         allow update: if isAdminOf(orgId)

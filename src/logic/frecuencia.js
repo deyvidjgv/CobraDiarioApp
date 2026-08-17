@@ -7,6 +7,8 @@
  * sin fijar dia de semana - por eso no comparten la misma logica.
  */
 
+import { toDate } from "./dateUtils";
+
 const MS_POR_DIA = 1000 * 60 * 60 * 24;
 
 /**
@@ -55,6 +57,24 @@ export function calcularCuotasVencidas(loan, hoy = new Date()) {
   }
 
   return Math.min(maxCuotas, calculadas);
+}
+
+/**
+ * Determina si la fecha dada es un día de cobro programado para el
+ * crédito: cuenta las cuotas vencidas hasta hoy y hasta ayer; si hoy
+ * suma una más, es que hoy toca cobrar. Respeta el calendario de cada
+ * frecuencia (días hábiles, día de semana, intervalos) y el tope de
+ * cuotas: pasada la última cuota ya no hay día de cobro.
+ *
+ * @param {object} loan - documento del crédito (fechaInicio puede ser Timestamp/ISO)
+ * @param {Date} [hoy]
+ * @returns {boolean}
+ */
+export function esDiaDeCobro(loan, hoy = new Date()) {
+  const normalizado = { ...loan, fechaInicio: toDate(loan.fechaInicio) };
+  const manana = startOfDay(hoy);
+  manana.setDate(manana.getDate() + 1);
+  return calcularCuotasVencidas(normalizado, manana) > calcularCuotasVencidas(normalizado, hoy);
 }
 
 function contarDiasHabiles(inicio, fin, diasHabiles) {
