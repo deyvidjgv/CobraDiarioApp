@@ -12,7 +12,7 @@ export default function Cobradiarios() {
   async function handleToggle(c) {
     const nuevoEstado = c.estado === "activo" ? "inactivo" : "activo";
     const verbo = nuevoEstado === "activo" ? "activar" : "desactivar";
-    if (!confirm(`Â¿Seguro que quieres ${verbo} a ${c.nombre}?`)) return;
+    if (!confirm(`¿Seguro que quieres ${verbo} a ${c.nombre}?`)) return;
 
     setBusyUid(c.uid);
     try {
@@ -34,14 +34,14 @@ export default function Cobradiarios() {
         ) : cobradiarios.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
             <IconUsersGroup size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
-            <p className="text-primary-light/75 text-sm">AÃºn no has creado ningÃºn cobradiario</p>
+            <p className="text-primary-light/75 text-sm">Aún no has creado ningún cobradiario</p>
           </div>
         ) : (
           <div className="space-y-2">
             {cobradiarios.map((c) => (
               <div
                 key={c.id}
-                className="w-full flex items-center gap-3 rounded-xl px-4 py-3 border border-thin bg-white"
+                className="w-full flex items-center gap-3 rounded-xl px-4 py-3 border border-thin bg-surface"
               >
                 <div className="w-10 h-10 rounded-full bg-primary-bg text-primary flex items-center justify-center text-sm font-medium shrink-0">
                   {c.nombre?.[0]?.toUpperCase() || "?"}
@@ -50,14 +50,14 @@ export default function Cobradiarios() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-primary truncate">{c.nombre}</p>
                   <p className="text-xs text-primary-light/70 truncate">
-                    {c.email} {c.celular ? `Â· ${c.celular}` : ""}
+                    {c.email} {c.celular ? `· ${c.celular}` : ""}
                   </p>
                 </div>
 
                 <span
                   className={`text-[11px] font-medium px-2 py-1 rounded-full shrink-0 ${
                     c.estado === "activo"
-                      ? "bg-emerald-50 text-al-dia"
+                      ? "bg-al-dia/10 text-al-dia"
                       : "bg-surface-2 text-primary-light/70"
                   }`}
                 >
@@ -67,7 +67,7 @@ export default function Cobradiarios() {
                 <button
                   type="button"
                   onClick={() => navigate(`/cobradiarios/operacion/${c.uid}`)}
-                  title="Ver operaciÃ³n (solo lectura, auditado)"
+                  title="Ver operación (solo lectura, auditado)"
                   className="p-2 text-primary-light/70 hover:text-primary hover:bg-primary-bg/50 rounded-lg transition shrink-0"
                 >
                   <IconEye size={18} stroke={1.5} />
@@ -91,7 +91,7 @@ export default function Cobradiarios() {
       {/* FAB */}
       <button
         onClick={() => navigate("/cobradiarios/nuevo")}
-        className="fixed bottom-8 right-4 w-14 h-14 bg-primary-light text-white rounded-full flex items-center justify-center hover:scale-105 transition z-30"
+        className="fixed bottom-8 right-4 w-14 h-14 bg-gold text-surface-1 rounded-full flex items-center justify-center hover:scale-105 transition z-30"
         aria-label="Nuevo cobradiario"
       >
         <IconPlus size={28} stroke={2} />

@@ -32,7 +32,7 @@ function AppRoutes() {
       <Route path="/registro" element={<Registro />} />
 
       {/* Panel operativo: hoy lo usan Admin y Cobradiario por igual, el
-          filtrado de datos por rol se agrega pÃ¡gina a pÃ¡gina (Fase 5-8). */}
+          filtrado de datos por rol se agrega página a página (Fase 5-8). */}
       <Route path="/" element={<CobradiarioLayout><Inicio /></CobradiarioLayout>} />
       <Route path="/ruta" element={<CobradiarioLayout><RutaDelDia /></CobradiarioLayout>} />
       <Route path="/cobro/:loanId" element={<CobradiarioLayout><RegistrarCobro /></CobradiarioLayout>} />
@@ -45,7 +45,7 @@ function AppRoutes() {
       <Route path="/caja" element={<CobradiarioLayout><Caja /></CobradiarioLayout>} />
       <Route path="/configuracion" element={<CobradiarioLayout><Configuracion /></CobradiarioLayout>} />
 
-      {/* Panel exclusivo del Admin (Plan Maestro, secciÃ³n 5). */}
+      {/* Panel exclusivo del Admin (Plan Maestro, sección 5). */}
       <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
       <Route path="/cobradiarios" element={<AdminLayout><Cobradiarios /></AdminLayout>} />
       <Route path="/cobradiarios/nuevo" element={<AdminLayout><NuevoCobradiario /></AdminLayout>} />

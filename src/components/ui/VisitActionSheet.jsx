@@ -46,7 +46,7 @@ export default function VisitActionSheet({
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center">
-      <div className="absolute inset-0 bg-primary/45 backdrop-blur-[2px]" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-[2px]" onClick={onClose} />
 
       <div
         role="dialog"
@@ -68,10 +68,10 @@ export default function VisitActionSheet({
           <button
             type="button"
             onClick={onCobrar}
-            className="h-14 rounded-2xl bg-primary text-surface-1 px-5 flex items-center justify-between font-bold text-base active:scale-[0.99] transition"
+            className="h-14 rounded-2xl bg-gold text-surface-1 px-5 flex items-center justify-between font-bold text-base active:scale-[0.99] transition"
           >
             <span>Registrar cobro</span>
-            {montoCuota && <span className="num text-sm font-medium text-gold">{montoCuota}</span>}
+            {montoCuota && <span className="num text-sm font-medium text-surface-1/70">{montoCuota}</span>}
           </button>
 
           {gestiones.map((g) => (
@@ -80,7 +80,7 @@ export default function VisitActionSheet({
               type="button"
               onClick={() => onGestion(g.resultado)}
               className={
-                "h-[52px] rounded-2xl bg-white border border-line px-5 flex items-center text-[15px] font-semibold transition hover:border-primary/25 " +
+                "h-[52px] rounded-2xl bg-surface border border-line px-5 flex items-center text-[15px] font-semibold transition hover:border-primary/25 " +
                 (g.muted ? "text-primary/60" : "text-primary")
               }
             >

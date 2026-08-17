@@ -17,13 +17,14 @@ import {
   IconChevronsRight,
   IconLogout,
 } from '@tabler/icons-react';
+import Logo from '../ui/Logo';
 import { cerrarSesion } from '../../firebase/auth';
 import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../../context/UIContext';
 
 const navItems = [
   { to: '/', label: 'Inicio', Icon: IconHome, end: true },
-  { to: '/ruta', label: 'Ruta del dÃ­a', Icon: IconMapPin, end: false },
+  { to: '/ruta', label: 'Ruta del día', Icon: IconMapPin, end: false },
   { to: '/clientes', label: 'Clientes', Icon: IconUsers, end: false },
   { to: '/caja', label: 'Caja', Icon: IconCash, end: false },
   { to: '/reportes', label: 'Reportes', Icon: IconChartBar, end: false },
@@ -38,7 +39,7 @@ const adminNavItems = [
     end: false,
   },
   { to: '/cobradiarios', label: 'Cobradiarios', Icon: IconUserCog, end: false },
-  { to: '/desempeno', label: 'DesempeÃ±o', Icon: IconChartBar, end: false },
+  { to: '/desempeno', label: 'Desempeño', Icon: IconChartBar, end: false },
   { to: '/clientes', label: 'Clientes', Icon: IconUsers, end: false },
   { to: '/caja', label: 'Caja', Icon: IconCash, end: false },
   {
@@ -47,23 +48,17 @@ const adminNavItems = [
     Icon: IconClipboardCheck,
     end: false,
   },
-  { to: '/auditoria', label: 'AuditorÃ­a', Icon: IconHistory, end: false },
+  { to: '/auditoria', label: 'Auditoría', Icon: IconHistory, end: false },
   { to: '/reportes', label: 'Reportes', Icon: IconChartBar, end: false },
   { to: '/configuracion', label: 'Ajustes', Icon: IconSettings, end: false },
 ];
 
 function Marca({ collapsed }) {
   return (
-    <div className="flex items-center gap-2.5 min-w-0">
-      <div className="w-8 h-8 rounded-xl bg-black flex items-center justify-center shrink-0 overflow-hidden border border-black/10 shadow-sm">
-        <img
-          src="/icons/credi-dev-logo.png"
-          alt="CrediDev logo"
-          className="w-6 h-6 object-contain"
-        />
-      </div>
+    <div className="flex items-center gap-3 min-w-0">
+      <Logo size={26} className="shrink-0" />
       {!collapsed && (
-        <span className="text-base font-semibold text-primary tracking-tight truncate">
+        <span className="font-display text-xl text-primary tracking-tight truncate">
           CrediDev
         </span>
       )}
@@ -83,7 +78,7 @@ function NavLinks({ items, collapsed }) {
           collapsed ? 'px-2' : 'px-4'
         } py-3 rounded-xl text-sm font-medium transition-all ${
           isActive
-            ? 'bg-primary-bg text-primary font-semibold'
+            ? 'bg-gold/10 text-primary font-semibold'
             : 'text-primary-light hover:bg-surface-2 hover:text-primary'
         }`
       }>
@@ -98,7 +93,7 @@ function NavLinks({ items, collapsed }) {
           />
           {!collapsed && <span className="truncate">{label}</span>}
           {!collapsed && isActive && (
-            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
           )}
         </>
       )}
@@ -108,7 +103,7 @@ function NavLinks({ items, collapsed }) {
 
 function LogoutButton({ collapsed, onDone = () => {} }) {
   async function handleLogout() {
-    if (!confirm('Â¿Cerrar sesiÃ³n?')) return;
+    if (!confirm('¿Cerrar sesión?')) return;
     await cerrarSesion();
     onDone();
     window.location.href = '/login';
@@ -117,25 +112,26 @@ function LogoutButton({ collapsed, onDone = () => {} }) {
     <button
       type="button"
       onClick={handleLogout}
-      title={collapsed ? 'Cerrar sesiÃ³n' : undefined}
+      title={collapsed ? 'Cerrar sesión' : undefined}
       className={`w-full flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${
         collapsed ? 'px-2' : 'px-4'
-      } py-3 rounded-xl border border-mora/20 bg-mora/10 text-sm font-medium text-mora hover:bg-mora/15 transition`}>
+      } py-3 rounded-xl border border-line text-sm font-medium text-primary-light hover:text-primary hover:border-primary/25 transition`}>
       <IconLogout
         size={18}
         stroke={1.5}
         className="shrink-0"
       />
-      {!collapsed && <span>Cerrar sesiÃ³n</span>}
+      {!collapsed && <span>Cerrar sesión</span>}
     </button>
   );
 }
 
 /**
- * NavegaciÃ³n lateral:
- *  - Escritorio (md+): barra estÃ¡tica a la izquierda, colapsable a solo
- *    iconos. La preferencia se guarda (UIContext â†’ localStorage).
- *  - MÃ³vil: overlay controlado por el botÃ³n â˜° del Header.
+ * Navegación lateral:
+ *  - Escritorio (lg+, ≥1024px): barra estática a la izquierda, colapsable a
+ *    solo iconos. La preferencia se guarda (UIContext → localStorage).
+ *  - Móvil y tablet (<1024px): overlay controlado por el botón ☰ del
+ *    Header; BottomNav es la navegación principal en ese rango.
  */
 export default function SideNav() {
   const { isAdmin } = useAuth();
@@ -144,13 +140,13 @@ export default function SideNav() {
   const { pathname } = useLocation();
   const items = isAdmin ? adminNavItems : navItems;
 
-  // Cierra el overlay mÃ³vil al navegar
+  // Cierra el overlay móvil al navegar
   useEffect(() => {
     setDrawerOpen(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // Bloquea el scroll del fondo mientras el drawer mÃ³vil estÃ¡ abierto
+  // Bloquea el scroll del fondo mientras el drawer móvil está abierto
   useEffect(() => {
     document.body.style.overflow = drawerOpen ? 'hidden' : '';
     return () => {
@@ -160,21 +156,21 @@ export default function SideNav() {
 
   return (
     <>
-      {/* â”€â”€â”€ Barra estÃ¡tica de escritorio â”€â”€â”€ */}
+      {/* ─── Barra estática de escritorio ─── */}
       <aside
-        className={`hidden md:flex fixed top-0 left-0 h-full z-40 flex-col
-          bg-white border-r border-[#E3DFD8] transition-[width] duration-200
+        className={`hidden lg:flex fixed top-0 left-0 h-full z-40 flex-col
+          bg-obsidian border-r border-line transition-[width] duration-200
           ${navCollapsed ? 'w-[76px]' : 'w-72'}`}>
         <div
           className={`flex items-center ${navCollapsed ? 'justify-center' : 'justify-between'}
-            px-4 py-4 border-b border-[#E3DFD8]`}>
+            px-4 py-4 border-b border-line`}>
           <Marca collapsed={navCollapsed} />
           {!navCollapsed && (
             <button
               type="button"
               onClick={toggleNavCollapsed}
-              title="Contraer menÃº (se guarda la preferencia)"
-              aria-label="Contraer menÃº"
+              title="Contraer menú (se guarda la preferencia)"
+              aria-label="Contraer menú"
               className="p-1.5 rounded-lg hover:bg-surface-2 transition text-primary-light/70 hover:text-primary-light">
               <IconChevronsLeft
                 size={18}
@@ -189,8 +185,8 @@ export default function SideNav() {
             <button
               type="button"
               onClick={toggleNavCollapsed}
-              title="Expandir menÃº (se guarda la preferencia)"
-              aria-label="Expandir menÃº"
+              title="Expandir menú (se guarda la preferencia)"
+              aria-label="Expandir menú"
               className="p-1.5 rounded-lg hover:bg-surface-2 transition text-primary-light/70 hover:text-primary-light">
               <IconChevronsRight
                 size={18}
@@ -209,20 +205,20 @@ export default function SideNav() {
         </nav>
 
         <div
-          className={`px-3 py-4 border-t border-[#E3DFD8] ${navCollapsed ? 'px-2' : ''}`}>
+          className={`px-3 py-4 border-t border-line ${navCollapsed ? 'px-2' : ''}`}>
           <LogoutButton collapsed={navCollapsed} />
           {!navCollapsed && (
-            <p className="text-[11px] text-primary-light/50 text-center mt-3">
+            <p className="font-mono text-[10.5px] tracking-[0.1em] uppercase text-primary/30 text-center mt-3">
               CrediDev
             </p>
           )}
         </div>
       </aside>
 
-      {/* â”€â”€â”€ Overlay mÃ³vil â”€â”€â”€ */}
+      {/* ─── Overlay móvil ─── */}
       <div
         aria-hidden="true"
-        className={`md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ${
+        className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ${
           drawerOpen
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none'
@@ -231,16 +227,16 @@ export default function SideNav() {
       />
       <aside
         role="navigation"
-        aria-label="MenÃº principal"
-        className={`md:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 flex flex-col
-          bg-white shadow-2xl shadow-black/20
+        aria-label="Menú principal"
+        className={`lg:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 flex flex-col
+          bg-surface shadow-2xl shadow-black/20
           transition-transform duration-300 ease-out
           ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#E3DFD8]">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
           <Marca collapsed={false} />
           <button
             onClick={() => setDrawerOpen(false)}
-            aria-label="Cerrar menÃº"
+            aria-label="Cerrar menú"
             className="p-1.5 rounded-lg hover:bg-surface-2 transition text-primary-light/70 hover:text-primary-light">
             <IconX
               size={20}
@@ -256,7 +252,7 @@ export default function SideNav() {
           />
         </nav>
 
-        <div className="mt-auto px-3 py-4 border-t border-[#E3DFD8]">
+        <div className="mt-auto px-3 py-4 border-t border-line">
           <LogoutButton
             collapsed={false}
             onDone={() => setDrawerOpen(false)}

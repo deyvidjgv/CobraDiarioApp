@@ -1,7 +1,7 @@
 ﻿import { useState } from "react";
 import Header from "../../components/layout/Header";
 import { useCorrections } from "../../hooks/useCorrections";
-import { formatearMonto } from "../../logic/formato";
+import { formatearMonto, round2 } from "../../logic/formato";
 import { IconClipboardCheck, IconCheck, IconX } from "@tabler/icons-react";
 
 export default function Correcciones() {
@@ -12,7 +12,7 @@ export default function Correcciones() {
   const resueltas = corrections.filter((c) => c.estado !== "pendiente");
 
   async function handleAprobar(req) {
-    if (!confirm(`Â¿Aprobar correcciÃ³n de $${formatearMonto(Math.abs(req.valorOriginal))} a $${formatearMonto(Math.abs(req.valorCorrecto))}?`)) return;
+    if (!confirm(`¿Aprobar corrección de $${formatearMonto(Math.abs(req.valorOriginal))} a $${formatearMonto(Math.abs(req.valorCorrecto))}?`)) return;
     setBusyId(req.id);
     try {
       await aprobarCorreccion(req);
@@ -37,7 +37,7 @@ export default function Correcciones() {
 
   return (
     <div className="pb-24">
-      <Header title="Solicitudes de correcciÃ³n" />
+      <Header title="Solicitudes de corrección" />
 
       <div className="p-4 space-y-6">
         {loading ? (
@@ -45,7 +45,7 @@ export default function Correcciones() {
         ) : corrections.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
             <IconClipboardCheck size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
-            <p className="text-primary-light/75 text-sm">No hay solicitudes de correcciÃ³n</p>
+            <p className="text-primary-light/75 text-sm">No hay solicitudes de corrección</p>
           </div>
         ) : (
           <>
@@ -57,7 +57,7 @@ export default function Correcciones() {
                 <p className="text-sm text-primary-light/70">No hay solicitudes pendientes.</p>
               ) : (
                 pendientes.map((req) => (
-                  <div key={req.id} className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+                  <div key={req.id} className="rounded-xl border border-gold/30 bg-gold/10 p-4 space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-primary-light/75">Valor original</span>
                       <span className="font-medium text-primary">${formatearMonto(Math.abs(req.valorOriginal))}</span>
@@ -74,7 +74,7 @@ export default function Correcciones() {
                       <button
                         disabled={busyId === req.id}
                         onClick={() => handleAprobar(req)}
-                        className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-al-dia text-white text-xs font-medium py-2 hover:bg-al-dia transition disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-al-dia text-surface-1 text-xs font-medium py-2 hover:bg-al-dia/90 transition disabled:opacity-50"
                       >
                         <IconCheck size={14} stroke={2} />
                         Aprobar
@@ -82,7 +82,7 @@ export default function Correcciones() {
                       <button
                         disabled={busyId === req.id}
                         onClick={() => handleRechazar(req)}
-                        className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-white border border-mora/20 text-mora text-xs font-medium py-2 hover:bg-mora/10 transition disabled:opacity-50"
+                        className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-surface border border-mora/20 text-mora text-xs font-medium py-2 hover:bg-mora/10 transition disabled:opacity-50"
                       >
                         <IconX size={14} stroke={2} />
                         Rechazar
@@ -98,25 +98,49 @@ export default function Correcciones() {
                 <h3 className="text-xs font-semibold uppercase text-primary-light/70 tracking-wider">
                   Resueltas
                 </h3>
-                {resueltas.map((req) => (
-                  <div key={req.id} className="rounded-xl border border-[#E3DFD8] p-4 space-y-1">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-primary-light/75">
-                        ${formatearMonto(Math.abs(req.valorOriginal))} â†’ ${formatearMonto(Math.abs(req.valorCorrecto))}
-                      </span>
-                      <span
-                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-                          req.estado === "aprobada"
-                            ? "bg-emerald-50 text-al-dia"
-                            : "bg-mora/10 text-mora"
-                        }`}
-                      >
-                        {req.estado === "aprobada" ? "Aprobada" : "Rechazada"}
-                      </span>
+                {resueltas.map((req) => {
+                  const diferencia = round2((req.valorCorrecto ?? 0) - (req.valorOriginal ?? 0));
+                  return (
+                    <div key={req.id} className="rounded-xl border border-line p-4 space-y-2">
+                      <div className="flex justify-between items-start gap-3">
+                        <p className="text-xs text-primary-light/70 flex-1">{req.motivo}</p>
+                        <span
+                          className={`shrink-0 text-xs font-medium px-2 py-0.5 rounded-full ${
+                            req.estado === "aprobada"
+                              ? "bg-al-dia/10 text-al-dia"
+                              : "bg-mora/10 text-mora"
+                          }`}
+                        >
+                          {req.estado === "aprobada" ? "Aprobada" : "Rechazada"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-primary-light/75">Monto original</span>
+                        <span className="font-medium text-primary">${formatearMonto(Math.abs(req.valorOriginal))}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-primary-light/75">Monto corregido</span>
+                        <span className="font-medium text-primary">${formatearMonto(Math.abs(req.valorCorrecto))}</span>
+                      </div>
+                      {req.estado === "aprobada" && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-primary-light/75">Diferencia</span>
+                          <span className={`font-medium ${diferencia >= 0 ? "text-al-dia" : "text-mora"}`}>
+                            {diferencia >= 0 ? "+" : "-"}${formatearMonto(Math.abs(diferencia))}
+                          </span>
+                        </div>
+                      )}
+                      {req.estado === "aprobada" && req.loanId && (
+                        <div className="flex justify-between text-sm border-t border-line pt-2 mt-1">
+                          <span className="text-primary-light/75">Saldo del crédito ajustado</span>
+                          <span className="font-medium text-primary">
+                            ${formatearMonto(req.saldoAntes)} → ${formatearMonto(req.saldoDespues)}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-xs text-primary-light/70">{req.motivo}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </section>
             )}
           </>

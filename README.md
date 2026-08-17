@@ -14,7 +14,7 @@ Construida con **React 18**, **Vite**, **Tailwind CSS** y **Firebase Firestore**
 - [Firestore y datos](#firestore-y-datos)
 - [Funciones principales](#funciones-principales)
 - [PWA e instalación](#pwa-e-instalación)
-- [Evolución Admin + Cobradiarios](#evolución-admin--cobradiarios)
+- [Roles: Admin y Cobradiario](#roles-admin-y-cobradiario)
 - [Mejoras recientes](#mejoras-recientes)
 - [Cómo usar](#cómo-usar)
 
@@ -91,7 +91,6 @@ npm run build
 - `src/styles/index.css` — estilos globales
 - `firebase/firestore.rules` — reglas de seguridad de Firestore (por rol admin/cobradiario)
 - `tests/firestore.rules.test.js` — pruebas de esas reglas contra el emulador (`npm run test:rules`)
-- `Plan_Maestro_Cobro_Diario_Admin_Cobradiario.md` — plan de evolución hacia Admin + Cobradiarios y su checklist de avance
 
 ---
 
@@ -123,14 +122,23 @@ Datos clave:
 
 ### Ruta del Día
 
-- Muestra los clientes que deben ser visitados hoy
-- Prioriza los clientes con mora
+- Lista principal agrupada por el próximo día de cobro de cada crédito
+  (Hoy, Mañana, y así sucesivamente), con "Ver más" para ir revelando
+  días siguientes sin saturar la pantalla
+- Dentro de cada día, ordena por prioridad: mora primero, luego al día
+- Filtro "Hoy" (la ruta del día actual) y filtro "Mora" (todos los
+  créditos atrasados sin importar cuándo les toque la próxima cuota,
+  separados entre mora general y mora que además cobra hoy)
 - Incluye botón GPS para abrir Google Maps
 
 ### Registrar Cobro
 
-- Registrar pagos por cliente
-- Ver saldo pendiente y recargos
+- Registrar pagos por cliente (incluye abonos parciales)
+- Ver saldo pendiente y recargos por vencimiento (se aplican solos al
+  registrar el cobro, sin paso manual)
+- Renovar cartulina en cualquier momento: cierra el crédito actual y
+  crea uno nuevo por el monto solicitado, sumando interés y seguro
+  (si está activo) al nuevo total a pagar
 - Guardar ubicación GPS del cliente
 
 ### Clientes
@@ -158,7 +166,8 @@ Datos clave:
 
 ### Configuración
 
-- Ajustar interés, días hábiles, moneda y seguro
+- Ajustar interés por defecto, seguro/comisión y recargo por vencimiento
+  (solo el Admin puede modificar estas reglas de negocio)
 - Botón de instalación PWA
 - El botón se desactiva cuando la app ya está instalada
 
@@ -173,23 +182,28 @@ Datos clave:
 
 ---
 
-## Evolución Admin + Cobradiarios
+## Roles: Admin y Cobradiario
 
-El proyecto está en proceso de evolucionar hacia una plataforma con un
-**Admin** central y varios **Cobradiarios** operativos, según
-[`Plan_Maestro_Cobro_Diario_Admin_Cobradiario.md`](./Plan_Maestro_Cobro_Diario_Admin_Cobradiario.md).
-Ese archivo tiene el detalle completo (15 fases) y su checklist se va
-marcando conforme se completa cada una.
+La app opera con dos roles sobre el mismo modelo multitenant
+(`organizations/{orgId}`):
 
-**Estado actual: FASE 0-3 completas.** FASE 4 en adelante, pendientes.
+- **Admin** — dueño de la organización. Crea/activa/desactiva
+  cobradiarios, ajusta las reglas de negocio (interés, seguro, recargo
+  por vencimiento), aprueba o rechaza correcciones, y ve reportes,
+  dashboard y auditoría de toda la organización. No opera créditos ni
+  cobros directamente.
+- **Cobradiario** — hace el trabajo operativo: gestiona sus propios
+  clientes y créditos, registra cobros en su ruta diaria, y solicita
+  correcciones cuando se equivoca al registrar un monto (los cobros y
+  préstamos son inmutables — nunca se editan ni se borran directamente).
 
-| Fase | Estado | Qué hace |
-|---|---|---|
-| 0 — Respaldo | ✅ | Checkpoint git antes de tocar código |
-| 1 — Roles | ✅ | `userIndex/{uid}` + `organizations/{orgId}/users/{uid}` con `role: "admin" \| "cobradiario"`. Todo usuario existente se auto-registra como admin de su propia organización la primera vez que entra (sin migración manual) |
-| 2 — Seguridad | ✅ | `firebase/firestore.rules` reescrito para autorizar por rol (antes solo validaba `auth.uid == orgId`) |
-| 3 — Cobradiarios | ✅ | El Admin crea/activa/desactiva cobradiarios desde `/cobradiarios` |
-| 4-15 | ⏳ | Paneles separados, créditos con estados, cobros inmutables, auditoría, dashboard, reportes, caja, rendimiento, etc. |
+`userIndex/{uid}` + `organizations/{orgId}/users/{uid}` guardan el
+`role: "admin" | "cobradiario"` de cada usuario. Todo usuario existente
+se auto-registra como admin de su propia organización la primera vez
+que entra (sin migración manual). `firebase/firestore.rules` autoriza
+cada operación según ese rol — el cobradiario solo puede tocar sus
+propios registros operativos, nunca editar ni borrar movimientos
+financieros ya creados; esa capacidad queda reservada al Admin.
 
 ### Cómo se crean los cobradiarios (sin backend)
 
@@ -230,10 +244,25 @@ en Netlify.
 
 ## Mejoras recientes
 
+- Rediseño visual completo: tema oscuro "Obsidiana + champán", tipografías
+  Instrument Sans / IBM Plex Sans / JetBrains Mono, íconos en `public/iconos/`
+- Responsive revisado a fondo para móvil/tablet (breakpoint en `1024px`,
+  antes `768px`), ya que la app se usa mayoritariamente desde el celular
+- Ruta del Día rediseñada: agrupación por próximo día de cobro con
+  prioridad de mora, filtros Hoy/Mora, badge de pendientes en la barra
+  inferior
+- Corrección de saldo: aprobar una corrección ahora también ajusta el
+  saldo pendiente del crédito (antes solo cuadraba la caja) y muestra el
+  desglose completo (monto original, corregido, diferencia) a cobrador y
+  admin
+- Renovación de cartulina: número de cuotas editable, seguro sumado al
+  total a pagar (no solo restado del efectivo entregado), y separador de
+  miles en los montos
+- Recargo por vencimiento se aplica automáticamente al registrar un cobro
+  sobre un crédito vencido, sin paso manual
 - Navegación atrás mejorada para evitar volver a créditos eliminados
 - Header muestra spinner de carga mientras la página está cargando
 - Botón de confirmación de modal estandarizado para móviles
-- Iconos del menú actualizados para `Cobro Diario` y `Caja`
 - Soporte de instalación PWA más robusto
 
 ---

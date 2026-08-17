@@ -15,7 +15,7 @@ export default function MetricCard({ label, value, color = "primary", onClick })
     <div
       onClick={onClick}
       className={
-        "bg-white rounded-2xl p-4 border border-line " +
+        "bg-surface rounded-2xl p-4 border border-line " +
         (onClick ? "cursor-pointer hover:border-primary/25 transition" : "")
       }
     >

@@ -26,13 +26,13 @@ import {
 function KpiCard({ label, valor, Icon, tono = "primary" }) {
   const tonos = {
     primary: "bg-primary-bg text-primary",
-    emerald: "bg-emerald-50 text-al-dia",
+    emerald: "bg-al-dia/10 text-al-dia",
     red: "bg-mora/10 text-mora",
-    amber: "bg-amber-50 text-gold",
+    amber: "bg-gold/10 text-gold",
     blue: "bg-adelanto/10 text-adelanto",
   };
   return (
-    <div className="bg-white rounded-xl p-4 border border-[#E3DFD8] flex items-center gap-3">
+    <div className="bg-surface rounded-xl p-4 border border-line flex items-center gap-3">
       <div className={`w-10 h-10 rounded-xl ${tonos[tono]} flex items-center justify-center shrink-0`}>
         <Icon size={20} stroke={1.5} />
       </div>
@@ -124,23 +124,23 @@ export default function Dashboard() {
             {/* Riesgo */}
             <section className="grid grid-cols-2 gap-3">
               <KpiCard label="Cartera vencida" valor={`$${formatearMonto(kpis.carteraVencida)}`} Icon={IconAlertOctagon} tono="red" />
-              <KpiCard label="DÃ©ficit de mora" valor={`$${formatearMonto(kpis.moraTotal)}`} Icon={IconTrendingUp} tono="amber" />
+              <KpiCard label="Déficit de mora" valor={`$${formatearMonto(kpis.moraTotal)}`} Icon={IconTrendingUp} tono="amber" />
             </section>
 
-            {/* OperaciÃ³n */}
+            {/* Operación */}
             <section className="grid grid-cols-2 gap-3">
               <KpiCard label="Cobradiarios activos" valor={String(kpis.cobradiariosActivos)} Icon={IconUsersGroup} />
               <KpiCard label="Clientes" valor={String(kpis.clientes)} Icon={IconUsers} tono="blue" />
-              <KpiCard label="CrÃ©ditos activos" valor={String(kpis.creditosActivos)} Icon={IconFileText} tono="blue" />
-              <KpiCard label="CrÃ©ditos en mora" valor={String(kpis.creditosEnMora)} Icon={IconAlertOctagon} tono="red" />
+              <KpiCard label="Créditos activos" valor={String(kpis.creditosActivos)} Icon={IconFileText} tono="blue" />
+              <KpiCard label="Créditos en mora" valor={String(kpis.creditosEnMora)} Icon={IconAlertOctagon} tono="red" />
             </section>
 
             {(kpis.creditosVencidos > 0 || kpis.creditosEnMora > 0) && (
-              <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
-                <p className="font-medium">AtenciÃ³n</p>
+              <div className="rounded-xl bg-gold/10 border border-gold/30 p-4 text-sm text-gold">
+                <p className="font-medium">Atención</p>
                 <p className="mt-1">
-                  {kpis.creditosVencidos} crÃ©ditos vencidos y {kpis.creditosEnMora} en mora
-                  requieren gestiÃ³n de cobro.
+                  {kpis.creditosVencidos} créditos vencidos y {kpis.creditosEnMora} en mora
+                  requieren gestión de cobro.
                 </p>
               </div>
             )}

@@ -7,7 +7,7 @@ export default function UndoToast({ mensaje, onUndo }) {
   if (!mensaje) return null;
   return (
     <div className="fixed left-0 right-0 bottom-[86px] md:bottom-6 z-40 px-4 flex justify-center pointer-events-none">
-      <div className="pointer-events-auto w-full sm:max-w-md bg-primary text-surface-1 rounded-2xl px-4 py-3.5 flex items-center justify-between gap-4 shadow-xl">
+      <div className="pointer-events-auto w-full sm:max-w-md bg-surface-2 border border-line text-primary rounded-2xl px-4 py-3.5 flex items-center justify-between gap-4 shadow-xl shadow-black/50">
         <span className="text-sm font-medium">{mensaje}</span>
         <button
           type="button"

@@ -61,17 +61,17 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
     const vencimientoPorcentaje = Number(form.vencimientoPorcentaje);
 
     if (!Number.isFinite(capital) || capital <= 0) {
-      alert("El capital debe ser un nÃºmero vÃ¡lido y mayor a cero.");
+      alert("El capital debe ser un número válido y mayor a cero.");
       return;
     }
 
     if (!Number.isFinite(interes) || interes < 0) {
-      alert("El interÃ©s debe ser un nÃºmero vÃ¡lido.");
+      alert("El interés debe ser un número válido.");
       return;
     }
 
     if (!Number.isFinite(numeroCuotas) || numeroCuotas < 1) {
-      alert("El nÃºmero de cuotas debe ser al menos 1.");
+      alert("El número de cuotas debe ser al menos 1.");
       return;
     }
 
@@ -101,7 +101,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
           required
           value={form.clientId}
           onChange={set("clientId")}
-          className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition bg-white"
+          className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition bg-surface"
         >
           <option value="">Seleccionar cliente</option>
           {clients.map((c) => (
@@ -112,7 +112,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
         </select>
       </label>
 
-      {/* Capital + InterÃ©s */}
+      {/* Capital + Interés */}
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
           <span className="text-sm font-medium text-primary">Capital ($) *</span>
@@ -123,12 +123,12 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
             value={form.capital ? formatearMonto(form.capital) : ""}
             onChange={set("capital", true)}
             onKeyDown={bloquearEntradaSoloNumeros}
-            className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
             placeholder="100.000"
           />
         </label>
         <label className="block">
-          <span className="text-sm font-medium text-primary">InterÃ©s (%) *</span>
+          <span className="text-sm font-medium text-primary">Interés (%) *</span>
           <input
             type="number"
             required
@@ -137,7 +137,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
             value={form.interes}
             onChange={set("interes")}
             onKeyDown={bloquearEntradaSoloNumerosConDecimal}
-            className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           />
         </label>
       </div>
@@ -145,7 +145,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
       {/* Cuotas + Fecha */}
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-sm font-medium text-primary">NÂ° cuotas *</span>
+          <span className="text-sm font-medium text-primary">N° cuotas *</span>
           <input
             type="number"
             required
@@ -153,7 +153,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
             value={form.numeroCuotas}
             onChange={set("numeroCuotas")}
             onKeyDown={bloquearEntradaSoloNumeros}
-            className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
             placeholder="20"
           />
         </label>
@@ -164,7 +164,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
             required
             value={form.fechaInicio}
             onChange={set("fechaInicio")}
-            className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           />
         </label>
       </div>
@@ -176,7 +176,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
       </div>
 
       {/* Seguro Opcional */}
-      <div className="bg-white rounded-xl p-4 border border-[#E3DFD8] space-y-3">
+      <div className="bg-surface rounded-xl p-4 border border-line space-y-3">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -184,7 +184,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
             onChange={(e) => setForm({ ...form, seguroActivo: e.target.checked })}
             className="rounded border-primary/20 text-primary focus:ring-primary"
           />
-          <span className="text-sm font-medium text-primary">Cobrar seguro / comisiÃ³n inicial</span>
+          <span className="text-sm font-medium text-primary">Cobrar seguro / comisión inicial</span>
         </label>
         {form.seguroActivo && (
           <div className="grid grid-cols-2 gap-3 pt-2">
@@ -193,7 +193,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
               <select
                 value={form.seguroTipo}
                 onChange={set("seguroTipo")}
-                className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-3 py-2 text-sm bg-white"
+                className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm bg-surface"
               >
                 <option value="porcentaje">Porcentaje (%)</option>
                 <option value="fijo">Monto Fijo ($)</option>
@@ -208,7 +208,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
                 value={form.seguroValor}
                 onChange={set("seguroValor")}
                 onKeyDown={bloquearEntradaSoloNumerosConDecimal}
-                className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-3 py-2 text-sm"
+                className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm"
               />
             </label>
           </div>
@@ -216,7 +216,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
       </div>
 
       {/* Vencimiento Opcional */}
-      <div className="bg-white rounded-xl p-4 border border-[#E3DFD8] space-y-3">
+      <div className="bg-surface rounded-xl p-4 border border-line space-y-3">
         <label className="flex items-center gap-2">
           <input
             type="checkbox"
@@ -229,7 +229,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
         {form.vencimientoActivo && (
           <div className="pt-2">
             <label className="block">
-              <span className="text-xs text-primary-light/75">Recargo por mora (%) - Aplica Ãºnicamente al vencer el plazo total</span>
+              <span className="text-xs text-primary-light/75">Recargo por mora (%) - Aplica únicamente al vencer el plazo total</span>
               <input
                 type="number"
                 min="0"
@@ -237,7 +237,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
                 value={form.vencimientoPorcentaje}
                 onChange={set("vencimientoPorcentaje")}
                 onKeyDown={bloquearEntradaSoloNumerosConDecimal}
-                className="mt-1 block w-full sm:w-1/2 rounded-xl border border-[#E3DFD8] px-3 py-2 text-sm"
+                className="mt-1 block w-full sm:w-1/2 rounded-xl border border-line px-3 py-2 text-sm"
               />
             </label>
           </div>
@@ -265,7 +265,7 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
 
         return (
           <div className="bg-primary/5 rounded-xl p-4 space-y-2">
-            <p className="text-xs font-medium text-primary/60">Vista previa del crÃ©dito</p>
+            <p className="text-xs font-medium text-primary/60">Vista previa del crédito</p>
 
             {/* Total a pagar */}
             <div className="flex justify-between text-sm">
@@ -275,14 +275,14 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
 
             {/* Cuota */}
             <div className="flex justify-between text-sm">
-              <span className="text-primary-light">Cuota ({numCuotas} Ã— {form.frecuencia}):</span>
+              <span className="text-primary-light">Cuota ({numCuotas} × {form.frecuencia}):</span>
               <span className="font-medium text-primary-light">${formatearMonto(cuota)}</span>
             </div>
 
-            {/* InformaciÃ³n sobre penalidad */}
+            {/* Información sobre penalidad */}
             {form.vencimientoActivo && (
-              <div className="text-[11px] text-primary-light/75 bg-white/50 rounded-lg px-2.5 py-2 mt-2 border border-primary/5">
-                <span className="font-medium text-primary-light">Info:</span> Se configurÃ³ penalidad por mora ({form.vencimientoPorcentaje}% {form.vencimientoModoInicial === "mensual" ? "mensual" : "al vencer el plazo"}). Esto solo aplicarÃ¡ en el futuro si el cliente presenta mora, no altera el plan original.
+              <div className="text-[11px] text-primary-light/75 bg-surface-2 rounded-lg px-2.5 py-2 mt-2 border border-primary/5">
+                <span className="font-medium text-primary-light">Info:</span> Se configuró penalidad por mora ({form.vencimientoPorcentaje}% {form.vencimientoModoInicial === "mensual" ? "mensual" : "al vencer el plazo"}). Esto solo aplicará en el futuro si el cliente presenta mora, no altera el plan original.
               </div>
             )}
 
@@ -305,9 +305,9 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-primary hover:bg-primary-light text-white font-medium rounded-xl py-3 transition disabled:opacity-50"
+        className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-xl py-3 transition disabled:opacity-50"
       >
-        {loading ? "Guardando..." : "Crear crÃ©dito"}
+        {loading ? "Guardando..." : "Crear crédito"}
       </button>
     </form>
   );

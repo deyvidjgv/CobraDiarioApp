@@ -23,18 +23,18 @@ export default function CobradiarioForm({ onSubmit, loading = false }) {
           required
           value={form.nombre}
           onChange={set("nombre")}
-          className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
-          placeholder="Juan PÃ©rez"
+          className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+          placeholder="Juan Pérez"
         />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-primary">CÃ©dula</span>
+        <span className="text-sm font-medium text-primary">Cédula</span>
         <input
           type="text"
           value={form.cedula}
           onChange={set("cedula")}
-          className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+          className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           placeholder="1094220549"
         />
       </label>
@@ -45,40 +45,40 @@ export default function CobradiarioForm({ onSubmit, loading = false }) {
           type="tel"
           value={form.celular}
           onChange={set("celular")}
-          className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+          className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           placeholder="300 123 4567"
         />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-primary">Correo (para iniciar sesiÃ³n) *</span>
+        <span className="text-sm font-medium text-primary">Correo (para iniciar sesión) *</span>
         <input
           type="email"
           required
           value={form.email}
           onChange={set("email")}
-          className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+          className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           placeholder="cobrador@correo.com"
         />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-primary">ContraseÃ±a temporal *</span>
+        <span className="text-sm font-medium text-primary">Contraseña temporal *</span>
         <input
           type="text"
           required
           minLength={6}
           value={form.password}
           onChange={set("password")}
-          className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
-          placeholder="MÃ­nimo 6 caracteres"
+          className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+          placeholder="Mínimo 6 caracteres"
         />
       </label>
 
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-primary hover:bg-primary-light text-white font-medium rounded-xl py-3 transition disabled:opacity-50"
+        className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-xl py-3 transition disabled:opacity-50"
       >
         {loading ? "Creando..." : "Crear cobradiario"}
       </button>

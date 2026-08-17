@@ -25,7 +25,7 @@ export default function ClientRow({
   return (
     <div
       className={
-        "w-full flex items-center gap-3 rounded-2xl bg-white border border-line pl-4 pr-2 py-3 transition " +
+        "w-full flex items-center gap-3 rounded-2xl bg-surface border border-line pl-4 pr-2 py-3 transition " +
         (enMora ? "border-l-[3px] border-l-mora border-l-solid " : "") +
         (done ? "opacity-55 " : "hover:border-primary/25 ")
       }

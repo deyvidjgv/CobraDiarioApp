@@ -6,8 +6,9 @@ import BottomNav from "./BottomNav";
 
 /**
  * Layout base para cualquier ruta que requiera sesión activa.
- * Escritorio (md+): barra lateral estática. Móvil: barra inferior fija de
- * cinco destinos (BottomNav); el drawer ☰ queda como acceso secundario.
+ * Escritorio (lg+, ≥1024px): barra lateral estática. Móvil y tablet
+ * (<1024px): barra inferior fija de cinco destinos (BottomNav); el drawer
+ * ☰ queda como acceso secundario.
  */
 export default function ProtectedLayout({ children }) {
   const { usuario, cargando } = useAuth();
@@ -30,11 +31,11 @@ export default function ProtectedLayout({ children }) {
       <div
         className={
           "flex-1 w-full transition-[padding] duration-200 " +
-          (navCollapsed ? "md:pl-[76px]" : "md:pl-[288px]")
+          (navCollapsed ? "lg:pl-[76px]" : "lg:pl-[288px]")
         }
       >
-        {/* pb-28 en móvil: espacio para la barra inferior */}
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-28 md:pb-8">{children}</div>
+        {/* pb-28 en móvil/tablet: espacio para la barra inferior */}
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-28 lg:pb-8">{children}</div>
       </div>
       <BottomNav />
     </div>

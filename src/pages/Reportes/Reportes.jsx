@@ -74,21 +74,21 @@ export default function Reportes() {
     .filter((m) => m.tipo === "cobro")
     .reduce((acc, m) => acc + m.monto, 0);
 
-  // Esperado del dÃ­a: una cuota por crÃ©dito activo (tope al saldo)
+  // Esperado del día: una cuota por crédito activo (tope al saldo)
   const esperadoHoy = loans
     .filter((l) => l.estado === "activo")
     .reduce((acc, l) => acc + Math.min(l.cuota || 0, l.saldoPendiente ?? (l.cuota ?? 0)), 0);
   const noCobradoHoy = Math.max(0, esperadoHoy - cobradoFecha);
   const efectividadDia = esperadoHoy > 0 ? round2((cobradoFecha / esperadoHoy) * 100) : null;
 
-  // Mora por antigÃ¼edad (aging): aproxima dÃ­as de mora segÃºn frecuencia
+  // Mora por antigüedad (aging): aproxima días de mora según frecuencia
   const DIAS_POR_CUOTA = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 };
   const tramosAging = useMemo(() => {
     const tramos = [
-      { tramo: "1-15 dÃ­as", min: 1, max: 15, clientes: 0, deficit: 0 },
-      { tramo: "16-30 dÃ­as", min: 16, max: 30, clientes: 0, deficit: 0 },
-      { tramo: "31-60 dÃ­as", min: 31, max: 60, clientes: 0, deficit: 0 },
-      { tramo: "MÃ¡s de 60 dÃ­as", min: 61, max: Infinity, clientes: 0, deficit: 0 },
+      { tramo: "1-15 días", min: 1, max: 15, clientes: 0, deficit: 0 },
+      { tramo: "16-30 días", min: 16, max: 30, clientes: 0, deficit: 0 },
+      { tramo: "31-60 días", min: 31, max: 60, clientes: 0, deficit: 0 },
+      { tramo: "Más de 60 días", min: 61, max: Infinity, clientes: 0, deficit: 0 },
     ];
     rankingMora.forEach(({ loan, mora }) => {
       const dias = Math.round((mora.cuotasMora || 0) * (DIAS_POR_CUOTA[loan.frecuencia] || 1));
@@ -101,7 +101,7 @@ export default function Reportes() {
     return tramos.filter((t) => t.clientes > 0);
   }, [rankingMora]);
 
-  // Ãndice de mora (PAR): saldo de crÃ©ditos con mora / cartera activa
+  // Índice de mora (PAR): saldo de créditos con mora / cartera activa
   const indiceMora = useMemo(() => {
     const carteraEnRiesgo = rankingMora.reduce(
       (acc, item) => acc + (item.loan.saldoPendiente || 0),
@@ -127,14 +127,14 @@ export default function Reportes() {
 
       if (loan) {
         const mora = calcularMoraGlobal(loan);
-        const estadoLabels = { mora: "En mora", al_dia: "Al dÃ­a", adelantado: "Adelanto", completado: "Completado" };
+        const estadoLabels = { mora: "En mora", al_dia: "Al día", adelantado: "Adelanto", completado: "Completado" };
         estadoStr = estadoLabels[mora.estado] || mora.estado;
       }
 
       return {
         ...m,
         clienteNombre: nombreCliente,
-        nota: nombreCliente ? `Cobro: ${nombreCliente}` : (m.nota || "Cobro crÃ©dito"),
+        nota: nombreCliente ? `Cobro: ${nombreCliente}` : (m.nota || "Cobro crédito"),
         estado: estadoStr,
       };
     });
@@ -149,7 +149,7 @@ export default function Reportes() {
   }
 
   async function handleGenerarCierre() {
-    if (!confirm(`Â¿Generar reporte definitivo para el ${selectedDate}?`)) return;
+    if (!confirm(`¿Generar reporte definitivo para el ${selectedDate}?`)) return;
     setGenerating(true);
     try {
       const nuevosClientes = clients.filter((c) => {
@@ -159,7 +159,7 @@ export default function Reportes() {
         return getColombiaDateKey(toDate(l.createdAt)) === selectedDate;
       });
       const listaMora = rankingMora.map(item => ({
-        nombre: item.client.nombre || "â€”",
+        nombre: item.client.nombre || "—",
         cuotasMora: item.mora.cuotasMora,
         deficit: item.mora.deficit
       }));
@@ -190,7 +190,7 @@ export default function Reportes() {
       // Enriquecer nuevosCreditos con nombre del cliente
       const nuevosCreditosEnriquecidos = nuevosCreditos.map((l) => ({
         ...l,
-        clienteNombre: clientMap[l.clientId]?.nombre || "â€”",
+        clienteNombre: clientMap[l.clientId]?.nombre || "—",
       }));
 
       const cierreObj = construirCierreDiario(
@@ -239,7 +239,7 @@ export default function Reportes() {
     const saldoPendiente = loans.reduce((acc, l) => acc + (l.saldoPendiente || 0), 0);
     const porcentajeRecuperacion = capitalColocado > 0 ? (totalRecuperado / capitalColocado) * 100 : 0;
 
-    // DistribuciÃ³n por frecuencia
+    // Distribución por frecuencia
     const distribucionFrecuencia = {};
     loans.forEach((l) => {
       const freq = l.frecuencia || "Sin definir";
@@ -258,7 +258,7 @@ export default function Reportes() {
       distribucionFrecuencia[freq].recuperado += pagado;
     });
 
-    // DistribuciÃ³n por estado
+    // Distribución por estado
     const distribucionEstado = {
       activos: creditosActivos,
       completados: creditosCompletados,
@@ -271,7 +271,7 @@ export default function Reportes() {
       const clientId = l.clientId;
       if (!clientesSaldo[clientId]) {
         clientesSaldo[clientId] = {
-          nombre: clientMap[clientId]?.nombre || "â€”",
+          nombre: clientMap[clientId]?.nombre || "—",
           cantidad: 0,
           saldo: 0,
         };
@@ -302,7 +302,7 @@ export default function Reportes() {
       };
     });
 
-    // Enriquecer tabla de crÃ©ditos con datos necesarios
+    // Enriquecer tabla de créditos con datos necesarios
     const clientLoanCounts = {};
     const filas = loans.map((l) => {
       const clientId = l.clientId;
@@ -310,12 +310,12 @@ export default function Reportes() {
       const numCredito = `#${clientLoanCounts[clientId]}`;
 
       const pagado = (l.montoTotalAPagar || 0) - (l.saldoPendiente ?? 0);
-      const clienteNombre = clientMap[l.clientId]?.nombre || "â€”";
+      const clienteNombre = clientMap[l.clientId]?.nombre || "—";
 
       return {
         cliente: clienteNombre,
         credito: numCredito,
-        frecuencia: l.frecuencia ? l.frecuencia.toUpperCase() : "â€”",
+        frecuencia: l.frecuencia ? l.frecuencia.toUpperCase() : "—",
         capital: l.capital || 0,
         totalPagar: l.montoTotalAPagar || 0,
         pagado,
@@ -324,7 +324,7 @@ export default function Reportes() {
       };
     });
 
-    // Llamar la nueva funciÃ³n mejorada
+    // Llamar la nueva función mejorada
     const datos = {
       fecha: getColombiaDateKey(),
       resumenGeneral: {
@@ -367,13 +367,13 @@ export default function Reportes() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            className="w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           />
         </div>
 
         {/* Resumen Global */}
         <div>
-          <h3 className="section-title mb-3">Resumen del dÃ­a</h3>
+          <h3 className="section-title mb-3">Resumen del día</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="card p-4 bg-gradient-to-br from-white to-primary-bg/40">
               <p className="text-xs text-primary-light/70">Esperado hoy</p>
@@ -386,7 +386,7 @@ export default function Reportes() {
             <div className="card p-4">
               <p className="text-xs text-primary-light/70">Efectividad</p>
               <p className={`text-lg font-semibold mt-1 ${efectividadDia >= 80 ? "text-al-dia" : efectividadDia >= 50 ? "text-gold" : "text-mora"}`}>
-                {efectividadDia !== null ? `${efectividadDia.toFixed(1)}%` : "â€”"}
+                {efectividadDia !== null ? `${efectividadDia.toFixed(1)}%` : "—"}
               </p>
             </div>
             <div className="card p-4">
@@ -404,9 +404,9 @@ export default function Reportes() {
           </div>
         </div>
 
-        {/* Ãndice de mora + aging */}
+        {/* Índice de mora + aging */}
         <div className="card p-4 space-y-3">
-          <h3 className="section-title">Ãndice de mora (PAR)</h3>
+          <h3 className="section-title">Índice de mora (PAR)</h3>
           <div className="flex items-baseline justify-between text-sm">
             <span className="text-primary-light/75">Cartera en riesgo</span>
             <span className="font-semibold text-primary" translate="no">
@@ -420,7 +420,7 @@ export default function Reportes() {
             />
           </div>
           <p className="text-xs text-primary-light/70">
-            {indiceMora.porcentaje.toFixed(1)}% de la cartera activa estÃ¡ en riesgo Â·{" "}
+            {indiceMora.porcentaje.toFixed(1)}% de la cartera activa está en riesgo ·{" "}
             {indiceMora.clientesEnMora} cliente(s) en mora
           </p>
           {tramosAging.length > 0 && (
@@ -429,7 +429,7 @@ export default function Reportes() {
                 <div key={t.tramo} className="rounded-xl bg-surface-1 px-3 py-2">
                   <p className="text-[11px] text-primary-light/70">{t.tramo}</p>
                   <p className="text-sm font-medium text-primary">
-                    {t.clientes} Â· ${formatearMonto(t.deficit)}
+                    {t.clientes} · ${formatearMonto(t.deficit)}
                   </p>
                 </div>
               ))}
@@ -444,22 +444,22 @@ export default function Reportes() {
           {/* Arqueo de caja */}
           <div className="rounded-xl bg-surface-1 p-3 space-y-2">
             <p className="text-xs font-medium text-primary-light">
-              Arqueo de caja â€” efectivo contado (opcional)
+              Arqueo de caja — efectivo contado (opcional)
             </p>
             <input
               type="number"
               min="0"
               inputMode="numeric"
-              placeholder="Conteo fÃ­sico del efectivo ($)"
+              placeholder="Conteo físico del efectivo ($)"
               value={saldoContado}
               onChange={(e) => setSaldoContado(e.target.value)}
-              className="w-full rounded-xl border border-[#E3DFD8] px-4 py-2.5 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+              className="w-full rounded-xl border border-line px-4 py-2.5 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
             />
             {saldoContado !== "" && (
               <p className={`text-xs ${Math.abs(Number(saldoContado) - saldo) < 1 ? "text-al-dia" : "text-gold"}`}>
-                Esperado ${formatearMonto(saldo)} Â·{" "}
+                Esperado ${formatearMonto(saldo)} ·{" "}
                 {Math.abs(Number(saldoContado) - saldo) < 1
-                  ? "cuadrado âœ“"
+                  ? "cuadrado ✓"
                   : `diferencia ${formatearMonto(Number(saldoContado) - saldo)}`}
               </p>
             )}
@@ -469,7 +469,7 @@ export default function Reportes() {
             <p className="text-sm text-primary-light/70">Cargando estado...</p>
           ) : cierreGuardado ? (
             <div className="space-y-3">
-              <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-sm border-thin border-emerald-100 flex justify-between items-center">
+              <div className="bg-al-dia/10 text-al-dia p-3 rounded-lg text-sm border-thin border-al-dia/25 flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <IconCheck size={18} stroke={2} />
                   <span>Guardado</span>
@@ -486,8 +486,8 @@ export default function Reportes() {
                 </button>
                 <button
                   onClick={handleDescargarCierreExcel}
-                  title="Excel para trabajar los nÃºmeros (el PDF con firmas es el comprobante)"
-                  className="bg-surface-1 border-thin text-emerald-700 font-medium rounded-xl px-4 py-3 hover:bg-surface-2 transition"
+                  title="Excel para trabajar los números (el PDF con firmas es el comprobante)"
+                  className="bg-surface-1 border-thin text-al-dia font-medium rounded-xl px-4 py-3 hover:bg-surface-2 transition"
                 >
                   <IconFileSpreadsheet size={20} stroke={1.5} />
                 </button>
@@ -503,13 +503,13 @@ export default function Reportes() {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-gold bg-amber-50 p-3 rounded-lg border-thin border-amber-100">
-                AÃºn no has generado el reporte de este dÃ­a.
+              <p className="text-sm text-gold bg-gold/10 p-3 rounded-lg border-thin border-gold/25">
+                Aún no has generado el reporte de este día.
               </p>
               <button
                 onClick={handleGenerarCierre}
                 disabled={generating}
-                className="w-full bg-primary text-white font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-primary-light transition disabled:opacity-50"
+                className="w-full bg-gold text-surface-1 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-gold/90 transition disabled:opacity-50"
               >
                 <IconDownload size={20} stroke={1.5} />
                 {generating ? "Guardando..." : "Generar y Guardar Reporte"}
@@ -522,14 +522,14 @@ export default function Reportes() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button
             onClick={() => exportarCartera("pdf")}
-            className="w-full bg-white border-thin text-primary font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-surface-1 transition shadow-[0_1px_3px_rgba(38,33,92,0.05)]"
+            className="w-full bg-surface border-thin text-primary font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-surface-1 transition shadow-[0_1px_3px_rgba(38,33,92,0.05)]"
           >
             <IconChartPie size={20} stroke={1.5} />
             Cartera en PDF
           </button>
           <button
             onClick={() => exportarCartera("excel")}
-            className="w-full bg-white border-thin text-emerald-700 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-surface-1 transition shadow-[0_1px_3px_rgba(38,33,92,0.05)]"
+            className="w-full bg-surface border-thin text-al-dia font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-surface-1 transition shadow-[0_1px_3px_rgba(38,33,92,0.05)]"
           >
             <IconFileSpreadsheet size={20} stroke={1.5} />
             Cartera en Excel

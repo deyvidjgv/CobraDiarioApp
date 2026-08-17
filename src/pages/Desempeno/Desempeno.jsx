@@ -10,8 +10,8 @@ import { formatearMonto, round2 } from "../../logic/formato";
 import { IconChartBar } from "@tabler/icons-react";
 
 /**
- * Rendimiento por cobradiario (Plan Maestro, secciÃ³n 14).
- * FÃ³rmula base: efectividad = (cobrado / esperado) Ã— 100
+ * Rendimiento por cobradiario (Plan Maestro, sección 14).
+ * Fórmula base: efectividad = (cobrado / esperado) × 100
  */
 export default function Desempeno() {
   const { cobradiarios, loading: usersLoading } = useCobradiarios();
@@ -30,7 +30,7 @@ export default function Desempeno() {
       const misLoans = loans.filter((l) => l.cobradiarioId === uid);
       const activos = misLoans.filter((l) => l.estado === "activo");
 
-      // Valor esperado hoy: una cuota por crÃ©dito activo
+      // Valor esperado hoy: una cuota por crédito activo
       const esperado = round2(
         activos.reduce((acc, l) => acc + Math.min(l.cuota ?? 0, l.saldoPendiente ?? l.cuota ?? 0), 0)
       );
@@ -68,16 +68,16 @@ export default function Desempeno() {
 
   return (
     <div className="pb-24">
-      <Header title="DesempeÃ±o" />
+      <Header title="Desempeño" />
 
       <div className="p-4 space-y-4">
         <p className="text-xs text-primary-light/70">
-          Efectividad de hoy = (cobrado / esperado) Ã— 100. El valor esperado es una cuota por
-          crÃ©dito activo.
+          Efectividad de hoy = (cobrado / esperado) × 100. El valor esperado es una cuota por
+          crédito activo.
         </p>
 
         {loading ? (
-          <p className="text-sm text-primary-light/70 py-10 text-center">Cargando desempeÃ±o...</p>
+          <p className="text-sm text-primary-light/70 py-10 text-center">Cargando desempeño...</p>
         ) : filas.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
             <IconChartBar size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
@@ -86,16 +86,16 @@ export default function Desempeno() {
         ) : (
           <div className="space-y-3">
             {filas.map((f) => (
-              <div key={f.uid} className="bg-white rounded-xl border border-[#E3DFD8] p-4 space-y-3">
+              <div key={f.uid} className="bg-surface rounded-xl border border-line p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-semibold text-primary">{f.nombre}</p>
                   {f.efectividad !== null ? (
                     <span
                       className={`text-xs font-semibold px-2 py-1 rounded-full ${
                         f.efectividad >= 80
-                          ? "bg-emerald-50 text-al-dia"
+                          ? "bg-al-dia/10 text-al-dia"
                           : f.efectividad >= 50
-                          ? "bg-amber-50 text-gold"
+                          ? "bg-gold/10 text-gold"
                           : "bg-mora/10 text-mora"
                       }`}
                     >
@@ -114,7 +114,7 @@ export default function Desempeno() {
                     <span className="text-primary font-medium">{f.clientes}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-primary-light/70">CrÃ©ditos activos</span>
+                    <span className="text-primary-light/70">Créditos activos</span>
                     <span className="text-primary font-medium">{f.creditosActivos}</span>
                   </div>
                   <div className="flex justify-between">
@@ -126,13 +126,13 @@ export default function Desempeno() {
                     <span className="text-al-dia font-medium">${formatearMonto(f.cobrado)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-primary-light/70">CrÃ©ditos nuevos hoy</span>
+                    <span className="text-primary-light/70">Créditos nuevos hoy</span>
                     <span className="text-primary font-medium">{f.creditosNuevos}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-primary-light/70">En mora</span>
                     <span className={f.creditosEnMora > 0 ? "text-mora font-medium" : "text-primary font-medium"}>
-                      {f.creditosEnMora} Â· ${formatearMonto(f.moraTotal)}
+                      {f.creditosEnMora} · ${formatearMonto(f.moraTotal)}
                     </span>
                   </div>
                 </div>

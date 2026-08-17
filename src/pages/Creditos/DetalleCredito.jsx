@@ -10,7 +10,7 @@ import { formatearMonto } from "../../logic/formato";
 import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
 import { verificarPassword } from "../../firebase/auth";
 import { useLoanActions } from "../../hooks/useLoanActions";
-import { IconAlertTriangle, IconCheck, IconTrash, IconBan } from "@tabler/icons-react";
+import { IconAlertTriangle, IconCheck, IconTrash, IconBan, IconCash } from "@tabler/icons-react";
 
 export default function DetalleCredito() {
   const { loanId } = useParams();
@@ -29,7 +29,7 @@ export default function DetalleCredito() {
   useEffect(() => {
     if (!orgId || !loanId) return;
 
-    // Cargar crÃ©dito
+    // Cargar crédito
     getDocument(orgId, "loans", loanId).then((doc) => {
       setLoan(doc);
       if (doc?.clientId) {
@@ -38,7 +38,7 @@ export default function DetalleCredito() {
       setLoading(false);
     });
 
-    // Suscribirse a pagos de este crÃ©dito. El cobradiario filtra por dueÃ±o:
+    // Suscribirse a pagos de este crédito. El cobradiario filtra por dueño:
     // "las reglas no son filtros", la query debe pedir solo lo suyo.
     const unsub = subscribeToCollection(
       orgId,
@@ -60,7 +60,7 @@ export default function DetalleCredito() {
   if (loading) {
     return (
       <>
-        <Header title="Detalle del crÃ©dito" showBack />
+        <Header title="Detalle del crédito" showBack />
         <p className="p-6 text-sm text-primary-light/70">Cargando...</p>
       </>
     );
@@ -69,8 +69,8 @@ export default function DetalleCredito() {
   if (!loan) {
     return (
       <>
-        <Header title="Detalle del crÃ©dito" showBack />
-        <p className="p-6 text-sm text-mora/80">CrÃ©dito no encontrado</p>
+        <Header title="Detalle del crédito" showBack />
+        <p className="p-6 text-sm text-mora/80">Crédito no encontrado</p>
       </>
     );
   }
@@ -81,7 +81,7 @@ export default function DetalleCredito() {
   const hasPayments = payments.length > 0;
 
   async function handleAnular() {
-    if (!confirm("Â¿Anular este crÃ©dito? El crÃ©dito queda inactivo pero TODO su historial de pagos y movimientos se conserva.")) return;
+    if (!confirm("¿Anular este crédito? El crédito queda inactivo pero TODO su historial de pagos y movimientos se conserva.")) return;
     try {
       await anularLoan(loanId);
       navigate(client?.id ? `/clientes/${client.id}` : "/clientes", { replace: true });
@@ -100,9 +100,9 @@ export default function DetalleCredito() {
       navigate(client?.id ? `/clientes/${client.id}` : "/clientes", { replace: true });
     } catch (err) {
       if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setPasswordError("ContraseÃ±a incorrecta. IntÃ©ntalo de nuevo.");
+        setPasswordError("Contraseña incorrecta. Inténtalo de nuevo.");
       } else {
-        setPasswordError(err.message || "Error al verificar la contraseÃ±a");
+        setPasswordError(err.message || "Error al verificar la contraseña");
       }
     } finally {
       setProcessing(false);
@@ -112,7 +112,7 @@ export default function DetalleCredito() {
   return (
     <>
       <Header 
-        title="Detalle del crÃ©dito" 
+        title="Detalle del crédito" 
         showBack 
         modalOpen={showConfirm} 
         closeModal={() => {
@@ -123,7 +123,7 @@ export default function DetalleCredito() {
 
       <div className="p-4 space-y-4">
         {/* Cliente */}
-        <div className="bg-white rounded-xl p-4 border-thin flex items-center gap-3">
+        <div className="bg-surface rounded-xl p-4 border-thin flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-primary-bg text-primary flex items-center justify-center font-medium">
             {client?.nombre?.charAt(0) || "?"}
           </div>
@@ -135,14 +135,14 @@ export default function DetalleCredito() {
         </div>
 
         {/* Resumen */}
-        <div className="bg-white rounded-xl p-4 border-thin space-y-3">
+        <div className="bg-surface rounded-xl p-4 border-thin space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
               <p className="text-xs text-primary-light/70">Capital</p>
               <p className="font-medium">${formatearMonto(loan.capital)}</p>
             </div>
             <div>
-              <p className="text-xs text-primary-light/70">InterÃ©s</p>
+              <p className="text-xs text-primary-light/70">Interés</p>
               <p className="font-medium">{loan.interesAplicado}%</p>
             </div>
             <div>
@@ -166,11 +166,22 @@ export default function DetalleCredito() {
           {/* Barra de progreso */}
           <div>
             <div className="w-full bg-surface-2 rounded-full h-2.5">
-              <div className="bg-primary-light rounded-full h-2.5 transition-all" style={{ width: `${progreso}%` }} />
+              <div className="bg-gold rounded-full h-2.5 transition-all" style={{ width: `${progreso}%` }} />
             </div>
             <p className="text-xs text-primary-light/70 text-right mt-1">{progreso}% completado</p>
           </div>
         </div>
+
+        {/* Registrar cobro — acceso directo al flujo de cobro desde el detalle */}
+        {!isAdmin && loan.estado === "activo" && (
+          <button
+            onClick={() => navigate(`/cobro/${loanId}`)}
+            className="w-full bg-gold text-surface-1 font-semibold rounded-xl py-3.5 flex items-center justify-center gap-2 hover:opacity-90 transition"
+          >
+            <IconCash size={20} stroke={1.8} />
+            Registrar cobro
+          </button>
+        )}
 
         {/* Mora info */}
         {mora.estado === "mora" && (
@@ -179,7 +190,7 @@ export default function DetalleCredito() {
               <IconAlertTriangle size={18} stroke={2} /> En mora
             </p>
             <p className="text-mora mt-1">
-              DÃ©ficit: ${formatearMonto(mora.deficit)} ({mora.cuotasMora} cuotas atrasadas)
+              Déficit: ${formatearMonto(mora.deficit)} ({mora.cuotasMora} cuotas atrasadas)
             </p>
           </div>
         )}
@@ -188,11 +199,11 @@ export default function DetalleCredito() {
         <div>
           <h3 className="text-sm font-medium text-primary mb-3">Historial de pagos</h3>
           {payments.length === 0 ? (
-            <p className="text-sm text-primary-light/70 text-center py-8">AÃºn no hay pagos registrados</p>
+            <p className="text-sm text-primary-light/70 text-center py-8">Aún no hay pagos registrados</p>
           ) : (
             <div className="space-y-2">
               {payments.map((p) => (
-                <div key={p.id} className="bg-white rounded-xl px-4 py-3 border-thin flex justify-between items-center">
+                <div key={p.id} className="bg-surface rounded-xl px-4 py-3 border-thin flex justify-between items-center">
                   <div>
                     <p className="text-sm font-medium text-primary">${formatearMonto(p.monto)}</p>
                     <p className="text-xs text-primary-light/70">
@@ -213,22 +224,22 @@ export default function DetalleCredito() {
           )}
         </div>
         
-        {/* Zona Peligrosa â€” solo visible para Admin (inmutabilidad financiera) */}
+        {/* Zona Peligrosa — solo visible para Admin (inmutabilidad financiera) */}
         {isAdmin && loan.estado === "activo" && (
         <div className="pt-6 space-y-2">
           <button
             onClick={handleAnular}
-            className="w-full bg-amber-50 border border-amber-200 text-amber-700 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-amber-100 transition"
+            className="w-full bg-gold/10 border border-gold/30 text-gold font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-gold/20 transition"
           >
             <IconBan size={18} stroke={1.5} />
-            Anular crÃ©dito (conserva historial)
+            Anular crédito (conserva historial)
           </button>
           <button
             onClick={() => setShowConfirm(true)}
             className="w-full bg-mora/10 border border-mora/15 text-mora font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-mora/15 transition"
           >
             <IconTrash size={18} stroke={1.5} />
-            Eliminar crÃ©dito y sus movimientos
+            Eliminar crédito y sus movimientos
           </button>
         </div>
         )}
@@ -236,9 +247,9 @@ export default function DetalleCredito() {
 
       <ConfirmarPasswordModal
         isOpen={showConfirm}
-        title="Eliminar CrÃ©dito"
-        description="Â¿EstÃ¡s seguro de que deseas eliminar permanentemente este crÃ©dito? Esta acciÃ³n eliminarÃ¡ el crÃ©dito y borrarÃ¡ absolutamente todos sus movimientos del historial de la caja (prÃ©stamo inicial, pagos, seguros y recargos)."
-        warning="âš  Esta acciÃ³n altera el flujo de caja histÃ³rico y no se puede deshacer."
+        title="Eliminar Crédito"
+        description="¿Estás seguro de que deseas eliminar permanentemente este crédito? Esta acción eliminará el crédito y borrará absolutamente todos sus movimientos del historial de la caja (préstamo inicial, pagos, seguros y recargos)."
+        warning="⚠ Esta acción altera el flujo de caja histórico y no se puede deshacer."
         onConfirm={handleAction}
         onCancel={() => {
           setShowConfirm(false);
@@ -246,7 +257,7 @@ export default function DetalleCredito() {
         }}
         loading={processing}
         error={passwordError}
-        confirmText="Confirmar eliminaciÃ³n"
+        confirmText="Confirmar eliminación"
         confirmIcon={<IconTrash size={16} stroke={1.5} />}
       />
     </>

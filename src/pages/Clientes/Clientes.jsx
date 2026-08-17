@@ -16,7 +16,7 @@ export default function Clientes() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("todos");
 
-  // Calcular el estado de mora de cada cliente basado en sus crÃ©ditos activos
+  // Calcular el estado de mora de cada cliente basado en sus créditos activos
   const clientsWithStatus = useMemo(() => {
     return clients.map((client) => {
       const clientLoans = loans.filter((l) => l.clientId === client.id);
@@ -56,7 +56,7 @@ export default function Clientes() {
   const filters = [
     { key: "todos", label: "Todos" },
     { key: "mora", label: "En mora" },
-    { key: "al_dia", label: "Al dÃ­a" },
+    { key: "al_dia", label: "Al día" },
   ];
 
   return (
@@ -71,10 +71,10 @@ export default function Clientes() {
           </svg>
           <input
             type="text"
-            placeholder="Buscar por nombre o telÃ©fono..."
+            placeholder="Buscar por nombre o teléfono..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#E3DFD8] text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            className="w-full pl-10 pr-4 py-3 rounded-xl bg-surface border border-line text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           />
         </div>
 
@@ -86,8 +86,8 @@ export default function Clientes() {
               onClick={() => setFilter(f.key)}
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition ${
                 filter === f.key
-                  ? "bg-primary text-white"
-                  : "bg-white text-primary-light/75 border border-[#E3DFD8] hover:border-primary/20"
+                  ? "bg-gold text-surface-1"
+                  : "bg-surface text-primary-light/75 border border-line hover:border-primary/20"
               }`}
             >
               {f.label}
@@ -113,7 +113,7 @@ export default function Clientes() {
                 name={client.nombre}
                 phone={client.telefono}
                 status={client.status}
-                subtitle={`${client.loanCount} crÃ©dito(s) Â· ${client.direccion || "Sin direcciÃ³n"}`}
+                subtitle={`${client.loanCount} crédito(s) · ${client.direccion || "Sin dirección"}`}
                 ubicacion={client.ubicacion}
                 onClick={() => navigate(`/clientes/${client.id}`)}
               />
@@ -122,11 +122,11 @@ export default function Clientes() {
         )}
       </div>
 
-      {/* FAB â€” solo cobradiario: el Admin consulta pero no registra clientes */}
+      {/* FAB — solo cobradiario: el Admin consulta pero no registra clientes */}
       {!isAdmin && (
         <button
           onClick={() => navigate("/clientes/nuevo")}
-          className="fixed bottom-8 right-4 w-14 h-14 bg-primary-light text-white rounded-full flex items-center justify-center hover:scale-105 transition z-30"
+          className="fixed bottom-8 right-4 w-14 h-14 bg-gold text-surface-1 rounded-full flex items-center justify-center hover:scale-105 transition z-30"
           aria-label="Nuevo cliente"
         >
           <IconPlus size={28} stroke={2} />

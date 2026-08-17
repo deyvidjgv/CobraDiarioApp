@@ -8,19 +8,38 @@ import {
   IconDotsVertical,
 } from "@tabler/icons-react";
 import { useAuth } from "../../context/AuthContext";
+import { useRutaHoy } from "../../hooks/useRutaHoy";
 import { cerrarSesion } from "../../firebase/auth";
 
 /**
  * Barra inferior de móvil: cinco destinos fijos y todo lo administrativo
  * dentro de "Más". Sustituye al menú ☰ como navegación principal en
- * teléfono; el SideNav sigue siendo la navegación de escritorio (md+).
+ * teléfono; el SideNav sigue siendo la navegación de escritorio (lg+).
+ * "Ruta" va al centro: es la pantalla que más se toca durante el día.
  */
 const tabs = [
   { to: "/", label: "Inicio", Icon: IconHome, end: true },
-  { to: "/ruta", label: "Ruta", Icon: IconMapPin, end: false },
   { to: "/clientes", label: "Clientes", Icon: IconUsers, end: false },
+  { to: "/ruta", label: "Ruta", Icon: IconMapPin, end: false, badge: true },
   { to: "/caja", label: "Caja", Icon: IconCash, end: false },
 ];
+
+/**
+ * Contador de pendientes de hoy sobre el ícono de "Ruta". Aislado en su
+ * propio componente y montado solo para el cobradiario (ver uso más abajo)
+ * para que sus listeners de Firestore (créditos + visitas) no queden
+ * activos también en la sesión del admin, que no tiene ruta personal.
+ */
+function RutaPendientesBadge() {
+  const { pendientesHoy } = useRutaHoy();
+  const count = pendientesHoy.length;
+  if (count === 0) return null;
+  return (
+    <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-mora text-surface-1 text-[9px] font-bold flex items-center justify-center leading-none">
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 const extraCobradiario = [
   { to: "/reportes", label: "Reportes" },
@@ -52,12 +71,12 @@ export default function BottomNav() {
   return (
     <>
       {masOpen && (
-        <div className="md:hidden fixed inset-0 z-50 flex items-end">
-          <div className="absolute inset-0 bg-primary/45" onClick={() => setMasOpen(false)} />
+        <div className="lg:hidden fixed inset-0 z-50 flex items-end">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setMasOpen(false)} />
           <div className="relative w-full bg-surface-1 rounded-t-3xl px-5 pt-3.5 pb-6 pb-safe flex flex-col gap-3">
             <div className="w-9 h-1 rounded-full bg-primary/15 mx-auto" />
             <span className="eyebrow">M\u00e1s</span>
-            <div className="flex flex-col divide-y divide-line rounded-2xl bg-white border border-line overflow-hidden">
+            <div className="flex flex-col divide-y divide-line rounded-2xl bg-surface border border-line overflow-hidden">
               {extras.map((e) => (
                 <button
                   key={e.to + e.label}
@@ -85,17 +104,20 @@ export default function BottomNav() {
 
       <nav
         aria-label="Navegaci\u00f3n principal"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 bg-surface-1/95 backdrop-blur border-t border-line pt-1.5 pb-safe"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 bg-surface-1/95 backdrop-blur border-t border-line pt-1.5 pb-safe"
       >
-        {tabs.map(({ to, label, Icon, end }) => (
+        {tabs.map(({ to, label, Icon, end, badge }) => (
           <NavLink key={to} to={to} end={end} className="min-h-[52px] flex flex-col items-center justify-center gap-1">
             {({ isActive }) => (
               <>
-                <Icon
-                  size={21}
-                  stroke={isActive ? 2 : 1.5}
-                  className={isActive ? "text-primary" : "text-primary/45"}
-                />
+                <span className="relative">
+                  <Icon
+                    size={21}
+                    stroke={isActive ? 2 : 1.5}
+                    className={isActive ? "text-primary" : "text-primary/45"}
+                  />
+                  {badge && !isAdmin && <RutaPendientesBadge />}
+                </span>
                 <span
                   className={
                     "text-[11px] " +

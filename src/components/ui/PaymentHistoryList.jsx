@@ -7,7 +7,7 @@ import { IconCheck, IconClock } from "@tabler/icons-react";
 export default function PaymentHistoryList({ payments = [], loading = false }) {
   if (loading) {
     return (
-      <div className="bg-white rounded-xl p-4 border-thin">
+      <div className="bg-surface rounded-xl p-4 border-thin">
         <p className="text-sm text-primary-light/70">Cargando historial...</p>
       </div>
     );
@@ -15,14 +15,14 @@ export default function PaymentHistoryList({ payments = [], loading = false }) {
 
   if (!payments || payments.length === 0) {
     return (
-      <div className="bg-white rounded-xl p-4 border-thin text-center">
-        <p className="text-sm text-primary-light/70">Sin registros de cobro aÃºn</p>
+      <div className="bg-surface rounded-xl p-4 border-thin text-center">
+        <p className="text-sm text-primary-light/70">Sin registros de cobro aún</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl p-4 border-thin space-y-3">
+    <div className="bg-surface rounded-xl p-4 border-thin space-y-3">
       <h3 className="text-sm font-medium text-primary">Historial de cobros</h3>
       <div className="space-y-2 max-h-60 overflow-y-auto">
         {payments.map((payment) => {
@@ -39,7 +39,7 @@ export default function PaymentHistoryList({ payments = [], loading = false }) {
               <div className="flex items-start gap-3 flex-1">
                 <div className="mt-1">
                   {estado === "Completado" ? (
-                    <IconCheck size={18} className="text-emerald-500" stroke={2.5} />
+                    <IconCheck size={18} className="text-al-dia" stroke={2.5} />
                   ) : (
                     <IconClock size={18} className="text-primary-light" stroke={2.5} />
                   )}
@@ -48,7 +48,7 @@ export default function PaymentHistoryList({ payments = [], loading = false }) {
                   <p className="text-xs font-medium text-primary">
                     {tipoPago}
                     {payment.cobradorNombre && (
-                      <span className="text-primary-light/70"> â€¢ {payment.cobradorNombre}</span>
+                      <span className="text-primary-light/70"> • {payment.cobradorNombre}</span>
                     )}
                   </p>
                   <p className="text-xs text-primary-light/70 mt-0.5">{fechaFormato}</p>

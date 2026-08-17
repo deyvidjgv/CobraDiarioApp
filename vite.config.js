@@ -8,33 +8,30 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: [
-        'favicon.ico',
-        'icons/icon-192.png',
-        'icons/icon-512.png',
-        'icons/credi-dev-logo.png',
+        'iconos/icono-16.png',
+        'iconos/icono-32.png',
+        'iconos/icono-180.png',
+        'iconos/logo.png',
       ],
       manifest: {
         name: 'CrediDev',
         short_name: 'CrediDev',
         description: 'Gestión moderna de clientes, créditos y cobros',
-        theme_color: '#111111',
-        background_color: '#F5F5F4',
+        theme_color: '#0E0E0D',
+        background_color: '#0E0E0D',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
         icons: [
-          { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
-          { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'iconos/icono-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'iconos/icono-512.png', sizes: '512x512', type: 'image/png' },
+          // Icono principal: Android lo recorta a la forma del launcher, por eso
+          // va con fondo sólido y el rombo dentro de la zona segura.
           {
-            src: 'icons/icon-512.png',
+            src: 'iconos/icono-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'maskable',
-          },
-          {
-            src: 'icons/credi-dev-logo.png',
-            sizes: '1024x1024',
-            type: 'image/png',
           },
         ],
       },

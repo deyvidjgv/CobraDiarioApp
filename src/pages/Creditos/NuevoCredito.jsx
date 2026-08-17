@@ -92,7 +92,7 @@ export default function NuevoCredito() {
           <button
             type="button"
             onClick={handleCaptureLocation}
-            className="flex items-center gap-2 bg-primary-light text-white rounded-xl py-2 px-4 hover:bg-primary transition"
+            className="flex items-center gap-2 bg-gold text-surface-1 rounded-xl py-2 px-4 hover:bg-gold/90 transition"
           >
             <IconCurrentLocation size={18} stroke={2} />
             Capturar ubicación del cliente

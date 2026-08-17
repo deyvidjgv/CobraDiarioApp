@@ -15,8 +15,8 @@ export default function FrequencySelector({ value, onChange }) {
           onClick={() => onChange(opt.value)}
           className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium border transition ${
             value === opt.value
-              ? "border-primary-light bg-primary-bg text-primary-light"
-              : "border-[#E3DFD8] bg-white text-primary-light hover:border-primary/20"
+              ? "border-gold/40 bg-gold/10 text-primary"
+              : "border-line bg-surface text-primary-light hover:border-primary/20"
           }`}
         >
           <span>{opt.label}</span>

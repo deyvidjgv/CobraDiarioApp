@@ -60,7 +60,7 @@ export default function Configuracion() {
   const { cobradiarios } = useCobradiarios();
   const { deleteLoan } = useLoanActions();
 
-  // Cambio de contraseÃ±a (Seguridad)
+  // Cambio de contraseña (Seguridad)
   const [pwd, setPwd] = useState({ actual: "", nueva: "", confirmar: "" });
   const [showPwd, setShowPwd] = useState(false);
   const [cambiandoPwd, setCambiandoPwd] = useState(false);
@@ -91,8 +91,8 @@ export default function Configuracion() {
     }
   }
 
-  // Estado de instalaciÃ³n de la PWA (store global, el evento se captura
-  // desde el arranque de la app â€” ver pwa/installPrompt.js)
+  // Estado de instalación de la PWA (store global, el evento se captura
+  // desde el arranque de la app — ver pwa/installPrompt.js)
   useEffect(() => {
     const unsub = suscribirInstalacion((estado) => setInstallState(estado));
     return unsub;
@@ -121,7 +121,7 @@ export default function Configuracion() {
   }
 
   async function handleLogout() {
-    if (!confirm("Â¿Cerrar sesiÃ³n?")) return;
+    if (!confirm("¿Cerrar sesión?")) return;
     await cerrarSesion();
     navigate("/login", { replace: true });
   }
@@ -130,19 +130,19 @@ export default function Configuracion() {
     e.preventDefault();
     setPwdMsg(null);
     if (pwd.nueva !== pwd.confirmar) {
-      setPwdMsg({ tipo: "error", texto: "La confirmaciÃ³n no coincide con la nueva contraseÃ±a." });
+      setPwdMsg({ tipo: "error", texto: "La confirmación no coincide con la nueva contraseña." });
       return;
     }
     setCambiandoPwd(true);
     try {
       await cambiarPassword(pwd.actual, pwd.nueva);
       setPwd({ actual: "", nueva: "", confirmar: "" });
-      setPwdMsg({ tipo: "ok", texto: "ContraseÃ±a actualizada correctamente." });
+      setPwdMsg({ tipo: "ok", texto: "Contraseña actualizada correctamente." });
     } catch (err) {
       if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setPwdMsg({ tipo: "error", texto: "La contraseÃ±a actual no es correcta." });
+        setPwdMsg({ tipo: "error", texto: "La contraseña actual no es correcta." });
       } else {
-        setPwdMsg({ tipo: "error", texto: err.message || "No se pudo cambiar la contraseÃ±a." });
+        setPwdMsg({ tipo: "error", texto: err.message || "No se pudo cambiar la contraseña." });
       }
     } finally {
       setCambiandoPwd(false);
@@ -156,9 +156,9 @@ export default function Configuracion() {
       await verificarYDelete(password);
     } catch (err) {
       if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setPasswordError("ContraseÃ±a incorrecta. IntÃ©ntalo de nuevo.");
+        setPasswordError("Contraseña incorrecta. Inténtalo de nuevo.");
       } else {
-        setPasswordError(err.message || "Error al verificar la contraseÃ±a");
+        setPasswordError(err.message || "Error al verificar la contraseña");
       }
     } finally {
       setProcessingDelete(false);
@@ -170,17 +170,17 @@ export default function Configuracion() {
     await deleteLoan(selectedLoanId);
     setShowDeleteCredit(false);
     setSelectedLoanId("");
-    alert("CrÃ©dito eliminado correctamente.");
+    alert("Crédito eliminado correctamente.");
   }
 
   const inputCls =
-    "mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition disabled:bg-surface-1 disabled:text-primary-light/70";
+    "mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition disabled:bg-surface-1 disabled:text-primary-light/70";
 
   if (loading) {
     return (
       <div className="pb-24">
         <Header title="Ajustes" loading={true} />
-        <p className="p-6 text-sm text-primary-light/70">Cargando configuraciÃ³n...</p>
+        <p className="p-6 text-sm text-primary-light/70">Cargando configuración...</p>
       </div>
     );
   }
@@ -190,7 +190,7 @@ export default function Configuracion() {
       <Header title="Ajustes" />
 
       <div className="p-4 space-y-5 max-w-2xl">
-        {/* â•â•â• 0. MI NEGOCIO â•â•â• */}
+        {/* ═══ 0. MI NEGOCIO ═══ */}
         <section className="card p-4 space-y-3">
           <h3 className="section-title">
             <IconBuildingStore size={16} stroke={2} className="text-primary" /> Mi negocio
@@ -204,17 +204,17 @@ export default function Configuracion() {
               value={nombreNegocio}
               disabled={!isAdmin}
               onChange={(e) => setNombreNegocio(e.target.value)}
-              placeholder="Ej. PrÃ©stamos DoÃ±a Ana"
-              className="flex-1 rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition disabled:bg-surface-1 disabled:text-primary-light/70"
+              placeholder="Ej. Préstamos Doña Ana"
+              className="flex-1 rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition disabled:bg-surface-1 disabled:text-primary-light/70"
             />
             {isAdmin && (
               <button
                 type="button"
                 onClick={handleGuardarNegocio}
                 disabled={guardandoNegocio}
-                className="rounded-xl bg-primary text-white font-medium px-5 text-sm hover:bg-primary-light transition disabled:opacity-50"
+                className="rounded-xl bg-gold text-surface-1 font-medium px-5 text-sm hover:bg-gold/90 transition disabled:opacity-50"
               >
-                {guardandoNegocio ? "Guardando..." : negocioGuardado ? "âœ“ Guardado" : "Guardar"}
+                {guardandoNegocio ? "Guardando..." : negocioGuardado ? "✓ Guardado" : "Guardar"}
               </button>
             )}
           </div>
@@ -223,10 +223,10 @@ export default function Configuracion() {
           )}
         </section>
 
-        {/* â•â•â• 1. CUENTA Y SESIÃ“N â•â•â• */}
+        {/* ═══ 1. CUENTA Y SESIÓN ═══ */}
         <section className="card p-4 space-y-3">
           <h3 className="section-title">
-            <IconUser size={16} stroke={2} className="text-primary" /> Cuenta y sesiÃ³n
+            <IconUser size={16} stroke={2} className="text-primary" /> Cuenta y sesión
           </h3>
           <div className="flex items-center gap-3 rounded-xl bg-surface-1 p-3">
             <div className="w-10 h-10 rounded-full bg-primary-bg text-primary flex items-center justify-center font-semibold shrink-0">
@@ -235,12 +235,12 @@ export default function Configuracion() {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-primary truncate">{usuario?.email}</p>
               <p className="text-xs text-primary-light/70">
-                {isAdmin ? "Administrador de la organizaciÃ³n" : "Cobrador diario"}
+                {isAdmin ? "Administrador de la organización" : "Cobrador diario"}
               </p>
             </div>
             <span
               className={`text-[11px] font-medium px-2.5 py-1 rounded-full shrink-0 ${
-                isAdmin ? "bg-primary-bg text-primary" : "bg-emerald-50 text-al-dia"
+                isAdmin ? "bg-primary-bg text-primary" : "bg-al-dia/10 text-al-dia"
               }`}
             >
               {isAdmin ? "Admin" : "Cobradiario"}
@@ -251,23 +251,23 @@ export default function Configuracion() {
             className="w-full border border-mora/20 bg-mora/10 text-mora font-medium rounded-xl py-3 hover:bg-mora/15 transition flex items-center justify-center gap-2"
           >
             <IconLogout size={18} stroke={1.5} />
-            Cerrar sesiÃ³n
+            Cerrar sesión
           </button>
         </section>
 
-        {/* â•â•â• 2. SEGURIDAD â•â•â• */}
+        {/* ═══ 2. SEGURIDAD ═══ */}
         <section className="card p-4 space-y-3">
           <h3 className="section-title">
             <IconShieldLock size={16} stroke={2} className="text-primary" /> Seguridad
           </h3>
           <p className="text-xs text-primary-light/70">
-            Cambia tu contraseÃ±a de acceso. Necesitas la actual para confirmar tu identidad.
+            Cambia tu contraseña de acceso. Necesitas la actual para confirmar tu identidad.
           </p>
           <form onSubmit={handleCambiarPassword} className="space-y-2.5">
             {[
-              { key: "actual", label: "ContraseÃ±a actual", ph: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" },
-              { key: "nueva", label: "Nueva contraseÃ±a", ph: "MÃ­nimo 6 caracteres" },
-              { key: "confirmar", label: "Confirmar nueva contraseÃ±a", ph: "Repite la nueva contraseÃ±a" },
+              { key: "actual", label: "Contraseña actual", ph: "••••••••" },
+              { key: "nueva", label: "Nueva contraseña", ph: "Mínimo 6 caracteres" },
+              { key: "confirmar", label: "Confirmar nueva contraseña", ph: "Repite la nueva contraseña" },
             ].map(({ key, label, ph }) => (
               <label key={key} className="block">
                 <span className="text-xs font-medium text-primary-light">{label}</span>
@@ -286,7 +286,7 @@ export default function Configuracion() {
                       type="button"
                       onClick={() => setShowPwd((v) => !v)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-primary-light/70 hover:text-primary-light"
-                      aria-label={showPwd ? "Ocultar contraseÃ±as" : "Mostrar contraseÃ±as"}
+                      aria-label={showPwd ? "Ocultar contraseñas" : "Mostrar contraseñas"}
                     >
                       {showPwd ? <IconEyeOff size={18} stroke={1.5} /> : <IconEye size={18} stroke={1.5} />}
                     </button>
@@ -302,27 +302,27 @@ export default function Configuracion() {
             <button
               type="submit"
               disabled={cambiandoPwd}
-              className="w-full bg-primary text-white font-medium rounded-xl py-3 hover:bg-primary-light transition disabled:opacity-50"
+              className="w-full bg-gold text-surface-1 font-medium rounded-xl py-3 hover:bg-gold/90 transition disabled:opacity-50"
             >
-              {cambiandoPwd ? "Actualizando..." : "Actualizar contraseÃ±a"}
+              {cambiandoPwd ? "Actualizando..." : "Actualizar contraseña"}
             </button>
           </form>
         </section>
 
-        {/* â•â•â• 3. REGLAS DE NEGOCIO â•â•â• */}
+        {/* ═══ 3. REGLAS DE NEGOCIO ═══ */}
         <section className="card p-4">
           <h3 className="section-title mb-1">
             <IconSettings2 size={16} stroke={2} className="text-primary" /> Reglas de negocio
           </h3>
           {!isAdmin && (
-            <p className="text-xs text-gold bg-amber-50 border border-amber-100 rounded-lg p-2 mb-3">
+            <p className="text-xs text-gold bg-gold/10 border border-gold/25 rounded-lg p-2 mb-3">
               Solo el administrador puede modificar estas reglas.
             </p>
           )}
           <form onSubmit={handleSave} className="space-y-5">
-            {/* InterÃ©s */}
+            {/* Interés */}
             <label className="block">
-              <span className="text-sm font-medium text-primary">Porcentaje de cobro (interÃ©s %)</span>
+              <span className="text-sm font-medium text-primary">Porcentaje de cobro (interés %)</span>
               <input
                 type="number"
                 min="0"
@@ -334,13 +334,13 @@ export default function Configuracion() {
                 className={inputCls}
               />
               <p className="text-xs text-primary-light/70 mt-1">
-                Valor por defecto al crear crÃ©ditos nuevos. No afecta crÃ©ditos existentes.
+                Valor por defecto al crear créditos nuevos. No afecta créditos existentes.
               </p>
             </label>
 
             {/* Seguro */}
-            <div className="pt-4 border-t border-[#E3DFD8] space-y-3">
-              <h4 className="text-sm font-semibold text-primary">Seguro / ComisiÃ³n (cobro inicial)</h4>
+            <div className="pt-4 border-t border-line space-y-3">
+              <h4 className="text-sm font-semibold text-primary">Seguro / Comisión (cobro inicial)</h4>
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -359,7 +359,7 @@ export default function Configuracion() {
                       value={form.seguroTipo}
                       disabled={!isAdmin}
                       onChange={(e) => setForm({ ...form, seguroTipo: e.target.value })}
-                      className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-3 py-2 text-sm bg-white disabled:bg-surface-1"
+                      className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm bg-surface disabled:bg-surface-1"
                     >
                       <option value="porcentaje">Porcentaje (%)</option>
                       <option value="fijo">Monto fijo ($)</option>
@@ -375,7 +375,7 @@ export default function Configuracion() {
                       value={form.seguroValor}
                       onChange={(e) => setForm({ ...form, seguroValor: Number(e.target.value) })}
                       onKeyDown={bloquearEntradaSoloNumerosConDecimal}
-                      className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-3 py-2 text-sm disabled:bg-surface-1"
+                      className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm disabled:bg-surface-1"
                     />
                   </label>
                 </div>
@@ -383,8 +383,8 @@ export default function Configuracion() {
             </div>
 
             {/* Vencimiento */}
-            <div className="pt-4 border-t border-[#E3DFD8] space-y-3">
-              <h4 className="text-sm font-semibold text-primary">InterÃ©s por vencimiento / mora</h4>
+            <div className="pt-4 border-t border-line space-y-3">
+              <h4 className="text-sm font-semibold text-primary">Interés por vencimiento / mora</h4>
               <label className="flex items-center gap-2">
                 <input
                   type="checkbox"
@@ -403,10 +403,10 @@ export default function Configuracion() {
                       value={form.vencimientoModoInicial}
                       disabled={!isAdmin}
                       onChange={(e) => setForm({ ...form, vencimientoModoInicial: e.target.value })}
-                      className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-3 py-2 text-sm bg-white disabled:bg-surface-1"
+                      className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm bg-surface disabled:bg-surface-1"
                     >
                       <option value="al_vencer">Al finalizar todo el plazo pactado</option>
-                      <option value="mensual">A los 30 dÃ­as de iniciar el crÃ©dito</option>
+                      <option value="mensual">A los 30 días de iniciar el crédito</option>
                     </select>
                   </label>
                   <label className="block">
@@ -419,7 +419,7 @@ export default function Configuracion() {
                       value={form.vencimientoPorcentaje}
                       onChange={(e) => setForm({ ...form, vencimientoPorcentaje: Number(e.target.value) })}
                       onKeyDown={bloquearEntradaSoloNumerosConDecimal}
-                      className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-3 py-2 text-sm disabled:bg-surface-1"
+                      className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm disabled:bg-surface-1"
                     />
                   </label>
                 </div>
@@ -430,35 +430,35 @@ export default function Configuracion() {
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full bg-primary hover:bg-primary-light text-white font-medium rounded-xl py-3 transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-xl py-3 transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {saving ? "Guardando..." : saved ? (<><IconCheck size={18} stroke={2} /> Guardado</>) : "Guardar configuraciÃ³n"}
+                {saving ? "Guardando..." : saved ? (<><IconCheck size={18} stroke={2} /> Guardado</>) : "Guardar configuración"}
               </button>
             )}
           </form>
         </section>
 
-        {/* â•â•â• 4. APLICACIÃ“N â•â•â• */}
+        {/* ═══ 4. APLICACIÓN ═══ */}
         <section className="card p-4 space-y-3">
           <h3 className="section-title">
-            <IconDeviceMobile size={16} stroke={2} className="text-primary" /> AplicaciÃ³n
+            <IconDeviceMobile size={16} stroke={2} className="text-primary" /> Aplicación
           </h3>
 
           {installState.instalada ? (
-            <div className="flex items-center gap-2 rounded-xl bg-emerald-50 text-emerald-700 px-3 py-2.5 text-sm">
+            <div className="flex items-center gap-2 rounded-xl bg-al-dia/10 text-al-dia px-3 py-2.5 text-sm">
               <IconCheck size={18} stroke={2} />
-              La app estÃ¡ instalada en este dispositivo.
+              La app está instalada en este dispositivo.
             </div>
           ) : installState.puedeInstalar ? (
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs text-primary-light/75 flex-1">
-                Instala la app para usarla como aplicaciÃ³n nativa: icono en el inicio, pantalla
+                Instala la app para usarla como aplicación nativa: icono en el inicio, pantalla
                 completa y apertura sin navegador.
               </p>
               <button
                 type="button"
                 onClick={handleInstallApp}
-                className="rounded-xl bg-primary text-white px-4 py-2.5 text-sm font-medium hover:bg-primary-light transition shrink-0"
+                className="rounded-xl bg-gold text-surface-1 px-4 py-2.5 text-sm font-medium hover:bg-gold/90 transition shrink-0"
               >
                 Instalar app
               </button>
@@ -466,34 +466,34 @@ export default function Configuracion() {
           ) : esIOS() ? (
             <div className="rounded-xl bg-surface-1 p-3 space-y-2">
               <p className="text-xs text-primary-light font-medium">
-                En iPhone/iPad la instalaciÃ³n es manual:
+                En iPhone/iPad la instalación es manual:
               </p>
               <ol className="text-xs text-primary-light/75 list-decimal list-inside space-y-1">
                 <li>Abre este sitio en el navegador Safari</li>
-                <li>Toca el botÃ³n <strong>Compartir</strong> (cuadro con flecha arriba)</li>
+                <li>Toca el botón <strong>Compartir</strong> (cuadro con flecha arriba)</li>
                 <li>Elige <strong>"Agregar a pantalla de inicio"</strong></li>
                 <li>Confirma con <strong>"Agregar"</strong></li>
               </ol>
             </div>
           ) : (
             <p className="text-xs text-primary-light/70">
-              La instalaciÃ³n estarÃ¡ disponible en navegadores compatibles cuando el dispositivo lo
+              La instalación estará disponible en navegadores compatibles cuando el dispositivo lo
               permita (Chrome/Edge en Android, o cualquier navegador de escritorio moderno desde el
-              menÃº del navegador â†’ "Instalar aplicaciÃ³n").
+              menú del navegador → "Instalar aplicación").
             </p>
           )}
         </section>
 
-        {/* â•â•â• 5. ZONA DE PELIGRO (solo Admin) â•â•â• */}
+        {/* ═══ 5. ZONA DE PELIGRO (solo Admin) ═══ */}
         {isAdmin && (
           <section className="rounded-2xl border border-mora/20 bg-mora/10/60 p-4 space-y-3">
             <h3 className="text-sm font-semibold text-mora flex items-center gap-2">
               <IconAlertTriangle size={16} stroke={2} /> Zona de peligro
             </h3>
             <p className="text-xs text-mora">
-              Elimina un crÃ©dito activo y todos sus movimientos. Altera el flujo de caja histÃ³rico,
-              no se puede deshacer y queda registrado en auditorÃ­a. Para solo desactivar un crÃ©dito
-              sin borrar historial, usa "Anular" en su pÃ¡gina de detalle.
+              Elimina un crédito activo y todos sus movimientos. Altera el flujo de caja histórico,
+              no se puede deshacer y queda registrado en auditoría. Para solo desactivar un crédito
+              sin borrar historial, usa "Anular" en su página de detalle.
             </p>
 
             {/* Filtro 1: cobradiario */}
@@ -506,7 +506,7 @@ export default function Configuracion() {
                   setFiltroClient("");
                   setSelectedLoanId("");
                 }}
-                className="mt-1 block w-full rounded-xl border border-mora/20 bg-white px-4 py-2.5 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition"
+                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-red-300 transition"
               >
                 <option value="">Todos los cobradiarios</option>
                 {cobradiarios.map((c) => (
@@ -517,7 +517,7 @@ export default function Configuracion() {
               </select>
             </label>
 
-            {/* Filtro 2: cliente (segÃºn cobradiario) */}
+            {/* Filtro 2: cliente (según cobradiario) */}
             <label className="block">
               <span className="text-xs font-medium text-mora">Cliente</span>
               <select
@@ -526,7 +526,7 @@ export default function Configuracion() {
                   setFiltroClient(e.target.value);
                   setSelectedLoanId("");
                 }}
-                className="mt-1 block w-full rounded-xl border border-mora/20 bg-white px-4 py-2.5 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition"
+                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-red-300 transition"
               >
                 <option value="">Todos los clientes</option>
                 {clients
@@ -539,16 +539,16 @@ export default function Configuracion() {
               </select>
             </label>
 
-            {/* SelecciÃ³n del crÃ©dito (filtrada) */}
+            {/* Selección del crédito (filtrada) */}
             <label className="block">
-              <span className="text-xs font-medium text-mora">CrÃ©dito activo</span>
+              <span className="text-xs font-medium text-mora">Crédito activo</span>
               <select
                 value={selectedLoanId}
                 onChange={(e) => setSelectedLoanId(e.target.value)}
-                className="mt-1 block w-full rounded-xl border border-mora/20 bg-white px-4 py-3 text-sm focus:outline-none focus:border-red-400 focus:ring-1 focus:ring-red-300 transition"
+                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-3 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-red-300 transition"
               >
                 <option value="">
-                  {filtroClient ? "Selecciona un crÃ©dito" : "Filtra por cliente para ver sus crÃ©ditos"}
+                  {filtroClient ? "Selecciona un crédito" : "Filtra por cliente para ver sus créditos"}
                 </option>
                 {loans
                   .filter((l) => !filtroClient || l.clientId === filtroClient)
@@ -556,8 +556,8 @@ export default function Configuracion() {
                     const client = clients.find((c) => c.id === loan.clientId);
                     return (
                       <option key={loan.id} value={loan.id}>
-                        {client?.nombre || "Sin cliente"} â€” {loan.frecuencia} Â· Capital $
-                        {formatearMonto(loan.capital)} Â· Saldo ${formatearMonto(loan.saldoPendiente ?? 0)}
+                        {client?.nombre || "Sin cliente"} — {loan.frecuencia} · Capital $
+                        {formatearMonto(loan.capital)} · Saldo ${formatearMonto(loan.saldoPendiente ?? 0)}
                       </option>
                     );
                   })}
@@ -571,17 +571,17 @@ export default function Configuracion() {
               const client = clients.find((c) => c.id === loan.clientId);
               const cob = cobradiarios.find((c) => c.uid === loan.cobradiarioId);
               return (
-                <div className="rounded-xl bg-white border border-mora/20 p-3 space-y-1.5 text-sm">
+                <div className="rounded-xl bg-surface border border-mora/20 p-3 space-y-1.5 text-sm">
                   <p className="text-xs font-semibold text-mora uppercase tracking-wide">
                     Vas a eliminar:
                   </p>
                   <div className="flex justify-between">
                     <span className="text-primary-light/75">Cliente</span>
-                    <span className="font-medium text-primary">{client?.nombre || "â€”"}</span>
+                    <span className="font-medium text-primary">{client?.nombre || "—"}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-primary-light/75">Cobradiario dueÃ±o</span>
-                    <span className="font-medium text-primary">{cob?.nombre || cob?.email || "â€”"}</span>
+                    <span className="text-primary-light/75">Cobradiario dueño</span>
+                    <span className="font-medium text-primary">{cob?.nombre || cob?.email || "—"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-primary-light/75">Capital / Saldo</span>
@@ -592,7 +592,7 @@ export default function Configuracion() {
                   <div className="flex justify-between">
                     <span className="text-primary-light/75">Cuotas</span>
                     <span className="font-medium text-primary">
-                      {loan.numeroCuotas} Ã— ${formatearMonto(loan.cuota)} ({loan.frecuencia})
+                      {loan.numeroCuotas} × ${formatearMonto(loan.cuota)} ({loan.frecuencia})
                     </span>
                   </div>
                 </div>
@@ -603,9 +603,9 @@ export default function Configuracion() {
               type="button"
               onClick={() => setShowDeleteCredit(true)}
               disabled={!selectedLoanId}
-              className="w-full rounded-xl bg-red-600 text-white text-sm font-semibold py-3 hover:bg-red-700 transition disabled:opacity-50"
+              className="w-full rounded-xl bg-mora text-surface-1 text-sm font-semibold py-3 hover:bg-mora/90 transition disabled:opacity-50"
             >
-              Eliminar crÃ©dito seleccionado
+              Eliminar crédito seleccionado
             </button>
           </section>
         )}
@@ -615,9 +615,9 @@ export default function Configuracion() {
 
       <ConfirmarPasswordModal
         isOpen={showDeleteCredit}
-        title="Eliminar crÃ©dito"
-        description="Verifica tu contraseÃ±a para autorizar la eliminaciÃ³n del crÃ©dito seleccionado."
-        warning="âš  Esta acciÃ³n eliminarÃ¡ el crÃ©dito y todos sus movimientos asociados."
+        title="Eliminar crédito"
+        description="Verifica tu contraseña para autorizar la eliminación del crédito seleccionado."
+        warning="⚠ Esta acción eliminará el crédito y todos sus movimientos asociados."
         onConfirm={handleDeleteCredit}
         onCancel={() => {
           setShowDeleteCredit(false);
@@ -625,7 +625,7 @@ export default function Configuracion() {
         }}
         loading={processingDelete}
         error={passwordError}
-        confirmText="Eliminar crÃ©dito"
+        confirmText="Eliminar crédito"
       />
     </div>
   );

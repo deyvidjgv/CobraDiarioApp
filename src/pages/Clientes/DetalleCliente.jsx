@@ -64,7 +64,7 @@ export default function DetalleCliente() {
   const handleDeleteClient = async (password) => {
     setPasswordError("");
     if (hasActiveLoan) {
-       setPasswordError("El cliente tiene un crÃ©dito activo.");
+       setPasswordError("El cliente tiene un crédito activo.");
        return;
     }
     setDeleting(true);
@@ -74,9 +74,9 @@ export default function DetalleCliente() {
       navigate("/clientes", { replace: true });
     } catch (err) {
       if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setPasswordError("ContraseÃ±a incorrecta. IntÃ©ntalo de nuevo.");
+        setPasswordError("Contraseña incorrecta. Inténtalo de nuevo.");
       } else {
-        setPasswordError(err.message || "Error al verificar la contraseÃ±a");
+        setPasswordError(err.message || "Error al verificar la contraseña");
       }
     } finally {
       setDeleting(false);
@@ -108,7 +108,7 @@ export default function DetalleCliente() {
 
       <div className="p-4 space-y-4 max-w-lg mx-auto">
         {/* Info Card */}
-        <div className="bg-white rounded-2xl p-5 border border-[#E3DFD8] shadow-sm">
+        <div className="bg-surface rounded-2xl p-5 border border-line shadow-sm">
           {!isEditing ? (
             <div className="space-y-4">
               <div className="flex justify-between items-start">
@@ -127,25 +127,25 @@ export default function DetalleCliente() {
                 </button>
               </div>
 
-              <div className="pt-3 border-t border-[#E3DFD8] space-y-3 text-sm">
+              <div className="pt-3 border-t border-line space-y-3 text-sm">
                 <div>
-                  <p className="text-xs text-primary-light/70 mb-0.5">CÃ©dula</p>
-                  <p className="text-primary">{client.cedula || "â€”"}</p>
+                  <p className="text-xs text-primary-light/70 mb-0.5">Cédula</p>
+                  <p className="text-primary">{client.cedula || "—"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-primary-light/70 mb-0.5">DirecciÃ³n</p>
-                  <p className="text-primary">{client.direccion || "â€”"}</p>
+                  <p className="text-xs text-primary-light/70 mb-0.5">Dirección</p>
+                  <p className="text-primary">{client.direccion || "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-primary-light/70 mb-0.5">Barrio</p>
-                  <p className="text-primary">{client.barrio || "â€”"}</p>
+                  <p className="text-primary">{client.barrio || "—"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-primary-light/70 mb-0.5">Referencia</p>
-                  <p className="text-primary">{client.referencia || "â€”"}</p>
+                  <p className="text-primary">{client.referencia || "—"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-primary-light/70 mb-0.5">AutorizaciÃ³n de datos</p>
+                  <p className="text-xs text-primary-light/70 mb-0.5">Autorización de datos</p>
                   <p className="text-primary">
                     {client.consentimientoDatos?.autorizado ? "Autorizado" : "No registrada"}
                   </p>
@@ -155,10 +155,10 @@ export default function DetalleCliente() {
               {client.ubicacion?.lat && client.ubicacion?.lng && (
                 <button
                   onClick={handleMapClick}
-                  className="w-full mt-2 bg-surface-1 border border-[#E3DFD8] text-primary font-medium rounded-xl py-2.5 flex items-center justify-center gap-2 hover:bg-surface-2 transition"
+                  className="w-full mt-2 bg-surface-1 border border-line text-primary font-medium rounded-xl py-2.5 flex items-center justify-center gap-2 hover:bg-surface-2 transition"
                 >
                   <IconMapPin size={18} stroke={1.5} />
-                  CÃ³mo llegar
+                  Cómo llegar
                 </button>
               )}
             </div>
@@ -173,18 +173,18 @@ export default function DetalleCliente() {
           )}
         </div>
 
-        {/* Historial de CrÃ©ditos */}
-        <div className="bg-white rounded-2xl p-5 border border-[#E3DFD8] shadow-sm">
-          <h3 className="text-base font-semibold text-primary mb-4">Historial de CrÃ©ditos</h3>
+        {/* Historial de Créditos */}
+        <div className="bg-surface rounded-2xl p-5 border border-line shadow-sm">
+          <h3 className="text-base font-semibold text-primary mb-4">Historial de Créditos</h3>
           {clientLoans.length === 0 ? (
-            <p className="text-sm text-primary-light/70">Este cliente no tiene crÃ©ditos registrados.</p>
+            <p className="text-sm text-primary-light/70">Este cliente no tiene créditos registrados.</p>
           ) : (
             <div className="space-y-3">
               {clientLoans.map((loan) => (
                 <div
                   key={loan.id}
                   onClick={() => navigate(`/creditos/${loan.id}`)}
-                  className="flex items-center justify-between p-3 rounded-xl border border-[#E3DFD8] hover:bg-surface-1 transition cursor-pointer"
+                  className="flex items-center justify-between p-3 rounded-xl border border-line hover:bg-surface-1 transition cursor-pointer"
                 >
                   <div>
                     <p className="text-sm font-medium text-primary">${formatearMonto(loan.capital)}</p>
@@ -212,7 +212,7 @@ export default function DetalleCliente() {
           </button>
           {hasActiveLoan && (
             <p className="text-xs text-center text-mora mt-2">
-              Este cliente tiene un crÃ©dito activo, no se puede eliminar hasta que se completen o anulen sus crÃ©ditos.
+              Este cliente tiene un crédito activo, no se puede eliminar hasta que se completen o anulen sus créditos.
             </p>
           )}
         </div>
@@ -221,8 +221,8 @@ export default function DetalleCliente() {
       <ConfirmarPasswordModal
         isOpen={showDeleteModal}
         title="Eliminar Cliente"
-        description={`Â¿EstÃ¡s seguro de que deseas eliminar permanentemente a ${client.nombre}?`}
-        warning="âš  Esta acciÃ³n eliminarÃ¡ su registro de cliente. Si tiene crÃ©ditos histÃ³ricos, podrÃ­an quedar huÃ©rfanos."
+        description={`¿Estás seguro de que deseas eliminar permanentemente a ${client.nombre}?`}
+        warning="⚠ Esta acción eliminará su registro de cliente. Si tiene créditos históricos, podrían quedar huérfanos."
         onConfirm={handleDeleteClient}
         onCancel={() => {
           setShowDeleteModal(false);
@@ -230,7 +230,7 @@ export default function DetalleCliente() {
         }}
         loading={deleting}
         error={passwordError}
-        confirmText="Confirmar eliminaciÃ³n"
+        confirmText="Confirmar eliminación"
       />
     </div>
   );
