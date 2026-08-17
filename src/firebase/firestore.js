@@ -94,10 +94,16 @@ export async function getDocument(orgId, sub, docId) {
 export function subscribeToCollection(orgId, sub, constraints, callback) {
   const ref = subCollection(orgId, sub);
   const q = constraints.length ? query(ref, ...constraints) : ref;
-  return onSnapshot(q, (snapshot) => {
-    const docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
-    callback(docs);
-  });
+  return onSnapshot(
+    q,
+    (snapshot) => {
+      const docs = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      callback(docs);
+    },
+    // Un listener negado por reglas no debe quedar como error no capturado
+    // sin contexto: se registra con la colección para poder diagnosticarlo.
+    (err) => console.warn(`[listener:${sub}]`, err.code, err.message)
+  );
 }
 
 // ─── Roles: userIndex + miembros de la organización ────────────

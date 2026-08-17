@@ -15,7 +15,7 @@ import { IconAlertTriangle, IconCheck, IconTrash, IconBan } from "@tabler/icons-
 export default function DetalleCredito() {
   const { loanId } = useParams();
   const navigate = useNavigate();
-  const { orgId, isAdmin } = useAuth();
+  const { orgId, isAdmin, isCobradiario, usuario } = useAuth();
   const { deleteLoan, anularLoan } = useLoanActions();
   const [loan, setLoan] = useState(null);
   const [client, setClient] = useState(null);
@@ -38,11 +38,16 @@ export default function DetalleCredito() {
       setLoading(false);
     });
 
-    // Suscribirse a pagos de este crédito
+    // Suscribirse a pagos de este crédito. El cobradiario filtra por dueño:
+    // "las reglas no son filtros", la query debe pedir solo lo suyo.
     const unsub = subscribeToCollection(
       orgId,
       "movements",
-      [where("referencia", "==", loanId), orderBy("fecha", "desc")],
+      [
+        where("referencia", "==", loanId),
+        ...(isCobradiario ? [where("cobradiarioId", "==", usuario.uid)] : []),
+        orderBy("fecha", "desc"),
+      ],
       (docs) => {
         // Filtrar solo cobros
         const cobros = docs.filter((d) => d.tipo === "cobro");
@@ -50,7 +55,7 @@ export default function DetalleCredito() {
       }
     );
     return unsub;
-  }, [orgId, loanId]);
+  }, [orgId, loanId, isCobradiario, usuario?.uid]);
 
   if (loading) {
     return (

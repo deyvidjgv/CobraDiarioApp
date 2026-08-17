@@ -10,7 +10,7 @@ import { TIPOS_MOVIMIENTO } from "../logic/caja";
  * @param {string} loanId - ID del crédito
  */
 export function usePaymentHistory(loanId) {
-  const { orgId } = useAuth();
+  const { orgId, usuario, isCobradiario } = useAuth();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,11 +20,17 @@ export function usePaymentHistory(loanId) {
       return;
     }
 
-    // Suscribirse a todos los movimientos de este crédito y filtrar cobros
+    // Suscribirse a todos los movimientos de este crédito y filtrar cobros.
+    // "Las reglas no son filtros": la query debe pedir solo lo que el rol
+    // puede leer, o Firestore niega el listener completo.
     const unsub = subscribeToCollection(
       orgId,
       "movements",
-      [where("referencia", "==", loanId), orderBy("fecha", "desc")],
+      [
+        where("referencia", "==", loanId),
+        ...(isCobradiario ? [where("cobradiarioId", "==", usuario.uid)] : []),
+        orderBy("fecha", "desc"),
+      ],
       (docs) => {
         // Filtrar solo cobros en el callback
         const cobros = docs.filter((doc) => doc.tipo === TIPOS_MOVIMIENTO.COBRO);
@@ -34,7 +40,7 @@ export function usePaymentHistory(loanId) {
     );
 
     return unsub;
-  }, [orgId, loanId]);
+  }, [orgId, loanId, isCobradiario, usuario?.uid]);
 
   return { payments, loading };
 }

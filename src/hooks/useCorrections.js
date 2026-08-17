@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { orderBy } from "firebase/firestore";
+import { where, orderBy } from "firebase/firestore";
 import { subscribeToCollection, addDocument, updateDocument } from "../firebase/firestore";
 import { construirMovimiento, TIPOS_MOVIMIENTO } from "../logic/caja";
 import { round2 } from "../logic/formato";
@@ -15,24 +15,29 @@ import { useAuth } from "../context/AuthContext";
  * original intacto y la corrección trazable.
  */
 export function useCorrections() {
-  const { orgId, usuario } = useAuth();
+  const { orgId, usuario, isCobradiario } = useAuth();
   const { registrarEvento } = useAudit();
   const [corrections, setCorrections] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!orgId) return;
+    // "Las reglas no son filtros": el cobradiario solo puede leer sus
+    // propias solicitudes, así que la query debe filtrar por creador.
     const unsub = subscribeToCollection(
       orgId,
       "correctionRequests",
-      [orderBy("createdAt", "desc")],
+      [
+        ...(isCobradiario ? [where("createdBy", "==", usuario.uid)] : []),
+        orderBy("createdAt", "desc"),
+      ],
       (docs) => {
         setCorrections(docs);
         setLoading(false);
       }
     );
     return unsub;
-  }, [orgId]);
+  }, [orgId, isCobradiario, usuario?.uid]);
 
   async function solicitarCorreccion({ movementId, valorOriginal, valorCorrecto, motivo }) {
     const ref = await addDocument(orgId, "correctionRequests", {
