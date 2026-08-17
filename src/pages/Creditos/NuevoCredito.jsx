@@ -19,16 +19,20 @@ export default function NuevoCredito() {
   // Estado React: clientId seleccionado en el formulario (fuente única de verdad)
   const [selectedClientId, setSelectedClientId] = useState("");
 
-  // Prestar es operación de cobradiario (Plan Maestro, sección 5): el Admin
-  // controla el dinero y a los cobradiarios, pero no entrega créditos.
-  if (isAdmin) return <Navigate to="/" replace />;
-
   useEffect(() => {
     if (!orgId) return;
     getSettings(orgId).then((s) => {
       if (s) setSettings(s);
     });
   }, [orgId]);
+
+  // Prestar es operación de cobradiario (Plan Maestro, sección 5): el Admin
+  // controla el dinero y a los cobradiarios, pero no entrega créditos.
+  // IMPORTANTE: este return va después de TODOS los hooks — isAdmin arranca
+  // en false y cambia de forma asíncrona, así que ponerlo antes de un hook
+  // (como estaba) provoca "Rendered fewer hooks than expected" en el
+  // re-render donde el rol resuelve a admin.
+  if (isAdmin) return <Navigate to="/" replace />;
 
   async function handleSubmit(formData) {
     setLoading(true);

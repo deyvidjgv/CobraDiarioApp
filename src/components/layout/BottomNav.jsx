@@ -6,6 +6,7 @@ import {
   IconUsers,
   IconCash,
   IconDotsVertical,
+  IconLayoutDashboard,
 } from "@tabler/icons-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRutaHoy } from "../../hooks/useRutaHoy";
@@ -15,12 +16,23 @@ import { cerrarSesion } from "../../firebase/auth";
  * Barra inferior de móvil: cinco destinos fijos y todo lo administrativo
  * dentro de "Más". Sustituye al menú ☰ como navegación principal en
  * teléfono; el SideNav sigue siendo la navegación de escritorio (lg+).
- * "Ruta" va al centro: es la pantalla que más se toca durante el día.
+ * "Ruta" va al centro para el cobradiario: es la pantalla que más se toca
+ * durante el día. El admin no tiene ruta personal (SideNav tampoco se la
+ * muestra en escritorio), así que en su lugar ve "Dashboard" — antes esta
+ * lista no se filtraba por rol y el admin veía "Ruta" igual en móvil,
+ * apuntando a una pantalla pensada para el cobrador.
  */
-const tabs = [
+const tabsCobradiario = [
   { to: "/", label: "Inicio", Icon: IconHome, end: true },
   { to: "/clientes", label: "Clientes", Icon: IconUsers, end: false },
   { to: "/ruta", label: "Ruta", Icon: IconMapPin, end: false, badge: true },
+  { to: "/caja", label: "Caja", Icon: IconCash, end: false },
+];
+
+const tabsAdmin = [
+  { to: "/", label: "Inicio", Icon: IconHome, end: true },
+  { to: "/clientes", label: "Clientes", Icon: IconUsers, end: false },
+  { to: "/dashboard", label: "Dashboard", Icon: IconLayoutDashboard, end: false },
   { to: "/caja", label: "Caja", Icon: IconCash, end: false },
 ];
 
@@ -47,7 +59,6 @@ const extraCobradiario = [
 ];
 
 const extraAdmin = [
-  { to: "/dashboard", label: "Dashboard" },
   { to: "/cobradiarios", label: "Cobradiarios" },
   { to: "/desempeno", label: "Desempe\u00f1o" },
   { to: "/correcciones", label: "Correcciones" },
@@ -61,6 +72,7 @@ export default function BottomNav() {
   const navigate = useNavigate();
   const [masOpen, setMasOpen] = useState(false);
   const extras = isAdmin ? extraAdmin : extraCobradiario;
+  const tabs = isAdmin ? tabsAdmin : tabsCobradiario;
 
   async function handleLogout() {
     if (!confirm("\u00bfCerrar sesi\u00f3n?")) return;

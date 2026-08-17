@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   Timestamp,
   writeBatch,
+  runTransaction,
 } from "firebase/firestore";
 import { db } from "./config";
 
@@ -30,6 +31,33 @@ export function documentRef(orgId, sub, docId) {
 
 export function getBatch() {
   return writeBatch(db);
+}
+
+/** Referencia a un documento nuevo (ID autogenerado) sin escribirlo todavía — para usar dentro de un batch/transacción */
+export function newDocRef(orgId, sub) {
+  return doc(subCollection(orgId, sub));
+}
+
+/**
+ * Lee-y-escribe atómico: evita la condición de carrera de leer un
+ * documento con getDocument y escribirlo después con updateDocument por
+ * separado (dos cobros casi simultáneos podrían pisarse el saldo).
+ */
+export async function runInTransaction(updater) {
+  return runTransaction(db, updater);
+}
+
+export async function txGet(transaction, ref) {
+  const snap = await transaction.get(ref);
+  return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+/** set/update sanitizados, válidos tanto dentro de un WriteBatch como de una Transaction (misma API) */
+export function wSet(writer, ref, data) {
+  writer.set(ref, { ...sanitizeFirestoreData(data), createdAt: serverTimestamp() });
+}
+export function wUpdate(writer, ref, data) {
+  writer.update(ref, { ...sanitizeFirestoreData(data), updatedAt: serverTimestamp() });
 }
 
 // ─── CRUD genérico ─────────────────────────────────────────────

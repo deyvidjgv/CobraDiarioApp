@@ -4,6 +4,8 @@ import { construirMovimiento, calcularSaldo, TIPOS_MOVIMIENTO } from "../src/log
 import { calcularRecargo, hayCorteVencidoPendiente } from "../src/logic/vencimiento";
 import { calcularCuotasVencidas, esDiaDeCobro } from "../src/logic/frecuencia";
 import { calcularMoraGlobal, calcularMoraGlobalAlCierre } from "../src/logic/mora";
+import { calcularTotalesCredito } from "../src/logic/credito";
+import { calcularSeguro } from "../src/logic/seguro";
 
 describe("round2", () => {
   test("redondea a dos decimales sin errores de coma flotante", () => {
@@ -166,6 +168,69 @@ describe("esDiaDeCobro (ruta del día)", () => {
     const base = { fechaInicio: new Date(2026, 7, 5), frecuencia: "diario", diasHabiles: [0, 1, 2, 3, 4, 5, 6] };
     expect(esDiaDeCobro({ ...base, numeroCuotas: 12 }, hoy)).toBe(true); // hoy es la última
     expect(esDiaDeCobro({ ...base, numeroCuotas: 11 }, hoy)).toBe(false); // calendario agotado
+  });
+});
+
+describe("calcularTotalesCredito", () => {
+  test("capital + interés dividido en cuotas", () => {
+    const t = calcularTotalesCredito(200000, 20, 2);
+    expect(t.montoTotalAPagar).toBe(240000);
+    expect(t.cuota).toBe(120000);
+    expect(t.saldoPendiente).toBe(240000);
+  });
+
+  test("rechaza numeroCuotas = 0 en vez de producir Infinity", () => {
+    expect(() => calcularTotalesCredito(200000, 20, 0)).toThrow();
+  });
+
+  test("rechaza numeroCuotas negativo", () => {
+    expect(() => calcularTotalesCredito(200000, 20, -1)).toThrow();
+  });
+});
+
+describe("calcularSeguro", () => {
+  test("seguro tipo porcentaje se calcula sobre el capital", () => {
+    const { seguroMonto, totalARecibirCliente } = calcularSeguro(200000, {
+      activo: true,
+      tipo: "porcentaje",
+      valor: 5,
+    });
+    expect(seguroMonto).toBe(10000);
+    expect(totalARecibirCliente).toBe(190000);
+  });
+
+  test("seguro inactivo no descuenta nada", () => {
+    expect(calcularSeguro(200000, { activo: false }).seguroMonto).toBe(0);
+  });
+
+  test("un porcentaje fuera de rango (>100%) no deja totalARecibirCliente negativo", () => {
+    const { seguroMonto, totalARecibirCliente } = calcularSeguro(200000, {
+      activo: true,
+      tipo: "porcentaje",
+      valor: 500,
+    });
+    expect(seguroMonto).toBe(200000);
+    expect(totalARecibirCliente).toBe(0);
+  });
+
+  test("un monto fijo mayor al capital se recorta al capital", () => {
+    const { seguroMonto, totalARecibirCliente } = calcularSeguro(50000, {
+      activo: true,
+      tipo: "fijo",
+      valor: 999999,
+    });
+    expect(seguroMonto).toBe(50000);
+    expect(totalARecibirCliente).toBe(0);
+  });
+});
+
+describe("calcularCuotasVencidas con frecuencia desconocida", () => {
+  test("no revienta la app: trata el crédito como sin cuotas vencidas", () => {
+    const inicio = new Date(2026, 0, 1);
+    const hoy = new Date(2026, 7, 16);
+    expect(
+      calcularCuotasVencidas({ fechaInicio: inicio, frecuencia: "quincenal-legacy" }, hoy)
+    ).toBe(0);
   });
 });
 

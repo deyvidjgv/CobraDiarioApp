@@ -1,37 +1,59 @@
 ﻿import { useState } from "react";
 import Header from "../../components/layout/Header";
+import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
+import { verificarPassword } from "../../firebase/auth";
 import { useCorrections } from "../../hooks/useCorrections";
 import { formatearMonto, round2 } from "../../logic/formato";
 import { IconClipboardCheck, IconCheck, IconX } from "@tabler/icons-react";
 
 export default function Correcciones() {
   const { corrections, loading, aprobarCorreccion, rechazarCorreccion } = useCorrections();
-  const [busyId, setBusyId] = useState(null);
+  // Aprobar/rechazar ajusta caja y el saldo del crédito, así que exige la
+  // misma confirmación por contraseña que borrar crédito/movimiento/cliente
+  // — antes usaba confirm()/prompt() nativos, sin ninguna verificación.
+  const [pendingAction, setPendingAction] = useState(null); // { req, tipo: "aprobar" | "rechazar", motivo? }
+  const [processing, setProcessing] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
 
   const pendientes = corrections.filter((c) => c.estado === "pendiente");
   const resueltas = corrections.filter((c) => c.estado !== "pendiente");
 
-  async function handleAprobar(req) {
-    if (!confirm(`¿Aprobar corrección de $${formatearMonto(Math.abs(req.valorOriginal))} a $${formatearMonto(Math.abs(req.valorCorrecto))}?`)) return;
-    setBusyId(req.id);
-    try {
-      await aprobarCorreccion(req);
-    } catch (err) {
-      alert("Error: " + err.message);
-    } finally {
-      setBusyId(null);
-    }
+  function iniciarAprobar(req) {
+    setPasswordError("");
+    setPendingAction({ req, tipo: "aprobar" });
   }
 
-  async function handleRechazar(req) {
+  function iniciarRechazar(req) {
     const motivo = prompt("Motivo del rechazo (opcional):") || "";
-    setBusyId(req.id);
+    setPasswordError("");
+    setPendingAction({ req, tipo: "rechazar", motivo });
+  }
+
+  function cerrarModal() {
+    setPendingAction(null);
+    setPasswordError("");
+  }
+
+  async function confirmarAccion(password) {
+    if (!pendingAction) return;
+    setPasswordError("");
+    setProcessing(true);
     try {
-      await rechazarCorreccion(req, motivo);
+      await verificarPassword(password);
+      if (pendingAction.tipo === "aprobar") {
+        await aprobarCorreccion(pendingAction.req);
+      } else {
+        await rechazarCorreccion(pendingAction.req, pendingAction.motivo);
+      }
+      setPendingAction(null);
     } catch (err) {
-      alert("Error: " + err.message);
+      if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setPasswordError("Contraseña incorrecta. Inténtalo de nuevo.");
+      } else {
+        setPasswordError(err.message || "No se pudo completar la acción.");
+      }
     } finally {
-      setBusyId(null);
+      setProcessing(false);
     }
   }
 
@@ -72,16 +94,16 @@ export default function Correcciones() {
                     </p>
                     <div className="flex gap-2 pt-1">
                       <button
-                        disabled={busyId === req.id}
-                        onClick={() => handleAprobar(req)}
+                        disabled={pendingAction?.req.id === req.id}
+                        onClick={() => iniciarAprobar(req)}
                         className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-al-dia text-surface-1 text-xs font-medium py-2 hover:bg-al-dia/90 transition disabled:opacity-50"
                       >
                         <IconCheck size={14} stroke={2} />
                         Aprobar
                       </button>
                       <button
-                        disabled={busyId === req.id}
-                        onClick={() => handleRechazar(req)}
+                        disabled={pendingAction?.req.id === req.id}
+                        onClick={() => iniciarRechazar(req)}
                         className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-surface border border-mora/20 text-mora text-xs font-medium py-2 hover:bg-mora/10 transition disabled:opacity-50"
                       >
                         <IconX size={14} stroke={2} />
@@ -146,6 +168,31 @@ export default function Correcciones() {
           </>
         )}
       </div>
+
+      <ConfirmarPasswordModal
+        isOpen={Boolean(pendingAction)}
+        title={pendingAction?.tipo === "aprobar" ? "Aprobar corrección" : "Rechazar corrección"}
+        description={
+          pendingAction?.tipo === "aprobar"
+            ? `Vas a aprobar el cambio de $${formatearMonto(Math.abs(pendingAction.req.valorOriginal))} a $${formatearMonto(Math.abs(pendingAction.req.valorCorrecto))}. Esto ajusta la caja y, si el movimiento corregido era un cobro, también el saldo pendiente del crédito.`
+            : "Vas a rechazar esta solicitud de corrección."
+        }
+        onConfirm={confirmarAccion}
+        onCancel={cerrarModal}
+        loading={processing}
+        error={passwordError}
+        confirmText={pendingAction?.tipo === "aprobar" ? "Aprobar" : "Rechazar"}
+        confirmIcon={
+          pendingAction?.tipo === "aprobar" ? (
+            <IconCheck size={16} stroke={1.5} />
+          ) : (
+            <IconX size={16} stroke={1.5} />
+          )
+        }
+        confirmColor={
+          pendingAction?.tipo === "aprobar" ? "bg-al-dia hover:bg-al-dia/90" : "bg-mora/100 hover:bg-mora"
+        }
+      />
     </div>
   );
 }

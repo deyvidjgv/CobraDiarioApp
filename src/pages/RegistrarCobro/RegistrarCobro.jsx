@@ -242,7 +242,10 @@ export default function RegistrarCobro() {
     e.preventDefault();
 
     const montoReal = limpiarMonto(monto);
-    if (!montoReal || Number(montoReal) <= 0) return;
+    if (!montoReal || Number(montoReal) <= 0) {
+      alert("Ingresa un monto mayor que cero para registrar el cobro.");
+      return;
+    }
 
     setSaving(true);
     try {

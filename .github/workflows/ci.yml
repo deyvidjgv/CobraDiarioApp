@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - name: Lógica de negocio (vitest)
+        run: npm test
+
+      - name: Build de producción
+        run: npm run build
+
+      - name: Reglas de Firestore (emulador)
+        run: npm run test:rules

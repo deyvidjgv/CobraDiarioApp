@@ -78,7 +78,10 @@ export default function Caja() {
 
   async function handleForm(e) {
     e.preventDefault();
-    if (!monto) return;
+    if (!monto || Number(limpiarMonto(monto)) <= 0) {
+      alert("Ingresa un monto mayor que cero.");
+      return;
+    }
     setSaving(true);
     try {
       const isBase = modalType === "base";

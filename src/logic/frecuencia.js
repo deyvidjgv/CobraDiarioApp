@@ -53,7 +53,11 @@ export function calcularCuotasVencidas(loan, hoy = new Date()) {
       break;
 
     default:
-      throw new Error(`Frecuencia desconocida: ${loan.frecuencia}`);
+      // Un documento con `frecuencia` corrupta/nula no debe tumbar la
+      // pantalla de nadie: se trata como si aún no tuviera cuotas vencidas
+      // (conservador — no marca mora sobre un dato que no se puede leer).
+      console.warn(`[frecuencia] Frecuencia desconocida "${loan.frecuencia}" en crédito ${loan.id ?? "?"}`);
+      calculadas = 0;
   }
 
   return Math.min(maxCuotas, calculadas);

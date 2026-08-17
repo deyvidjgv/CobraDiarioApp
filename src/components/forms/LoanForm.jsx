@@ -36,9 +36,10 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
     }
   }, [settings]);
 
+  const numeroCuotasPreview = Number(form.numeroCuotas);
   const preview =
-    form.capital && form.numeroCuotas
-      ? calcularTotalesCredito(Number(form.capital), Number(form.interes), Number(form.numeroCuotas))
+    form.capital && numeroCuotasPreview > 0
+      ? calcularTotalesCredito(Number(form.capital), Number(form.interes), numeroCuotasPreview)
       : null;
 
   function set(field, isMonto = false) {

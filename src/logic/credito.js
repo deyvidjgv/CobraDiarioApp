@@ -16,6 +16,9 @@ import { round2 } from "./formato";
  * @returns {{ montoTotalAPagar: number, cuota: number, saldoPendiente: number }}
  */
 export function calcularTotalesCredito(capital, interesAplicado, numeroCuotas) {
+  if (!Number.isFinite(numeroCuotas) || numeroCuotas <= 0) {
+    throw new Error("numeroCuotas debe ser un número mayor que cero");
+  }
   const montoTotalAPagar = round2(capital + (capital * interesAplicado) / 100);
   const cuota = round2(montoTotalAPagar / numeroCuotas);
 

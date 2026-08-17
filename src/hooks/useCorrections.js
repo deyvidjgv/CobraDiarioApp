@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
 import { where, orderBy } from "firebase/firestore";
-import { subscribeToCollection, addDocument, updateDocument, getDocument } from "../firebase/firestore";
+import {
+  subscribeToCollection,
+  addDocument,
+  updateDocument,
+  getDocument,
+  documentRef,
+  newDocRef,
+  runInTransaction,
+  txGet,
+  wSet,
+  wUpdate,
+} from "../firebase/firestore";
 import { construirMovimiento, TIPOS_MOVIMIENTO } from "../logic/caja";
 import { round2 } from "../logic/formato";
 import { useAudit, ACCIONES_AUDIT } from "./useAudit";
@@ -60,64 +71,89 @@ export function useCorrections() {
     return ref;
   }
 
+  /**
+   * Aprobar una corrección es una operación financiera (ajusta caja y el
+   * saldo del crédito), así que corre dentro de una transacción que vuelve
+   * a leer `correctionRequests/{id}` y aborta si ya no está "pendiente" —
+   * sin esto, dos aprobaciones casi simultáneas (dos admins, o la misma
+   * sesión en dos pestañas) duplicarían el movimiento de ajuste y
+   * descontarían el saldo del crédito dos veces.
+   */
   async function aprobarCorreccion(request) {
     const diferencia = round2((request.valorCorrecto ?? 0) - (request.valorOriginal ?? 0));
+    const requestRef = documentRef(orgId, "correctionRequests", request.id);
 
-    let movOriginal = null;
-    let loanId = null;
-    let saldoAntes = null;
-    let saldoDespues = null;
+    // El movimiento original es inmutable (nunca se edita ni se borra una
+    // vez creado), así que leerlo fuera de la transacción es seguro.
+    const movOriginal =
+      diferencia !== 0 ? await getDocument(orgId, "movements", request.movementId) : null;
+    // Solo un cobro ligado a un crédito mueve saldoPendiente; gasto/base/
+    // ajuste no tienen crédito asociado y no deben tocar loans.
+    const loanId =
+      movOriginal?.tipo === TIPOS_MOVIMIENTO.COBRO && movOriginal.referencia
+        ? movOriginal.referencia
+        : null;
+    const loanRef = loanId ? documentRef(orgId, "loans", loanId) : null;
+    const ajusteRef = diferencia !== 0 ? newDocRef(orgId, "movements") : null;
 
-    if (diferencia !== 0) {
-      movOriginal = await getDocument(orgId, "movements", request.movementId);
-
-      // Solo un cobro ligado a un crédito mueve saldoPendiente; gasto/base/
-      // ajuste no tienen crédito asociado y no deben tocar loans.
-      if (movOriginal?.tipo === TIPOS_MOVIMIENTO.COBRO && movOriginal.referencia) {
-        loanId = movOriginal.referencia;
-        const loan = await getDocument(orgId, "loans", loanId);
-        if (loan) {
-          saldoAntes = loan.saldoPendiente ?? 0;
-          // Misma fórmula que useLoans.js al registrar un cobro: diferencia
-          // positiva (se cobró más de lo registrado) descuenta más saldo;
-          // negativa lo sube de vuelta.
-          saldoDespues = Math.max(0, round2(saldoAntes - diferencia));
-          const loanUpdates = { saldoPendiente: saldoDespues };
-          if (saldoDespues <= 0) loanUpdates.estado = "completado";
-          else if (loan.estado === "completado") loanUpdates.estado = "activo";
-          await updateDocument(orgId, "loans", loanId, loanUpdates);
-        }
+    const resultado = await runInTransaction(async (tx) => {
+      const reqActual = await txGet(tx, requestRef);
+      if (!reqActual) throw new Error("La solicitud de corrección ya no existe.");
+      if (reqActual.estado !== "pendiente") {
+        throw new Error(`Esta solicitud ya fue resuelta (${reqActual.estado}).`);
       }
 
-      const ajuste = construirMovimiento({
-        tipo: TIPOS_MOVIMIENTO.AJUSTE,
-        monto: diferencia,
-        orgId,
-        referencia: request.movementId,
-        nota: `Corrección aprobada: ${request.motivo}`,
-        cobradiarioId: movOriginal?.cobradiarioId || null,
-        createdBy: usuario.uid,
+      let saldoAntes = null;
+      let saldoDespues = null;
+
+      if (diferencia !== 0) {
+        if (loanRef) {
+          const loan = await txGet(tx, loanRef);
+          if (loan) {
+            saldoAntes = loan.saldoPendiente ?? 0;
+            // Misma fórmula que useLoans.js al registrar un cobro: diferencia
+            // positiva (se cobró más de lo registrado) descuenta más saldo;
+            // negativa lo sube de vuelta.
+            saldoDespues = Math.max(0, round2(saldoAntes - diferencia));
+            const loanUpdates = { saldoPendiente: saldoDespues };
+            if (saldoDespues <= 0) loanUpdates.estado = "completado";
+            else if (loan.estado === "completado") loanUpdates.estado = "activo";
+            wUpdate(tx, loanRef, loanUpdates);
+          }
+        }
+
+        const ajuste = construirMovimiento({
+          tipo: TIPOS_MOVIMIENTO.AJUSTE,
+          monto: diferencia,
+          orgId,
+          referencia: request.movementId,
+          nota: `Corrección aprobada: ${request.motivo}`,
+          cobradiarioId: movOriginal?.cobradiarioId || null,
+          createdBy: usuario.uid,
+        });
+        // Denormalizado para que Caja.jsx pueda mostrar el desglose sin releer.
+        ajuste.valorOriginal = request.valorOriginal;
+        ajuste.valorCorrecto = request.valorCorrecto;
+        wSet(tx, ajusteRef, ajuste);
+      }
+
+      wUpdate(tx, requestRef, {
+        estado: "aprobada",
+        resolvedBy: usuario.uid,
+        resolvedAt: new Date().toISOString(),
+        ...(loanId ? { loanId, saldoAntes, saldoDespues } : {}),
       });
-      // Denormalizado para que Caja.jsx pueda mostrar el desglose sin releer.
-      ajuste.valorOriginal = request.valorOriginal;
-      ajuste.valorCorrecto = request.valorCorrecto;
-      await addDocument(orgId, "movements", ajuste);
-    }
+
+      return { loanId, saldoAntes, saldoDespues };
+    });
 
     registrarEvento(ACCIONES_AUDIT.CORRECCION_APROBADA, {
       entidad: "correctionRequests",
       entidadId: request.id,
       detalle:
         `Ajuste de $${diferencia} sobre mov ${request.movementId}.` +
-        (loanId ? ` Saldo crédito: $${saldoAntes} → $${saldoDespues}.` : "") +
+        (resultado.loanId ? ` Saldo crédito: $${resultado.saldoAntes} → $${resultado.saldoDespues}.` : "") +
         ` ${request.motivo}`,
-    });
-
-    return updateDocument(orgId, "correctionRequests", request.id, {
-      estado: "aprobada",
-      resolvedBy: usuario.uid,
-      resolvedAt: new Date().toISOString(),
-      ...(loanId ? { loanId, saldoAntes, saldoDespues } : {}),
     });
   }
 
