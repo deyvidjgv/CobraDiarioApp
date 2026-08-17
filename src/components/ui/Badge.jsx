@@ -1,15 +1,15 @@
-const styles = {
-  mora: "text-red-600",
-  al_dia: "text-emerald-600",
-  adelantado: "text-blue-600",
-  completado: "text-gray-400",
-  activo: "text-emerald-600",
-  anulado: "text-gray-500",
+﻿const styles = {
+  mora: "text-mora",
+  al_dia: "text-al-dia",
+  adelantado: "text-adelanto",
+  completado: "text-primary-light/70",
+  activo: "text-al-dia",
+  anulado: "text-primary-light/75",
 };
 
 const labels = {
   mora: "En mora",
-  al_dia: "Al día",
+  al_dia: "Al dÃ­a",
   adelantado: "Adelanto",
   completado: "Completado",
   activo: "Activo",
@@ -27,3 +27,4 @@ export default function Badge({ status }) {
     </span>
   );
 }
+

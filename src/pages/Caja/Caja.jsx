@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import Header from "../../components/layout/Header";
 import { useMovements } from "../../hooks/useMovements";
 import { useCorrections } from "../../hooks/useCorrections";
@@ -44,7 +44,7 @@ export default function Caja() {
   const [movimientoAEliminar, setMovimientoAEliminar] = useState(null);
   const [passwordError, setPasswordError] = useState("");
 
-  // Solicitar corrección sobre un movimiento ya registrado (no se edita/borra directo)
+  // Solicitar correcciÃ³n sobre un movimiento ya registrado (no se edita/borra directo)
   const [movimientoACorregir, setMovimientoACorregir] = useState(null);
   const [valorCorrecto, setValorCorrecto] = useState("");
   const [motivoCorreccion, setMotivoCorreccion] = useState("");
@@ -64,7 +64,7 @@ export default function Caja() {
       setMovimientoACorregir(null);
       setValorCorrecto("");
       setMotivoCorreccion("");
-      alert("Solicitud de corrección enviada. El Admin debe aprobarla.");
+      alert("Solicitud de correcciÃ³n enviada. El Admin debe aprobarla.");
     } catch (err) {
       alert("Error al enviar la solicitud: " + err.message);
     } finally {
@@ -109,7 +109,7 @@ export default function Caja() {
       setMovimientoAEliminar(null);
     } catch (err) {
       if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setPasswordError("Contraseña incorrecta. Inténtalo de nuevo.");
+        setPasswordError("ContraseÃ±a incorrecta. IntÃ©ntalo de nuevo.");
       } else {
         setPasswordError(err.message || "No se pudo eliminar el movimiento.");
       }
@@ -119,13 +119,13 @@ export default function Caja() {
   }
 
   const tipoLabel = {
-    cobro: { text: "Cobro", color: "text-emerald-600", bg: "bg-emerald-50", Icon: IconArrowUpRight },
-    prestamo_nuevo: { text: "Préstamo", color: "text-red-500", bg: "bg-red-50", Icon: IconArrowDownRight },
-    gasto: { text: "Gasto", color: "text-red-500", bg: "bg-red-50", Icon: IconArrowDownRight },
-    ajuste: { text: "Ajuste", color: "text-amber-600", bg: "bg-amber-50", Icon: IconMinus },
-    ingreso_base: { text: "Base", color: "text-emerald-600", bg: "bg-emerald-50", Icon: IconArrowUpRight },
-    seguro: { text: "Seguro", color: "text-emerald-600", bg: "bg-emerald-50", Icon: IconArrowUpRight },
-    recargo_vencimiento: { text: "Recargo vencimiento", color: "text-amber-600", bg: "bg-amber-50", Icon: IconAlertOctagon },
+    cobro: { text: "Cobro", color: "text-al-dia", bg: "bg-emerald-50", Icon: IconArrowUpRight },
+    prestamo_nuevo: { text: "PrÃ©stamo", color: "text-mora", bg: "bg-mora/10", Icon: IconArrowDownRight },
+    gasto: { text: "Gasto", color: "text-mora", bg: "bg-mora/10", Icon: IconArrowDownRight },
+    ajuste: { text: "Ajuste", color: "text-gold", bg: "bg-amber-50", Icon: IconMinus },
+    ingreso_base: { text: "Base", color: "text-al-dia", bg: "bg-emerald-50", Icon: IconArrowUpRight },
+    seguro: { text: "Seguro", color: "text-al-dia", bg: "bg-emerald-50", Icon: IconArrowUpRight },
+    recargo_vencimiento: { text: "Recargo vencimiento", color: "text-gold", bg: "bg-amber-50", Icon: IconAlertOctagon },
   };
 
   // Solo gasto / ingreso_base / ajuste se pueden eliminar (nunca cobro ni prestamo_nuevo)
@@ -171,8 +171,8 @@ export default function Caja() {
 
       <div className="px-4 sm:px-6 lg:px-8 space-y-6">
         {/* Selector de fecha */}
-        <div className="bg-white rounded-xl p-4 border border-[#E5E5EA] flex items-center gap-3">
-          <IconCalendar size={20} stroke={1.5} className="text-gray-400 shrink-0" />
+        <div className="bg-white rounded-xl p-4 border border-[#E3DFD8] flex items-center gap-3">
+          <IconCalendar size={20} stroke={1.5} className="text-primary-light/70 shrink-0" />
           <input
             type="date"
             value={selectedDate}
@@ -190,10 +190,10 @@ export default function Caja() {
           )}
         </div>
 
-        {/* Filtro por cobradiario (solo Admin, Plan Maestro sección 16) */}
+        {/* Filtro por cobradiario (solo Admin, Plan Maestro secciÃ³n 16) */}
         {isAdmin && (
-          <div className="bg-white rounded-xl p-4 border border-[#E5E5EA] flex items-center gap-3">
-            <IconChevronDown size={20} stroke={1.5} className="text-gray-400 shrink-0" />
+          <div className="bg-white rounded-xl p-4 border border-[#E3DFD8] flex items-center gap-3">
+            <IconChevronDown size={20} stroke={1.5} className="text-primary-light/70 shrink-0" />
             <select
               value={filtroCobradiario}
               onChange={(e) => setFiltroCobradiario(e.target.value)}
@@ -215,7 +215,7 @@ export default function Caja() {
             <div className="absolute -right-6 -top-6 w-36 h-36 rounded-full bg-white/10 pointer-events-none" />
             <div>
               <p className="text-sm opacity-80 relative">
-                {isHoy ? "Saldo del día" : `Saldo del ${formatearFechaLarga(selectedDate + "T12:00:00")}`}
+                {isHoy ? "Saldo del dÃ­a" : `Saldo del ${formatearFechaLarga(selectedDate + "T12:00:00")}`}
               </p>
               <p className="text-4xl sm:text-5xl font-bold mt-2 relative tracking-tight">
                 ${formatearMonto(saldo)}
@@ -228,14 +228,14 @@ export default function Caja() {
               </div>
               <div>
                 <p className="opacity-70 text-xs mb-0.5">Salidas</p>
-                <p className="font-semibold text-red-300 text-base">-${formatearMonto(salidas)}</p>
+                <p className="font-semibold text-mora/70 text-base">-${formatearMonto(salidas)}</p>
               </div>
             </div>
           </div>
 
           {isHoy && (
-            <div className="flex flex-col justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E5E5EA] shadow-sm">
-              <h4 className="text-xs font-semibold uppercase text-gray-400 tracking-wider">Acciones de caja</h4>
+            <div className="flex flex-col justify-between gap-3 bg-white p-4 rounded-2xl border border-[#E3DFD8] shadow-sm">
+              <h4 className="text-xs font-semibold uppercase text-primary-light/70 tracking-wider">Acciones de caja</h4>
               <div className="space-y-2.5 flex-1 flex flex-col justify-center">
                 <button
                   onClick={() => setModalType("base")}
@@ -246,7 +246,7 @@ export default function Caja() {
                 </button>
                 <button
                   onClick={() => setModalType("gasto")}
-                  className="w-full bg-red-50 border border-red-100 rounded-xl py-3 px-4 text-sm font-medium text-red-600 hover:bg-red-100 transition flex items-center justify-center gap-2"
+                  className="w-full bg-mora/10 border border-mora/15 rounded-xl py-3 px-4 text-sm font-medium text-mora hover:bg-mora/15 transition flex items-center justify-center gap-2"
                 >
                   <IconMinus size={18} stroke={2} />
                   Registrar gasto
@@ -258,15 +258,15 @@ export default function Caja() {
 
         {/* Modal ingreso / gasto */}
         {(modalType === "base" || modalType === "gasto") && (
-          <form onSubmit={handleForm} className="bg-white rounded-2xl p-5 border border-[#E5E5EA] space-y-4 shadow-md max-w-lg mx-auto">
+          <form onSubmit={handleForm} className="bg-white rounded-2xl p-5 border border-[#E3DFD8] space-y-4 shadow-md max-w-lg mx-auto">
             <div className="flex items-center justify-between">
               <h3 className="text-base font-semibold text-primary">
-                {modalType === "base" ? "💰 Ingresar base" : "💸 Registrar gasto"}
+                {modalType === "base" ? "ðŸ’° Ingresar base" : "ðŸ’¸ Registrar gasto"}
               </h3>
               <button
                 type="button"
                 onClick={() => setModalType(null)}
-                className="p-1 rounded-lg hover:bg-gray-100 transition text-gray-400"
+                className="p-1 rounded-lg hover:bg-surface-2 transition text-primary-light/70"
               >
                 <IconX size={20} stroke={1.5} />
               </button>
@@ -279,20 +279,20 @@ export default function Caja() {
               value={monto ? formatearMonto(monto) : ""}
               onChange={(e) => setMonto(limpiarMonto(e.target.value))}
               onKeyDown={bloquearEntradaSoloNumeros}
-              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+              className="w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
             />
             <input
               type="text"
               placeholder="Nota (opcional)"
               value={nota}
               onChange={(e) => setNota(e.target.value)}
-              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+              className="w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
             />
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => { setModalType(null); setMonto(""); setNota(""); }}
-                className="flex-1 py-3 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+                className="flex-1 py-3 rounded-xl border border-[#E3DFD8] text-sm font-medium text-primary-light/75 hover:bg-surface-1 transition"
               >
                 Cancelar
               </button>
@@ -307,20 +307,20 @@ export default function Caja() {
           </form>
         )}
 
-        {/* Modal confirmación con contraseña: eliminar un movimiento puntual */}
+        {/* Modal confirmaciÃ³n con contraseÃ±a: eliminar un movimiento puntual */}
         <ConfirmarPasswordModal
           isOpen={!!movimientoAEliminar}
           title="Eliminar movimiento"
           description={
             <>
-              Se eliminará el movimiento{" "}
-              <strong className="text-gray-700">
+              Se eliminarÃ¡ el movimiento{" "}
+              <strong className="text-primary">
                 {movimientoAEliminar ? (tipoLabel[movimientoAEliminar.tipo]?.text ?? movimientoAEliminar.tipo) : ""}
               </strong>{" "}
               por ${movimientoAEliminar ? formatearMonto(Math.abs(movimientoAEliminar.monto)) : "0"}.
             </>
           }
-          warning="⚠ Esta acción no se puede deshacer."
+          warning="âš  Esta acciÃ³n no se puede deshacer."
           onConfirm={handleEliminarMovimiento}
           onCancel={() => { setMovimientoAEliminar(null); setPasswordError(""); }}
           loading={saving}
@@ -328,25 +328,25 @@ export default function Caja() {
           confirmText="Eliminar movimiento"
         />
 
-        {/* Modal: solicitar corrección de un movimiento (no se edita/borra directo) */}
+        {/* Modal: solicitar correcciÃ³n de un movimiento (no se edita/borra directo) */}
         {movimientoACorregir && (
           <form
             onSubmit={handleSolicitarCorreccion}
-            className="bg-white rounded-2xl p-5 border border-[#E5E5EA] space-y-4 shadow-md max-w-lg mx-auto"
+            className="bg-white rounded-2xl p-5 border border-[#E3DFD8] space-y-4 shadow-md max-w-lg mx-auto"
           >
             <div className="flex items-center justify-between">
-              <h3 className="text-base font-semibold text-amber-600">✏️ Solicitar corrección</h3>
+              <h3 className="text-base font-semibold text-gold">âœï¸ Solicitar correcciÃ³n</h3>
               <button
                 type="button"
                 onClick={() => { setMovimientoACorregir(null); setValorCorrecto(""); setMotivoCorreccion(""); }}
-                className="p-1 rounded-lg hover:bg-gray-100 transition text-gray-400"
+                className="p-1 rounded-lg hover:bg-surface-2 transition text-primary-light/70"
               >
                 <IconX size={20} stroke={1.5} />
               </button>
             </div>
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-primary-light/75">
               Valor registrado: <strong>${formatearMonto(Math.abs(movimientoACorregir.monto))}</strong>. El
-              Admin revisará esta solicitud antes de aplicar el ajuste; el movimiento original no se
+              Admin revisarÃ¡ esta solicitud antes de aplicar el ajuste; el movimiento original no se
               modifica.
             </p>
             <input
@@ -357,28 +357,28 @@ export default function Caja() {
               value={valorCorrecto ? formatearMonto(valorCorrecto) : ""}
               onChange={(e) => setValorCorrecto(limpiarMonto(e.target.value))}
               onKeyDown={bloquearEntradaSoloNumeros}
-              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+              className="w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
             />
             <textarea
               required
-              placeholder="Motivo de la corrección"
+              placeholder="Motivo de la correcciÃ³n"
               value={motivoCorreccion}
               onChange={(e) => setMotivoCorreccion(e.target.value)}
               rows={2}
-              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+              className="w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
             />
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => { setMovimientoACorregir(null); setValorCorrecto(""); setMotivoCorreccion(""); }}
-                className="flex-1 py-3 rounded-xl border border-[#E5E5EA] text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+                className="flex-1 py-3 rounded-xl border border-[#E3DFD8] text-sm font-medium text-primary-light/75 hover:bg-surface-1 transition"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
                 disabled={enviandoCorreccion}
-                className="flex-1 py-3 rounded-xl bg-amber-500 text-white text-sm font-medium hover:bg-amber-600 transition disabled:opacity-50"
+                className="flex-1 py-3 rounded-xl bg-gold text-white text-sm font-medium hover:bg-gold transition disabled:opacity-50"
               >
                 {enviandoCorreccion ? "Enviando..." : "Enviar solicitud"}
               </button>
@@ -387,24 +387,24 @@ export default function Caja() {
         )}
 
         {/* Lista de movimientos (tarjetas desplegables) */}
-        <div className="bg-white rounded-2xl p-5 border border-[#E5E5EA] shadow-sm">
+        <div className="bg-white rounded-2xl p-5 border border-[#E3DFD8] shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-gray-700">
+            <h3 className="text-base font-semibold text-primary">
               {isHoy ? "Movimientos de hoy" : `Movimientos del ${selectedDate}`}
             </h3>
             {movements.length > 0 && (
-              <span className="text-xs font-medium text-gray-500 bg-gray-100 rounded-full px-3 py-1">
+              <span className="text-xs font-medium text-primary-light/75 bg-surface-2 rounded-full px-3 py-1">
                 {movements.length} {movements.length === 1 ? "registro" : "registros"}
               </span>
             )}
           </div>
 
           {loading ? (
-            <p className="text-sm text-gray-400 text-center py-10">Cargando...</p>
+            <p className="text-sm text-primary-light/70 text-center py-10">Cargando...</p>
           ) : movements.length === 0 ? (
             <div className="text-center py-10">
-              <p className="text-3xl mb-2">🏦</p>
-              <p className="text-sm text-gray-400">Sin movimientos ese día</p>
+              <p className="text-3xl mb-2">ðŸ¦</p>
+              <p className="text-sm text-primary-light/70">Sin movimientos ese dÃ­a</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -413,28 +413,28 @@ export default function Caja() {
                 const IconComponent = info.Icon;
                 const expanded = expandedId === m.id;
                 return (
-                  <div key={m.id} className="rounded-xl border border-[#E5E5EA] overflow-hidden">
+                  <div key={m.id} className="rounded-xl border border-[#E3DFD8] overflow-hidden">
                     <button
                       type="button"
                       onClick={() => setExpandedId(expanded ? null : m.id)}
-                      className="w-full bg-gray-50/60 px-4 py-3.5 flex items-center gap-3 hover:bg-gray-50 transition text-left"
+                      className="w-full bg-surface-1/60 px-4 py-3.5 flex items-center gap-3 hover:bg-surface-1 transition text-left"
                     >
                       <div className={`w-10 h-10 rounded-xl ${info.bg} flex items-center justify-center flex-shrink-0`}>
                         <IconComponent size={20} stroke={2} className={info.color} />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-800">
+                        <p className="text-sm font-semibold text-primary">
                           {info.text}
                           {m.clienteNombre && (
-                            <span className="font-normal text-gray-500"> — {m.clienteNombre}</span>
+                            <span className="font-normal text-primary-light/75"> â€” {m.clienteNombre}</span>
                           )}
                         </p>
-                        <p className="text-xs text-gray-400 truncate">{formatearHora(m.fecha)}</p>
+                        <p className="text-xs text-primary-light/70 truncate">{formatearHora(m.fecha)}</p>
                       </div>
                       <p className={`text-sm font-bold shrink-0 ${
                         m.tipo === "recargo_vencimiento"
-                          ? "text-amber-600"
-                          : m.monto >= 0 ? "text-emerald-600" : "text-red-500"
+                          ? "text-gold"
+                          : m.monto >= 0 ? "text-al-dia" : "text-mora"
                       }`}>
                         {m.tipo === "recargo_vencimiento"
                           ? `+$${formatearMonto(m.montoRecargo ?? 0)} (deuda)`
@@ -442,51 +442,51 @@ export default function Caja() {
                       </p>
                       <IconChevronDown
                         size={18}
-                        className={`text-gray-300 shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
+                        className={`text-primary-light/50 shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
                       />
                     </button>
 
                     {expanded && (
-                      <div className="px-4 py-3 border-t border-[#E5E5EA] bg-white space-y-1.5 text-sm">
+                      <div className="px-4 py-3 border-t border-[#E3DFD8] bg-white space-y-1.5 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Fecha</span>
-                          <span className="text-gray-700">{formatearFechaLarga(m.fecha)}</span>
+                          <span className="text-primary-light/70">Fecha</span>
+                          <span className="text-primary">{formatearFechaLarga(m.fecha)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-400">Hora</span>
-                          <span className="text-gray-700">{formatearHora(m.fecha)}</span>
+                          <span className="text-primary-light/70">Hora</span>
+                          <span className="text-primary">{formatearHora(m.fecha)}</span>
                         </div>
                         {m.clienteNombre && (
                           <div className="flex justify-between">
-                            <span className="text-gray-400">Cliente</span>
-                            <span className="text-gray-700">{m.clienteNombre}</span>
+                            <span className="text-primary-light/70">Cliente</span>
+                            <span className="text-primary">{m.clienteNombre}</span>
                           </div>
                         )}
                         {m.cobradorNombre && (
                           <div className="flex justify-between">
-                            <span className="text-gray-400">Registrado por</span>
-                            <span className="text-gray-700">{m.cobradorNombre}</span>
+                            <span className="text-primary-light/70">Registrado por</span>
+                            <span className="text-primary">{m.cobradorNombre}</span>
                           </div>
                         )}
                         {m.tipo === "cobro" && (
                           <>
                             {m.tipoPago && (
-                              <div className="flex justify-between border-t border-[#E5E5EA] pt-2 mt-1">
-                                <span className="text-gray-400">Tipo de cobro</span>
-                                <span className="font-medium text-gray-800">
-                                  {m.tipoPago} {m.detallePagoInfo ? `— ${m.detallePagoInfo}` : ""}
+                              <div className="flex justify-between border-t border-[#E3DFD8] pt-2 mt-1">
+                                <span className="text-primary-light/70">Tipo de cobro</span>
+                                <span className="font-medium text-primary">
+                                  {m.tipoPago} {m.detallePagoInfo ? `â€” ${m.detallePagoInfo}` : ""}
                                 </span>
                               </div>
                             )}
                             {m.estadoFinalLabel && (
                               <div className="flex justify-between">
-                                <span className="text-gray-400">Estado tras cobro</span>
+                                <span className="text-primary-light/70">Estado tras cobro</span>
                                 <span className={`font-semibold ${
                                   m.estadoFinalLabel === "En mora"
-                                    ? "text-red-600"
+                                    ? "text-mora"
                                     : m.estadoFinalLabel === "Adelantado"
-                                    ? "text-blue-600"
-                                    : "text-emerald-600"
+                                    ? "text-adelanto"
+                                    : "text-al-dia"
                                 }`}>
                                   {m.estadoFinalLabel} {m.detalleEstadoFinal ? `(${m.detalleEstadoFinal})` : ""}
                                 </span>
@@ -494,22 +494,22 @@ export default function Caja() {
                             )}
                             {m.saldoRestante != null && (
                               <div className="flex justify-between">
-                                <span className="text-gray-400">Saldo pendiente</span>
-                                <span className="font-medium text-gray-700">${formatearMonto(m.saldoRestante)}</span>
+                                <span className="text-primary-light/70">Saldo pendiente</span>
+                                <span className="font-medium text-primary">${formatearMonto(m.saldoRestante)}</span>
                               </div>
                             )}
                           </>
                         )}
                         {m.nota && (
                           <div className="flex justify-between gap-3">
-                            <span className="text-gray-400 shrink-0">Nota</span>
-                            <span className="text-gray-700 text-right">{m.nota}</span>
+                            <span className="text-primary-light/70 shrink-0">Nota</span>
+                            <span className="text-primary text-right">{m.nota}</span>
                           </div>
                         )}
                         {esEliminable(m.tipo) ? (
                           <button
                             onClick={() => setMovimientoAEliminar(m)}
-                            className="mt-2 flex items-center gap-1.5 text-xs font-medium text-red-500 hover:text-red-600"
+                            className="mt-2 flex items-center gap-1.5 text-xs font-medium text-mora hover:text-mora"
                           >
                             <IconTrash size={14} stroke={2} />
                             Eliminar este movimiento
@@ -518,10 +518,10 @@ export default function Caja() {
                           m.tipo === TIPOS_MOVIMIENTO.COBRO && (
                             <button
                               onClick={() => setMovimientoACorregir(m)}
-                              className="mt-2 flex items-center gap-1.5 text-xs font-medium text-amber-600 hover:text-amber-700"
+                              className="mt-2 flex items-center gap-1.5 text-xs font-medium text-gold hover:text-amber-700"
                             >
                               <IconEdit size={14} stroke={2} />
-                              Solicitar corrección
+                              Solicitar correcciÃ³n
                             </button>
                           )
                         )}
@@ -537,3 +537,4 @@ export default function Caja() {
     </div>
   );
 }
+

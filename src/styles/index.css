@@ -1,31 +1,30 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  background-color: #F4F5FC;
-  /* Tinte índigo sutil en la parte superior que se funde con el fondo base */
-  background-image: linear-gradient(180deg, #E9EAFB 0%, #F4F5FC 340px);
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background-color: #F7F5F1;
+  background-image: none;
   background-repeat: no-repeat;
   -webkit-font-smoothing: antialiased;
 }
 
 @media (max-width: 640px) {
   .bg-primary {
-    background-color: #6F62D6;
+    background-color: #1A1917;
   }
 
   .bg-primary-light {
-    background-color: #9E97E5;
+    background-color: #3A3733;
   }
 
   .text-primary {
-    color: #433F92;
+    color: #1A1917;
   }
 
   .border-thin {
-    border-color: #DADBE5;
+    border-color: #E3DFD8;
   }
 }
 
@@ -33,18 +32,20 @@ body {
 @layer utilities {
   .border-thin {
     border-width: 0.5px;
-    border-color: #E5E5EA;
+    border-color: #E3DFD8;
   }
 
   /* Tarjeta base con sombra suave (consistencia visual en toda la app) */
   .card {
-    @apply bg-white rounded-2xl border border-[#E5E5EA] shadow-[0_1px_3px_rgba(38,33,92,0.05)];
+    @apply bg-white rounded-2xl border border-[#E3DFD8];
+    box-shadow: 0 1px 3px rgba(26, 25, 23, 0.06);
   }
 
-  /* Encabezado de sección con acento de color a la izquierda */
+  /* Encabezado de secciÃ³n con acento de color a la izquierda */
   .section-title {
-    @apply text-sm font-semibold text-gray-800 flex items-center gap-2;
+    @apply text-sm font-semibold text-primary flex items-center gap-2;
   }
+
   .section-title::before {
     content: "";
     @apply inline-block w-1 h-4 rounded-full bg-primary-light;
@@ -56,20 +57,24 @@ body {
   width: 8px;
   height: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #D9D9E3;
   border-radius: 8px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #C5C5D6;
 }
 
-/* iOS: los campos con fuente < 16px disparan el zoom automático al
-   enfocar. En móvil se fuerza 16px para escribir sin zoom. */
+/* iOS: los campos con fuente < 16px disparan el zoom automÃ¡tico al
+   enfocar. En mÃ³vil se fuerza 16px para escribir sin zoom. */
 @media (max-width: 640px) {
+
   input,
   select,
   textarea {

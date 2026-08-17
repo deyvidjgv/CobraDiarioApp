@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import ClientRow from "../../components/ui/ClientRow";
@@ -12,12 +12,12 @@ import { formatearMonto } from "../../logic/formato";
 import { IconCheck, IconX, IconUserOff, IconCalendarHeart, IconSearch } from "@tabler/icons-react";
 
 const accionesVisita = [
-  { resultado: RESULTADOS_VISITA.NO_PAGO, label: "No pagó", Icon: IconX, clase: "text-red-500 hover:bg-red-50" },
-  { resultado: RESULTADOS_VISITA.NO_ENCONTRADO, label: "No encontrado", Icon: IconUserOff, clase: "text-gray-500 hover:bg-gray-50" },
-  { resultado: RESULTADOS_VISITA.PROMESA_PAGO, label: "Promesa", Icon: IconCalendarHeart, clase: "text-amber-600 hover:bg-amber-50" },
+  { resultado: RESULTADOS_VISITA.NO_PAGO, label: "No pagÃ³", Icon: IconX, clase: "text-mora hover:bg-mora/10" },
+  { resultado: RESULTADOS_VISITA.NO_ENCONTRADO, label: "No encontrado", Icon: IconUserOff, clase: "text-primary-light/75 hover:bg-surface-1" },
+  { resultado: RESULTADOS_VISITA.PROMESA_PAGO, label: "Promesa", Icon: IconCalendarHeart, clase: "text-gold hover:bg-amber-50" },
 ];
 
-// Prioridad de visita: 1º mora, 2º cuota de hoy pendiente, 3º al día, 4º adelantado
+// Prioridad de visita: 1Âº mora, 2Âº cuota de hoy pendiente, 3Âº al dÃ­a, 4Âº adelantado
 function prioridadDe(item) {
   if (item.mora.estado === "mora") return 0;
   if (item.faltaCobrarHoy) return 1;
@@ -40,7 +40,7 @@ export default function RutaDelDia() {
     return Object.fromEntries(visits.map((v) => [v.loanId, v]));
   }, [visits]);
 
-  // Enriquecer cada crédito con mora, cuota programada hoy y datos del cliente
+  // Enriquecer cada crÃ©dito con mora, cuota programada hoy y datos del cliente
   const rutaOrdenada = useMemo(() => {
     const clientMap = Object.fromEntries(clients.map((c) => [c.id, c]));
 
@@ -48,7 +48,7 @@ export default function RutaDelDia() {
       .map((loan) => {
         const mora = calcularMoraGlobal(loan);
         // Deficit al cierre de hoy: incluye la cuota de hoy en lo esperado,
-        // así un adelanto que ya la cubre no genera visita innecesaria.
+        // asÃ­ un adelanto que ya la cubre no genera visita innecesaria.
         const alCierre = calcularMoraGlobalAlCierre(loan);
         const programadoHoy = esDiaDeCobro(loan);
         const faltaCobrarHoy = programadoHoy && alCierre.deficit > 0;
@@ -59,13 +59,13 @@ export default function RutaDelDia() {
       .sort((a, b) => {
         const prioridad = prioridadDe(a) - prioridadDe(b);
         if (prioridad !== 0) return prioridad;
-        // A igual prioridad, la mora más grande primero y luego por nombre
+        // A igual prioridad, la mora mÃ¡s grande primero y luego por nombre
         if (a.mora.deficit !== b.mora.deficit) return b.mora.deficit - a.mora.deficit;
         return (a.client.nombre || "").localeCompare(b.client.nombre || "");
       });
   }, [loans, clients]);
 
-  // Créditos con cobro registrado hoy (visita resultado "cobro")
+  // CrÃ©ditos con cobro registrado hoy (visita resultado "cobro")
   const cobradosHoyIds = useMemo(
     () =>
       new Set(
@@ -74,7 +74,7 @@ export default function RutaDelDia() {
     [visits]
   );
 
-  // Lista según filtro activo + búsqueda por nombre, cédula o teléfono
+  // Lista segÃºn filtro activo + bÃºsqueda por nombre, cÃ©dula o telÃ©fono
   const rutaFiltrada = useMemo(() => {
     let lista = rutaOrdenada;
     if (filtro === "hoy") {
@@ -128,24 +128,24 @@ export default function RutaDelDia() {
       <Header title="Ruta de hoy" />
 
       <div className="p-4 space-y-3">
-        {/* Buscador: nombre, cédula o teléfono */}
+        {/* Buscador: nombre, cÃ©dula o telÃ©fono */}
         <div className="relative">
           <IconSearch
             size={18}
             stroke={1.5}
-            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-light/70 pointer-events-none"
           />
           <input
             type="search"
             inputMode="search"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, cédula o teléfono"
-            className="w-full rounded-xl border border-[#E5E5EA] bg-white pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            placeholder="Buscar por nombre, cÃ©dula o telÃ©fono"
+            className="w-full rounded-xl border border-[#E3DFD8] bg-white pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           />
         </div>
 
-        {/* Filtros rápidos */}
+        {/* Filtros rÃ¡pidos */}
         <div className="flex gap-2">
           {chips.map((chip) => (
             <button
@@ -155,11 +155,11 @@ export default function RutaDelDia() {
               className={`flex-1 rounded-xl px-3 py-2 text-xs font-semibold transition border ${
                 filtro === chip.id
                   ? "bg-primary text-white border-primary shadow-sm"
-                  : "bg-white text-gray-500 border-[#E5E5EA] hover:border-primary-light/50"
+                  : "bg-white text-primary-light/75 border-[#E3DFD8] hover:border-primary-light/50"
               }`}
             >
               {chip.label}
-              <span className={`ml-1.5 ${filtro === chip.id ? "text-white/70" : "text-gray-400"}`}>
+              <span className={`ml-1.5 ${filtro === chip.id ? "text-white/70" : "text-primary-light/70"}`}>
                 {chip.count}
               </span>
             </button>
@@ -167,17 +167,17 @@ export default function RutaDelDia() {
         </div>
 
         {loading ? (
-          <p className="text-sm text-gray-400 py-10 text-center">Cargando ruta...</p>
+          <p className="text-sm text-primary-light/70 py-10 text-center">Cargando ruta...</p>
         ) : rutaOrdenada.length === 0 ? (
           <div className="text-center py-16">
-            <span className="text-4xl block mb-3">📋</span>
-            <p className="text-gray-500 text-sm">No hay créditos activos todavía</p>
+            <span className="text-4xl block mb-3">ðŸ“‹</span>
+            <p className="text-primary-light/75 text-sm">No hay crÃ©ditos activos todavÃ­a</p>
             {!isAdmin && (
               <button
                 onClick={() => navigate("/creditos/nuevo")}
                 className="mt-4 text-primary-light font-medium text-sm hover:underline"
               >
-                Crear primer crédito →
+                Crear primer crÃ©dito â†’
               </button>
             )}
           </div>
@@ -185,31 +185,31 @@ export default function RutaDelDia() {
           <div className="text-center py-12">
             <span className="text-4xl block mb-3">
               {filtro === "hoy"
-                ? "📅"
+                ? "ðŸ“…"
                 : filtro === "mora"
-                ? "🎉"
+                ? "ðŸŽ‰"
                 : filtro === "cobrados"
-                ? "💸"
-                : "🔍"}
+                ? "ðŸ’¸"
+                : "ðŸ”"}
             </span>
-            <p className="text-gray-500 text-sm">
+            <p className="text-primary-light/75 text-sm">
               {busqueda.trim()
                 ? `Sin resultados para "${busqueda.trim()}"`
                 : filtro === "hoy"
                 ? rutaOrdenada.some((i) => cobradosHoyIds.has(i.id))
-                  ? "¡Buen trabajo! Ya cobraste lo programado de hoy"
+                  ? "Â¡Buen trabajo! Ya cobraste lo programado de hoy"
                   : "No hay cobros programados para hoy"
                 : filtro === "mora"
                 ? "No hay clientes en mora"
                 : filtro === "cobrados"
-                ? "Aún no hay cobros registrados hoy"
+                ? "AÃºn no hay cobros registrados hoy"
                 : "Sin resultados"}
             </p>
           </div>
         ) : (
           <>
-            <p className="text-xs text-gray-400">
-              {rutaFiltrada.length} de {rutaOrdenada.length} créditos · {visits.length} visitas hoy
+            <p className="text-xs text-primary-light/70">
+              {rutaFiltrada.length} de {rutaOrdenada.length} crÃ©ditos Â· {visits.length} visitas hoy
             </p>
             {rutaFiltrada.map((item) => {
               const visita = visitasHoyPorLoan[item.id];
@@ -221,14 +221,14 @@ export default function RutaDelDia() {
                     status={item.mora.estado}
                     subtitle={
                       item.mora.estado === "mora"
-                        ? `Debe ${item.mora.cuotasMora} cuotas — $${formatearMonto(item.mora.deficit)}`
+                        ? `Debe ${item.mora.cuotasMora} cuotas â€” $${formatearMonto(item.mora.deficit)}`
                         : `Cuota: $${formatearMonto(Math.min(item.cuota, item.saldoPendiente ?? item.cuota))}`
                     }
                     ubicacion={item.client.ubicacion}
                     onClick={() => navigate(`/cobro/${item.id}`)}
                   />
                   {visita ? (
-                    <p className="flex items-center gap-1 text-[11px] text-gray-400 pl-2">
+                    <p className="flex items-center gap-1 text-[11px] text-primary-light/70 pl-2">
                       <IconCheck size={12} stroke={2.5} className="text-emerald-500" />
                       {visita.resultado === RESULTADOS_VISITA.COBRO
                         ? "Cobro registrado hoy"
@@ -259,3 +259,4 @@ export default function RutaDelDia() {
     </div>
   );
 }
+

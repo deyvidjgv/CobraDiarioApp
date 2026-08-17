@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import { where, orderBy } from "firebase/firestore";
 import Header from "../../components/layout/Header";
 import { useLoans } from "../../hooks/useLoans";
@@ -26,19 +26,19 @@ import {
 function KpiCard({ label, valor, Icon, tono = "primary" }) {
   const tonos = {
     primary: "bg-primary-bg text-primary",
-    emerald: "bg-emerald-50 text-emerald-600",
-    red: "bg-red-50 text-red-600",
-    amber: "bg-amber-50 text-amber-600",
-    blue: "bg-blue-50 text-blue-600",
+    emerald: "bg-emerald-50 text-al-dia",
+    red: "bg-mora/10 text-mora",
+    amber: "bg-amber-50 text-gold",
+    blue: "bg-adelanto/10 text-adelanto",
   };
   return (
-    <div className="bg-white rounded-xl p-4 border border-[#E5E5EA] flex items-center gap-3">
+    <div className="bg-white rounded-xl p-4 border border-[#E3DFD8] flex items-center gap-3">
       <div className={`w-10 h-10 rounded-xl ${tonos[tono]} flex items-center justify-center shrink-0`}>
         <Icon size={20} stroke={1.5} />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] text-gray-400 uppercase tracking-wide">{label}</p>
-        <p className="text-lg font-semibold text-gray-800 truncate">{valor}</p>
+        <p className="text-[11px] text-primary-light/70 uppercase tracking-wide">{label}</p>
+        <p className="text-lg font-semibold text-primary truncate">{valor}</p>
       </div>
     </div>
   );
@@ -110,7 +110,7 @@ export default function Dashboard() {
 
       <div className="p-4 space-y-4">
         {loading ? (
-          <p className="text-sm text-gray-400 py-10 text-center">Cargando indicadores...</p>
+          <p className="text-sm text-primary-light/70 py-10 text-center">Cargando indicadores...</p>
         ) : (
           <>
             {/* Dinero */}
@@ -124,23 +124,23 @@ export default function Dashboard() {
             {/* Riesgo */}
             <section className="grid grid-cols-2 gap-3">
               <KpiCard label="Cartera vencida" valor={`$${formatearMonto(kpis.carteraVencida)}`} Icon={IconAlertOctagon} tono="red" />
-              <KpiCard label="Déficit de mora" valor={`$${formatearMonto(kpis.moraTotal)}`} Icon={IconTrendingUp} tono="amber" />
+              <KpiCard label="DÃ©ficit de mora" valor={`$${formatearMonto(kpis.moraTotal)}`} Icon={IconTrendingUp} tono="amber" />
             </section>
 
-            {/* Operación */}
+            {/* OperaciÃ³n */}
             <section className="grid grid-cols-2 gap-3">
               <KpiCard label="Cobradiarios activos" valor={String(kpis.cobradiariosActivos)} Icon={IconUsersGroup} />
               <KpiCard label="Clientes" valor={String(kpis.clientes)} Icon={IconUsers} tono="blue" />
-              <KpiCard label="Créditos activos" valor={String(kpis.creditosActivos)} Icon={IconFileText} tono="blue" />
-              <KpiCard label="Créditos en mora" valor={String(kpis.creditosEnMora)} Icon={IconAlertOctagon} tono="red" />
+              <KpiCard label="CrÃ©ditos activos" valor={String(kpis.creditosActivos)} Icon={IconFileText} tono="blue" />
+              <KpiCard label="CrÃ©ditos en mora" valor={String(kpis.creditosEnMora)} Icon={IconAlertOctagon} tono="red" />
             </section>
 
             {(kpis.creditosVencidos > 0 || kpis.creditosEnMora > 0) && (
               <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 text-sm text-amber-800">
-                <p className="font-medium">Atención</p>
+                <p className="font-medium">AtenciÃ³n</p>
                 <p className="mt-1">
-                  {kpis.creditosVencidos} créditos vencidos y {kpis.creditosEnMora} en mora
-                  requieren gestión de cobro.
+                  {kpis.creditosVencidos} crÃ©ditos vencidos y {kpis.creditosEnMora} en mora
+                  requieren gestiÃ³n de cobro.
                 </p>
               </div>
             )}
@@ -150,3 +150,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

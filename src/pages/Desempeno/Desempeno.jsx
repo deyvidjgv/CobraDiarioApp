@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+﻿import { useMemo } from "react";
 import Header from "../../components/layout/Header";
 import { useLoans } from "../../hooks/useLoans";
 import { useClients } from "../../hooks/useClients";
@@ -10,8 +10,8 @@ import { formatearMonto, round2 } from "../../logic/formato";
 import { IconChartBar } from "@tabler/icons-react";
 
 /**
- * Rendimiento por cobradiario (Plan Maestro, sección 14).
- * Fórmula base: efectividad = (cobrado / esperado) × 100
+ * Rendimiento por cobradiario (Plan Maestro, secciÃ³n 14).
+ * FÃ³rmula base: efectividad = (cobrado / esperado) Ã— 100
  */
 export default function Desempeno() {
   const { cobradiarios, loading: usersLoading } = useCobradiarios();
@@ -30,7 +30,7 @@ export default function Desempeno() {
       const misLoans = loans.filter((l) => l.cobradiarioId === uid);
       const activos = misLoans.filter((l) => l.estado === "activo");
 
-      // Valor esperado hoy: una cuota por crédito activo
+      // Valor esperado hoy: una cuota por crÃ©dito activo
       const esperado = round2(
         activos.reduce((acc, l) => acc + Math.min(l.cuota ?? 0, l.saldoPendiente ?? l.cuota ?? 0), 0)
       );
@@ -68,41 +68,41 @@ export default function Desempeno() {
 
   return (
     <div className="pb-24">
-      <Header title="Desempeño" />
+      <Header title="DesempeÃ±o" />
 
       <div className="p-4 space-y-4">
-        <p className="text-xs text-gray-400">
-          Efectividad de hoy = (cobrado / esperado) × 100. El valor esperado es una cuota por
-          crédito activo.
+        <p className="text-xs text-primary-light/70">
+          Efectividad de hoy = (cobrado / esperado) Ã— 100. El valor esperado es una cuota por
+          crÃ©dito activo.
         </p>
 
         {loading ? (
-          <p className="text-sm text-gray-400 py-10 text-center">Cargando desempeño...</p>
+          <p className="text-sm text-primary-light/70 py-10 text-center">Cargando desempeÃ±o...</p>
         ) : filas.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
-            <IconChartBar size={48} stroke={1.5} className="text-gray-300 mb-3" />
-            <p className="text-gray-500 text-sm">No hay cobradiarios registrados</p>
+            <IconChartBar size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
+            <p className="text-primary-light/75 text-sm">No hay cobradiarios registrados</p>
           </div>
         ) : (
           <div className="space-y-3">
             {filas.map((f) => (
-              <div key={f.uid} className="bg-white rounded-xl border border-[#E5E5EA] p-4 space-y-3">
+              <div key={f.uid} className="bg-white rounded-xl border border-[#E3DFD8] p-4 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-800">{f.nombre}</p>
+                  <p className="text-sm font-semibold text-primary">{f.nombre}</p>
                   {f.efectividad !== null ? (
                     <span
                       className={`text-xs font-semibold px-2 py-1 rounded-full ${
                         f.efectividad >= 80
-                          ? "bg-emerald-50 text-emerald-600"
+                          ? "bg-emerald-50 text-al-dia"
                           : f.efectividad >= 50
-                          ? "bg-amber-50 text-amber-600"
-                          : "bg-red-50 text-red-600"
+                          ? "bg-amber-50 text-gold"
+                          : "bg-mora/10 text-mora"
                       }`}
                     >
                       {f.efectividad}% efectividad
                     </span>
                   ) : (
-                    <span className="text-[11px] text-gray-400 px-2 py-1 rounded-full bg-gray-100">
+                    <span className="text-[11px] text-primary-light/70 px-2 py-1 rounded-full bg-surface-2">
                       Sin cartera
                     </span>
                   )}
@@ -110,29 +110,29 @@ export default function Desempeno() {
 
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Clientes</span>
-                    <span className="text-gray-700 font-medium">{f.clientes}</span>
+                    <span className="text-primary-light/70">Clientes</span>
+                    <span className="text-primary font-medium">{f.clientes}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Créditos activos</span>
-                    <span className="text-gray-700 font-medium">{f.creditosActivos}</span>
+                    <span className="text-primary-light/70">CrÃ©ditos activos</span>
+                    <span className="text-primary font-medium">{f.creditosActivos}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Esperado hoy</span>
-                    <span className="text-gray-700 font-medium">${formatearMonto(f.esperado)}</span>
+                    <span className="text-primary-light/70">Esperado hoy</span>
+                    <span className="text-primary font-medium">${formatearMonto(f.esperado)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Cobrado hoy</span>
-                    <span className="text-emerald-600 font-medium">${formatearMonto(f.cobrado)}</span>
+                    <span className="text-primary-light/70">Cobrado hoy</span>
+                    <span className="text-al-dia font-medium">${formatearMonto(f.cobrado)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">Créditos nuevos hoy</span>
-                    <span className="text-gray-700 font-medium">{f.creditosNuevos}</span>
+                    <span className="text-primary-light/70">CrÃ©ditos nuevos hoy</span>
+                    <span className="text-primary font-medium">{f.creditosNuevos}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-400">En mora</span>
-                    <span className={f.creditosEnMora > 0 ? "text-red-600 font-medium" : "text-gray-700 font-medium"}>
-                      {f.creditosEnMora} · ${formatearMonto(f.moraTotal)}
+                    <span className="text-primary-light/70">En mora</span>
+                    <span className={f.creditosEnMora > 0 ? "text-mora font-medium" : "text-primary font-medium"}>
+                      {f.creditosEnMora} Â· ${formatearMonto(f.moraTotal)}
                     </span>
                   </div>
                 </div>
@@ -144,3 +144,4 @@ export default function Desempeno() {
     </div>
   );
 }
+

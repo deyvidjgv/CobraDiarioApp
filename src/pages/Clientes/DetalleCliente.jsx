@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import Badge from "../../components/ui/Badge";
@@ -42,7 +42,7 @@ export default function DetalleCliente() {
   if (!client) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-surface-1">
-        <p className="text-gray-400 text-sm">Cargando o cliente no encontrado...</p>
+        <p className="text-primary-light/70 text-sm">Cargando o cliente no encontrado...</p>
       </div>
     );
   }
@@ -64,7 +64,7 @@ export default function DetalleCliente() {
   const handleDeleteClient = async (password) => {
     setPasswordError("");
     if (hasActiveLoan) {
-       setPasswordError("El cliente tiene un crédito activo.");
+       setPasswordError("El cliente tiene un crÃ©dito activo.");
        return;
     }
     setDeleting(true);
@@ -74,9 +74,9 @@ export default function DetalleCliente() {
       navigate("/clientes", { replace: true });
     } catch (err) {
       if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setPasswordError("Contraseña incorrecta. Inténtalo de nuevo.");
+        setPasswordError("ContraseÃ±a incorrecta. IntÃ©ntalo de nuevo.");
       } else {
-        setPasswordError(err.message || "Error al verificar la contraseña");
+        setPasswordError(err.message || "Error al verificar la contraseÃ±a");
       }
     } finally {
       setDeleting(false);
@@ -108,13 +108,13 @@ export default function DetalleCliente() {
 
       <div className="p-4 space-y-4 max-w-lg mx-auto">
         {/* Info Card */}
-        <div className="bg-white rounded-2xl p-5 border border-[#E5E5EA] shadow-sm">
+        <div className="bg-white rounded-2xl p-5 border border-[#E3DFD8] shadow-sm">
           {!isEditing ? (
             <div className="space-y-4">
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-800">{client.nombre}</h2>
-                  <div className="flex items-center gap-1.5 mt-1 text-gray-500">
+                  <h2 className="text-lg font-semibold text-primary">{client.nombre}</h2>
+                  <div className="flex items-center gap-1.5 mt-1 text-primary-light/75">
                     <IconPhone size={16} stroke={1.5} />
                     <span className="text-sm">{client.telefono}</span>
                   </div>
@@ -127,26 +127,26 @@ export default function DetalleCliente() {
                 </button>
               </div>
 
-              <div className="pt-3 border-t border-[#E5E5EA] space-y-3 text-sm">
+              <div className="pt-3 border-t border-[#E3DFD8] space-y-3 text-sm">
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Cédula</p>
-                  <p className="text-gray-700">{client.cedula || "—"}</p>
+                  <p className="text-xs text-primary-light/70 mb-0.5">CÃ©dula</p>
+                  <p className="text-primary">{client.cedula || "â€”"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Dirección</p>
-                  <p className="text-gray-700">{client.direccion || "—"}</p>
+                  <p className="text-xs text-primary-light/70 mb-0.5">DirecciÃ³n</p>
+                  <p className="text-primary">{client.direccion || "â€”"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Barrio</p>
-                  <p className="text-gray-700">{client.barrio || "—"}</p>
+                  <p className="text-xs text-primary-light/70 mb-0.5">Barrio</p>
+                  <p className="text-primary">{client.barrio || "â€”"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Referencia</p>
-                  <p className="text-gray-700">{client.referencia || "—"}</p>
+                  <p className="text-xs text-primary-light/70 mb-0.5">Referencia</p>
+                  <p className="text-primary">{client.referencia || "â€”"}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-400 mb-0.5">Autorización de datos</p>
-                  <p className="text-gray-700">
+                  <p className="text-xs text-primary-light/70 mb-0.5">AutorizaciÃ³n de datos</p>
+                  <p className="text-primary">
                     {client.consentimientoDatos?.autorizado ? "Autorizado" : "No registrada"}
                   </p>
                 </div>
@@ -155,44 +155,44 @@ export default function DetalleCliente() {
               {client.ubicacion?.lat && client.ubicacion?.lng && (
                 <button
                   onClick={handleMapClick}
-                  className="w-full mt-2 bg-surface-1 border border-[#E5E5EA] text-primary font-medium rounded-xl py-2.5 flex items-center justify-center gap-2 hover:bg-surface-2 transition"
+                  className="w-full mt-2 bg-surface-1 border border-[#E3DFD8] text-primary font-medium rounded-xl py-2.5 flex items-center justify-center gap-2 hover:bg-surface-2 transition"
                 >
                   <IconMapPin size={18} stroke={1.5} />
-                  Cómo llegar
+                  CÃ³mo llegar
                 </button>
               )}
             </div>
           ) : (
             <div>
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-semibold text-gray-800">Editar Cliente</h3>
-                <button onClick={() => setIsEditing(false)} className="text-sm text-gray-500">Cancelar</button>
+                <h3 className="font-semibold text-primary">Editar Cliente</h3>
+                <button onClick={() => setIsEditing(false)} className="text-sm text-primary-light/75">Cancelar</button>
               </div>
               <ClientForm initial={client} onSubmit={handleEditSubmit} loading={saving} />
             </div>
           )}
         </div>
 
-        {/* Historial de Créditos */}
-        <div className="bg-white rounded-2xl p-5 border border-[#E5E5EA] shadow-sm">
-          <h3 className="text-base font-semibold text-gray-800 mb-4">Historial de Créditos</h3>
+        {/* Historial de CrÃ©ditos */}
+        <div className="bg-white rounded-2xl p-5 border border-[#E3DFD8] shadow-sm">
+          <h3 className="text-base font-semibold text-primary mb-4">Historial de CrÃ©ditos</h3>
           {clientLoans.length === 0 ? (
-            <p className="text-sm text-gray-400">Este cliente no tiene créditos registrados.</p>
+            <p className="text-sm text-primary-light/70">Este cliente no tiene crÃ©ditos registrados.</p>
           ) : (
             <div className="space-y-3">
               {clientLoans.map((loan) => (
                 <div
                   key={loan.id}
                   onClick={() => navigate(`/creditos/${loan.id}`)}
-                  className="flex items-center justify-between p-3 rounded-xl border border-[#E5E5EA] hover:bg-surface-1 transition cursor-pointer"
+                  className="flex items-center justify-between p-3 rounded-xl border border-[#E3DFD8] hover:bg-surface-1 transition cursor-pointer"
                 >
                   <div>
-                    <p className="text-sm font-medium text-gray-800">${formatearMonto(loan.capital)}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">Pendiente: ${formatearMonto(loan.saldoPendiente ?? 0)}</p>
+                    <p className="text-sm font-medium text-primary">${formatearMonto(loan.capital)}</p>
+                    <p className="text-xs text-primary-light/70 mt-0.5">Pendiente: ${formatearMonto(loan.saldoPendiente ?? 0)}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge status={loan.estado} />
-                    <IconChevronRight size={18} stroke={1.5} className="text-gray-300" />
+                    <IconChevronRight size={18} stroke={1.5} className="text-primary-light/50" />
                   </div>
                 </div>
               ))}
@@ -205,14 +205,14 @@ export default function DetalleCliente() {
           <button
             onClick={() => setShowDeleteModal(true)}
             disabled={hasActiveLoan}
-            className="w-full bg-red-50 border border-red-100 text-red-600 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-red-100 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-mora/10 border border-mora/15 text-mora font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-mora/15 transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <IconTrash size={18} stroke={1.5} />
             Eliminar Cliente
           </button>
           {hasActiveLoan && (
-            <p className="text-xs text-center text-red-500 mt-2">
-              Este cliente tiene un crédito activo, no se puede eliminar hasta que se completen o anulen sus créditos.
+            <p className="text-xs text-center text-mora mt-2">
+              Este cliente tiene un crÃ©dito activo, no se puede eliminar hasta que se completen o anulen sus crÃ©ditos.
             </p>
           )}
         </div>
@@ -221,8 +221,8 @@ export default function DetalleCliente() {
       <ConfirmarPasswordModal
         isOpen={showDeleteModal}
         title="Eliminar Cliente"
-        description={`¿Estás seguro de que deseas eliminar permanentemente a ${client.nombre}?`}
-        warning="⚠ Esta acción eliminará su registro de cliente. Si tiene créditos históricos, podrían quedar huérfanos."
+        description={`Â¿EstÃ¡s seguro de que deseas eliminar permanentemente a ${client.nombre}?`}
+        warning="âš  Esta acciÃ³n eliminarÃ¡ su registro de cliente. Si tiene crÃ©ditos histÃ³ricos, podrÃ­an quedar huÃ©rfanos."
         onConfirm={handleDeleteClient}
         onCancel={() => {
           setShowDeleteModal(false);
@@ -230,8 +230,9 @@ export default function DetalleCliente() {
         }}
         loading={deleting}
         error={passwordError}
-        confirmText="Confirmar eliminación"
+        confirmText="Confirmar eliminaciÃ³n"
       />
     </div>
   );
 }
+

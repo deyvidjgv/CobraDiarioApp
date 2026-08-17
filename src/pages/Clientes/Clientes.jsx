@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+﻿import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import ClientRow from "../../components/ui/ClientRow";
@@ -16,7 +16,7 @@ export default function Clientes() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("todos");
 
-  // Calcular el estado de mora de cada cliente basado en sus créditos activos
+  // Calcular el estado de mora de cada cliente basado en sus crÃ©ditos activos
   const clientsWithStatus = useMemo(() => {
     return clients.map((client) => {
       const clientLoans = loans.filter((l) => l.clientId === client.id);
@@ -56,7 +56,7 @@ export default function Clientes() {
   const filters = [
     { key: "todos", label: "Todos" },
     { key: "mora", label: "En mora" },
-    { key: "al_dia", label: "Al día" },
+    { key: "al_dia", label: "Al dÃ­a" },
   ];
 
   return (
@@ -66,15 +66,15 @@ export default function Clientes() {
       <div className="p-4 space-y-4">
         {/* Buscador */}
         <div className="relative">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-primary-light/70">
             <path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11ZM2 9a7 7 0 1 1 12.452 4.391l3.328 3.329a.75.75 0 1 1-1.06 1.06l-3.329-3.328A7 7 0 0 1 2 9Z" clipRule="evenodd" />
           </svg>
           <input
             type="text"
-            placeholder="Buscar por nombre o teléfono..."
+            placeholder="Buscar por nombre o telÃ©fono..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#E5E5EA] text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            className="w-full pl-10 pr-4 py-3 rounded-xl bg-white border border-[#E3DFD8] text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           />
         </div>
 
@@ -87,7 +87,7 @@ export default function Clientes() {
               className={`px-4 py-1.5 rounded-full text-xs font-medium transition ${
                 filter === f.key
                   ? "bg-primary text-white"
-                  : "bg-white text-gray-500 border border-[#E5E5EA] hover:border-gray-300"
+                  : "bg-white text-primary-light/75 border border-[#E3DFD8] hover:border-primary/20"
               }`}
             >
               {f.label}
@@ -97,11 +97,11 @@ export default function Clientes() {
 
         {/* Lista */}
         {loading ? (
-          <p className="text-sm text-gray-400 py-10 text-center">Cargando clientes...</p>
+          <p className="text-sm text-primary-light/70 py-10 text-center">Cargando clientes...</p>
         ) : filtered.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
-            <IconUsersGroup size={48} stroke={1.5} className="text-gray-300 mb-3" />
-            <p className="text-gray-500 text-sm">
+            <IconUsersGroup size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
+            <p className="text-primary-light/75 text-sm">
               {search ? "Sin resultados" : "No hay clientes registrados"}
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function Clientes() {
                 name={client.nombre}
                 phone={client.telefono}
                 status={client.status}
-                subtitle={`${client.loanCount} crédito(s) · ${client.direccion || "Sin dirección"}`}
+                subtitle={`${client.loanCount} crÃ©dito(s) Â· ${client.direccion || "Sin direcciÃ³n"}`}
                 ubicacion={client.ubicacion}
                 onClick={() => navigate(`/clientes/${client.id}`)}
               />
@@ -122,7 +122,7 @@ export default function Clientes() {
         )}
       </div>
 
-      {/* FAB — solo cobradiario: el Admin consulta pero no registra clientes */}
+      {/* FAB â€” solo cobradiario: el Admin consulta pero no registra clientes */}
       {!isAdmin && (
         <button
           onClick={() => navigate("/clientes/nuevo")}
@@ -135,3 +135,4 @@ export default function Clientes() {
     </div>
   );
 }
+

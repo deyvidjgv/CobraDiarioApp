@@ -1,8 +1,8 @@
-import jsPDF from "jspdf";
-import "jspdf-autotable";
-import { format } from "date-fns";
-import { toZonedTime } from "date-fns-tz";
-import { formatearMonto } from "./formato";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
+import { formatearMonto } from './formato';
 
 /**
  * Genera y descarga un PDF con tabla de datos.
@@ -12,7 +12,7 @@ import { formatearMonto } from "./formato";
  * @param {Array<string[]>} filas - filas de datos
  * @param {string} [subtitulo] - linea de contexto (ej. rango de fechas)
  */
-export function exportarPDF(titulo, columnas, filas, subtitulo = "") {
+export function exportarPDF(titulo, columnas, filas, subtitulo = '') {
   const doc = new jsPDF();
 
   // Encabezado
@@ -31,7 +31,7 @@ export function exportarPDF(titulo, columnas, filas, subtitulo = "") {
     startY: subtitulo ? 34 : 28,
     head: [columnas],
     body: filas,
-    theme: "grid",
+    theme: 'grid',
     styles: { fontSize: 9, cellPadding: 3 },
     headStyles: { fillColor: [31, 58, 95], textColor: 255 },
     alternateRowStyles: { fillColor: [245, 243, 237] },
@@ -44,13 +44,13 @@ export function exportarPDF(titulo, columnas, filas, subtitulo = "") {
     doc.setFontSize(8);
     doc.setTextColor(160);
     doc.text(
-      `Generado por Cobro Diario — ${new Date().toLocaleDateString()}`,
+      `Generado por CrediDev — ${new Date().toLocaleDateString()}`,
       14,
-      doc.internal.pageSize.height - 10
+      doc.internal.pageSize.height - 10,
     );
   }
 
-  const filename = `${titulo.replace(/\s+/g, "_")}_${new Date().toISOString().split("T")[0]}.pdf`;
+  const filename = `${titulo.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`;
   doc.save(filename);
 }
 
@@ -66,7 +66,7 @@ function ensurePageBreak(doc, currentY, minSpace, pageHeight, margin = 14) {
  * Genera un PDF de cierre diario profesional y estructurado.
  * Reporte mejorado con 11 secciones claramente definidas.
  */
-export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
+export function exportarCierreDiarioPDF(cierre, nombreNegocio = '') {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -83,11 +83,11 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   };
 
   const tableStyles = {
-    theme: "plain",
+    theme: 'plain',
     margin: { left: margin, right: margin, top: 0, bottom: 16 },
-    pageBreak: "auto",
+    pageBreak: 'auto',
     styles: {
-      font: "helvetica",
+      font: 'helvetica',
       fontSize: 9,
       cellPadding: 3,
       textColor: colors.darkGray,
@@ -97,7 +97,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
     headStyles: {
       fillColor: colors.primary,
       textColor: 255,
-      fontStyle: "bold",
+      fontStyle: 'bold',
       fontSize: 9,
     },
     alternateRowStyles: {
@@ -114,7 +114,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   }
   doc.setFontSize(18);
   doc.setTextColor(...colors.primary);
-  doc.text("Reporte de Cierre Diario", margin, currentY);
+  doc.text('Reporte de Cierre Diario', margin, currentY);
   currentY += 8;
 
   doc.setFontSize(10);
@@ -123,12 +123,12 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY += 5;
 
   // Hora local formateada
-  const formatter = new Intl.DateTimeFormat("es-CO", {
-    timeZone: "America/Bogota",
-    dateStyle: "short",
-    timeStyle: "short",
+  const formatter = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    dateStyle: 'short',
+    timeStyle: 'short',
   });
-  let timeStr = "";
+  let timeStr = '';
   try {
     timeStr = formatter.format(new Date());
   } catch (e) {
@@ -146,21 +146,21 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("2. Resumen General", margin, currentY);
+  doc.text('2. Resumen General', margin, currentY);
   currentY += 5;
 
   const resumenData = [
-    ["Total de entradas", `$${formatearMonto(cierre.totalEntradas)}`],
-    ["Total de salidas", `$${formatearMonto(cierre.totalSalidas)}`],
-    ["Saldo neto", `$${formatearMonto(cierre.saldoNeto)}`],
-    ["Cobros realizados", `${cierre.detalles?.cobros?.length || 0}`],
-    ["Créditos creados", `${cierre.detalles?.nuevosCreditos?.length || 0}`],
-    ["Clientes en mora", `${cierre.detalles?.mora?.length || 0}`],
+    ['Total de entradas', `$${formatearMonto(cierre.totalEntradas)}`],
+    ['Total de salidas', `$${formatearMonto(cierre.totalSalidas)}`],
+    ['Saldo neto', `$${formatearMonto(cierre.saldoNeto)}`],
+    ['Cobros realizados', `${cierre.detalles?.cobros?.length || 0}`],
+    ['Créditos creados', `${cierre.detalles?.nuevosCreditos?.length || 0}`],
+    ['Clientes en mora', `${cierre.detalles?.mora?.length || 0}`],
   ];
 
   doc.autoTable({
     startY: currentY,
-    head: [["Indicador", "Valor"]],
+    head: [['Indicador', 'Valor']],
     body: resumenData,
     ...tableStyles,
   });
@@ -170,20 +170,26 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("3. Efectividad de Cobro del Día", margin, currentY);
+  doc.text('3. Efectividad de Cobro del Día', margin, currentY);
   currentY += 5;
 
   const efe = cierre.efectividad || {};
   const efectividadData = [
-    ["Valor esperado (cuotas del día)", `$${formatearMonto(efe.esperadoHoy || 0)}`],
-    ["Valor cobrado", `$${formatearMonto(efe.cobradoHoy || 0)}`],
-    ["No cobrado", `$${formatearMonto(efe.noCobrado || 0)}`],
-    ["Efectividad (cobrado / esperado)", efe.porcentaje != null ? `${efe.porcentaje.toFixed(1)}%` : "—"],
+    [
+      'Valor esperado (cuotas del día)',
+      `$${formatearMonto(efe.esperadoHoy || 0)}`,
+    ],
+    ['Valor cobrado', `$${formatearMonto(efe.cobradoHoy || 0)}`],
+    ['No cobrado', `$${formatearMonto(efe.noCobrado || 0)}`],
+    [
+      'Efectividad (cobrado / esperado)',
+      efe.porcentaje != null ? `${efe.porcentaje.toFixed(1)}%` : '—',
+    ],
   ];
 
   doc.autoTable({
     startY: currentY,
-    head: [["Indicador", "Valor"]],
+    head: [['Indicador', 'Valor']],
     body: efectividadData,
     ...tableStyles,
   });
@@ -193,25 +199,34 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 50, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("4. Arqueo de Caja (Cuadre del Día)", margin, currentY);
+  doc.text('4. Arqueo de Caja (Cuadre del Día)', margin, currentY);
   currentY += 5;
 
   const arq = cierre.arqueo || {};
-  const diferenciaTxt = arq.diferencia !== null && arq.diferencia !== undefined
-    ? `$${formatearMonto(arq.diferencia)}${Math.abs(arq.diferencia) >= 1 ? " ⚠ revisar" : " ✓ cuadrado"}`
-    : "No reportado";
+  const diferenciaTxt =
+    arq.diferencia !== null && arq.diferencia !== undefined
+      ? `$${formatearMonto(arq.diferencia)}${Math.abs(arq.diferencia) >= 1 ? ' ⚠ revisar' : ' ✓ cuadrado'}`
+      : 'No reportado';
   const arqueoData = [
-    ["Base inicial", `$${formatearMonto(arq.baseInicial || 0)}`],
-    ["Total entradas", `$${formatearMonto(cierre.totalEntradas)}`],
-    ["Total salidas", `$${formatearMonto(cierre.totalSalidas)}`],
-    ["Saldo esperado en caja", `$${formatearMonto(arq.saldoEsperado ?? cierre.saldoNeto)}`],
-    ["Efectivo contado (arqueo físico)", arq.saldoContado !== null && arq.saldoContado !== undefined ? `$${formatearMonto(arq.saldoContado)}` : "No reportado"],
-    ["Diferencia", diferenciaTxt],
+    ['Base inicial', `$${formatearMonto(arq.baseInicial || 0)}`],
+    ['Total entradas', `$${formatearMonto(cierre.totalEntradas)}`],
+    ['Total salidas', `$${formatearMonto(cierre.totalSalidas)}`],
+    [
+      'Saldo esperado en caja',
+      `$${formatearMonto(arq.saldoEsperado ?? cierre.saldoNeto)}`,
+    ],
+    [
+      'Efectivo contado (arqueo físico)',
+      arq.saldoContado !== null && arq.saldoContado !== undefined
+        ? `$${formatearMonto(arq.saldoContado)}`
+        : 'No reportado',
+    ],
+    ['Diferencia', diferenciaTxt],
   ];
 
   doc.autoTable({
     startY: currentY,
-    head: [["Concepto", "Valor"]],
+    head: [['Concepto', 'Valor']],
     body: arqueoData,
     ...tableStyles,
   });
@@ -221,25 +236,27 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("5. Resumen por Método de Pago", margin, currentY);
+  doc.text('5. Resumen por Método de Pago', margin, currentY);
   currentY += 5;
 
   // Calcular totales por método de pago
-  const efectivo = cierre.detalles?.cobros
-    ?.filter((c) => c.metodoPago === "efectivo" || !c.metodoPago)
-    .reduce((acc, c) => acc + (c.monto || 0), 0) || 0;
-  const transferencia = cierre.detalles?.cobros
-    ?.filter((c) => c.metodoPago === "transferencia")
-    .reduce((acc, c) => acc + (c.monto || 0), 0) || 0;
+  const efectivo =
+    cierre.detalles?.cobros
+      ?.filter((c) => c.metodoPago === 'efectivo' || !c.metodoPago)
+      .reduce((acc, c) => acc + (c.monto || 0), 0) || 0;
+  const transferencia =
+    cierre.detalles?.cobros
+      ?.filter((c) => c.metodoPago === 'transferencia')
+      .reduce((acc, c) => acc + (c.monto || 0), 0) || 0;
 
   const metodosPagoData = [
-    ["Efectivo", `$${formatearMonto(efectivo)}`],
-    ["Transferencia", `$${formatearMonto(transferencia)}`],
+    ['Efectivo', `$${formatearMonto(efectivo)}`],
+    ['Transferencia', `$${formatearMonto(transferencia)}`],
   ];
 
   doc.autoTable({
     startY: currentY,
-    head: [["Método", "Valor Total"]],
+    head: [['Método', 'Valor Total']],
     body: metodosPagoData,
     ...tableStyles,
   });
@@ -249,22 +266,22 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("6. Cobros Realizados", margin, currentY);
+  doc.text('6. Cobros Realizados', margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.cobros?.length > 0) {
     const cobrosBody = cierre.detalles.cobros.map((c) => [
       formatearHoraPDF(c.fecha),
-      c.clienteNombre || "—",
+      c.clienteNombre || '—',
       `$${formatearMonto(c.monto)}`,
-      c.metodoPago === "transferencia" ? "Transferencia" : "Efectivo",
-      c.estado || "—",
-      c.cobradorNombre || "—",
+      c.metodoPago === 'transferencia' ? 'Transferencia' : 'Efectivo',
+      c.estado || '—',
+      c.cobradorNombre || '—',
     ]);
 
     doc.autoTable({
       startY: currentY,
-      head: [["Hora", "Cliente", "Valor", "Método", "Estado", "Cobrador"]],
+      head: [['Hora', 'Cliente', 'Valor', 'Método', 'Estado', 'Cobrador']],
       body: cobrosBody,
       ...tableStyles,
     });
@@ -272,7 +289,11 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No se registraron cobros durante este período.", margin, currentY);
+    doc.text(
+      'No se registraron cobros durante este período.',
+      margin,
+      currentY,
+    );
     currentY += 6;
   }
 
@@ -280,7 +301,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("7. Movimientos de Caja", margin, currentY);
+  doc.text('7. Movimientos de Caja', margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.caja?.length > 0) {
@@ -289,15 +310,15 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
       return [
         formatearHoraPDF(m.fecha),
         tipoLabel,
-        m.nota || "—",
+        m.nota || '—',
         `$${formatearMonto(m.monto)}`,
-        m.cobradorNombre || "—",
+        m.cobradorNombre || '—',
       ];
     });
 
     doc.autoTable({
       startY: currentY,
-      head: [["Hora", "Tipo", "Concepto", "Valor", "Usuario"]],
+      head: [['Hora', 'Tipo', 'Concepto', 'Valor', 'Usuario']],
       body: cajaBody,
       ...tableStyles,
     });
@@ -305,7 +326,11 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No se registraron movimientos de caja durante este período.", margin, currentY);
+    doc.text(
+      'No se registraron movimientos de caja durante este período.',
+      margin,
+      currentY,
+    );
     currentY += 6;
   }
 
@@ -313,7 +338,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("8. Clientes en Mora", margin, currentY);
+  doc.text('8. Clientes en Mora', margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.mora?.length > 0) {
@@ -325,7 +350,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
 
     doc.autoTable({
       startY: currentY,
-      head: [["Cliente", "Cuotas Vencidas", "Saldo Pendiente"]],
+      head: [['Cliente', 'Cuotas Vencidas', 'Saldo Pendiente']],
       body: moraBody,
       ...tableStyles,
     });
@@ -333,7 +358,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No existen clientes en mora.", margin, currentY);
+    doc.text('No existen clientes en mora.', margin, currentY);
     currentY += 6;
   }
 
@@ -342,7 +367,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
     currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
     doc.setFontSize(11);
     doc.setTextColor(...colors.primary);
-    doc.text("9. Mora por Antigüedad", margin, currentY);
+    doc.text('9. Mora por Antigüedad', margin, currentY);
     currentY += 5;
 
     const agingBody = cierre.moraAging.map((t) => [
@@ -353,7 +378,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
 
     doc.autoTable({
       startY: currentY,
-      head: [["Tramo de días", "Clientes", "Déficit"]],
+      head: [['Tramo de días', 'Clientes', 'Déficit']],
       body: agingBody,
       ...tableStyles,
     });
@@ -364,21 +389,21 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("10. Créditos Creados Durante el Día", margin, currentY);
+  doc.text('10. Créditos Creados Durante el Día', margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.nuevosCreditos?.length > 0) {
     const creditosBody = cierre.detalles.nuevosCreditos.map((c) => [
-      c.cliente || "—",
+      c.cliente || '—',
       `$${formatearMonto(c.capital || 0)}`,
       `$${formatearMonto(c.total || 0)}`,
       String(c.cuotas || 0),
-      c.frecuencia?.toUpperCase() || "—",
+      c.frecuencia?.toUpperCase() || '—',
     ]);
 
     doc.autoTable({
       startY: currentY,
-      head: [["Cliente", "Capital", "Total a Cobrar", "Cuotas", "Frecuencia"]],
+      head: [['Cliente', 'Capital', 'Total a Cobrar', 'Cuotas', 'Frecuencia']],
       body: creditosBody,
       ...tableStyles,
     });
@@ -386,7 +411,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No se registraron créditos nuevos.", margin, currentY);
+    doc.text('No se registraron créditos nuevos.', margin, currentY);
     currentY += 6;
   }
 
@@ -394,21 +419,30 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("11. Estado General de la Cartera", margin, currentY);
+  doc.text('11. Estado General de la Cartera', margin, currentY);
   currentY += 5;
 
   const carteraData = [
-    ["Capital colocado", `$${formatearMonto(cierre.cartera?.capitalColocado || 0)}`],
-    ["Capital recuperado", `$${formatearMonto(cierre.cartera?.capitalRecuperado || 0)}`],
-    ["Saldo pendiente", `$${formatearMonto(cierre.cartera?.saldoPendiente || 0)}`],
-    ["Créditos activos", String(cierre.cartera?.creditosActivos || 0)],
-    ["Créditos finalizados", String(cierre.cartera?.creditosFinalizados || 0)],
-    ["Créditos vencidos", String(cierre.cartera?.creditosVencidos || 0)],
+    [
+      'Capital colocado',
+      `$${formatearMonto(cierre.cartera?.capitalColocado || 0)}`,
+    ],
+    [
+      'Capital recuperado',
+      `$${formatearMonto(cierre.cartera?.capitalRecuperado || 0)}`,
+    ],
+    [
+      'Saldo pendiente',
+      `$${formatearMonto(cierre.cartera?.saldoPendiente || 0)}`,
+    ],
+    ['Créditos activos', String(cierre.cartera?.creditosActivos || 0)],
+    ['Créditos finalizados', String(cierre.cartera?.creditosFinalizados || 0)],
+    ['Créditos vencidos', String(cierre.cartera?.creditosVencidos || 0)],
   ];
 
   doc.autoTable({
     startY: currentY,
-    head: [["Concepto", "Valor"]],
+    head: [['Concepto', 'Valor']],
     body: carteraData,
     ...tableStyles,
   });
@@ -418,21 +452,21 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("12. Penalidades Aplicadas", margin, currentY);
+  doc.text('12. Penalidades Aplicadas', margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.recargos?.length > 0) {
     const recargosBody = cierre.detalles.recargos.map((r) => [
-      r.clienteNombre || "—",
+      r.clienteNombre || '—',
       formatearHoraPDF(r.fecha),
-      r.nota || "—",
+      r.nota || '—',
       `$${formatearMonto(r.monto || 0)}`,
-      r.cobradorNombre || "—",
+      r.cobradorNombre || '—',
     ]);
 
     doc.autoTable({
       startY: currentY,
-      head: [["Cliente", "Fecha", "Concepto", "Monto", "Usuario"]],
+      head: [['Cliente', 'Fecha', 'Concepto', 'Monto', 'Usuario']],
       body: recargosBody,
       ...tableStyles,
     });
@@ -440,7 +474,11 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No se aplicaron penalidades durante este período.", margin, currentY);
+    doc.text(
+      'No se aplicaron penalidades durante este período.',
+      margin,
+      currentY,
+    );
     currentY += 6;
   }
 
@@ -448,18 +486,18 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("13. Nuevos Clientes Registrados", margin, currentY);
+  doc.text('13. Nuevos Clientes Registrados', margin, currentY);
   currentY += 5;
 
   if (cierre.detalles?.nuevosClientes?.length > 0) {
     const clientesBody = cierre.detalles.nuevosClientes.map((c) => [
-      c.nombre || "—",
-      c.telefono || "—",
+      c.nombre || '—',
+      c.telefono || '—',
     ]);
 
     doc.autoTable({
       startY: currentY,
-      head: [["Nombre", "Teléfono"]],
+      head: [['Nombre', 'Teléfono']],
       body: clientesBody,
       ...tableStyles,
     });
@@ -467,7 +505,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No se registraron nuevos clientes.", margin, currentY);
+    doc.text('No se registraron nuevos clientes.', margin, currentY);
     currentY += 6;
   }
 
@@ -476,7 +514,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY += 4;
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("14. Observaciones", margin, currentY);
+  doc.text('14. Observaciones', margin, currentY);
   currentY += 5;
 
   doc.setFontSize(9);
@@ -484,20 +522,28 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
 
   const observaciones = [];
   if ((cierre.detalles?.recargos?.length || 0) > 0) {
-    observaciones.push(`• Se aplicaron ${cierre.detalles.recargos.length} penalidad(es) por vencimiento.`);
+    observaciones.push(
+      `• Se aplicaron ${cierre.detalles.recargos.length} penalidad(es) por vencimiento.`,
+    );
   }
   if ((cierre.detalles?.nuevosCreditos?.length || 0) > 0) {
-    observaciones.push(`• Se registraron ${cierre.detalles.nuevosCreditos.length} nuevo(s) crédito(s).`);
+    observaciones.push(
+      `• Se registraron ${cierre.detalles.nuevosCreditos.length} nuevo(s) crédito(s).`,
+    );
   }
   if ((cierre.detalles?.nuevosClientes?.length || 0) > 0) {
-    observaciones.push(`• Se registraron ${cierre.detalles.nuevosClientes.length} nuevo(s) cliente(s).`);
+    observaciones.push(
+      `• Se registraron ${cierre.detalles.nuevosClientes.length} nuevo(s) cliente(s).`,
+    );
   }
   if ((cierre.detalles?.mora?.length || 0) > 0) {
-    observaciones.push(`• Hay ${cierre.detalles.mora.length} cliente(s) en mora.`);
+    observaciones.push(
+      `• Hay ${cierre.detalles.mora.length} cliente(s) en mora.`,
+    );
   }
 
   if (observaciones.length === 0) {
-    observaciones.push("Sin observaciones relevantes.");
+    observaciones.push('Sin observaciones relevantes.');
   }
 
   observaciones.forEach((obs) => {
@@ -510,7 +556,7 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
   currentY += 6;
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("15. Firmas de Responsabilidad", margin, currentY);
+  doc.text('15. Firmas de Responsabilidad', margin, currentY);
   currentY += 16;
 
   const firmaWidth = (contentWidth - 20) / 2;
@@ -524,11 +570,11 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
 
   doc.setFontSize(8);
   doc.setTextColor(...colors.lightGray);
-  doc.text("Elaborado por (Cobrador)", margin, firmaY + 5);
+  doc.text('Elaborado por (Cobrador)', margin, firmaY + 5);
   doc.text(
-    "Revisado por (Administrador)",
+    'Revisado por (Administrador)',
     margin + firmaWidth + 20,
-    firmaY + 5
+    firmaY + 5,
   );
   currentY = firmaY + 12;
 
@@ -539,11 +585,15 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
     doc.setFontSize(8);
     doc.setTextColor(...colors.lightGray);
     doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
-    doc.text("CobraDiario — Sistema de Gestión de Créditos y Cobros", margin, pageHeight - 8);
+    doc.text(
+      'CrediDev — Sistema de Gestión de Créditos y Cobros',
+      margin,
+      pageHeight - 8,
+    );
     doc.text(
       `${timeStr} | Página ${i} de ${pageCount}`,
       pageWidth - margin - 40,
-      pageHeight - 8
+      pageHeight - 8,
     );
   }
 
@@ -556,16 +606,16 @@ export function exportarCierreDiarioPDF(cierre, nombreNegocio = "") {
  * Formatea una hora para el PDF
  */
 function formatearHoraPDF(fecha) {
-  if (!fecha) return "—";
+  if (!fecha) return '—';
   const d = fecha?.toDate ? fecha.toDate() : new Date(fecha);
   try {
-    return new Intl.DateTimeFormat("es-CO", {
-      timeZone: "America/Bogota",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Intl.DateTimeFormat('es-CO', {
+      timeZone: 'America/Bogota',
+      hour: '2-digit',
+      minute: '2-digit',
     }).format(d);
   } catch (e) {
-    return "—";
+    return '—';
   }
 }
 
@@ -574,10 +624,10 @@ function formatearHoraPDF(fecha) {
  */
 function getTipoMovimientoLabel(tipo) {
   const labels = {
-    gasto: "Gasto",
-    ingreso_base: "Base Diaria",
-    seguro: "Seguro",
-    recargo_vencimiento: "Penalidad",
+    gasto: 'Gasto',
+    ingreso_base: 'Base Diaria',
+    seguro: 'Seguro',
+    recargo_vencimiento: 'Penalidad',
   };
   return labels[tipo] || tipo;
 }
@@ -586,7 +636,7 @@ function getTipoMovimientoLabel(tipo) {
  * Genera un PDF profesional de Cartera Global
  * Reporte gerencial con análisis estratégico de la cartera
  */
-export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
+export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = '') {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -602,11 +652,11 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   };
 
   const tableStyles = {
-    theme: "plain",
+    theme: 'plain',
     margin: { left: margin, right: margin, top: 0, bottom: 16 },
-    pageBreak: "auto",
+    pageBreak: 'auto',
     styles: {
-      font: "helvetica",
+      font: 'helvetica',
       fontSize: 9,
       cellPadding: 3,
       textColor: colors.darkGray,
@@ -616,7 +666,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
     headStyles: {
       fillColor: colors.primary,
       textColor: 255,
-      fontStyle: "bold",
+      fontStyle: 'bold',
       fontSize: 9,
     },
     alternateRowStyles: {
@@ -633,7 +683,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   }
   doc.setFontSize(18);
   doc.setTextColor(...colors.primary);
-  doc.text("Reporte de Cartera Global", margin, currentY);
+  doc.text('Reporte de Cartera Global', margin, currentY);
   currentY += 8;
 
   doc.setFontSize(10);
@@ -641,12 +691,12 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   doc.text(`Fecha de corte: ${datosCartera.fecha}`, margin, currentY);
   currentY += 5;
 
-  const formatter = new Intl.DateTimeFormat("es-CO", {
-    timeZone: "America/Bogota",
-    dateStyle: "short",
-    timeStyle: "short",
+  const formatter = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    dateStyle: 'short',
+    timeStyle: 'short',
   });
-  let timeStr = "";
+  let timeStr = '';
   try {
     timeStr = formatter.format(new Date());
   } catch (e) {
@@ -663,7 +713,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("2. Resumen General de la Cartera", margin, currentY);
+  doc.text('2. Resumen General de la Cartera', margin, currentY);
   currentY += 5;
 
   const {
@@ -679,20 +729,20 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   } = datosCartera.resumenGeneral;
 
   const resumenData = [
-    ["Total de créditos", String(totalCreditos)],
-    ["Créditos activos", String(creditosActivos)],
-    ["Créditos completados", String(creditosCompletados)],
-    ["Créditos anulados", String(creditosAnulados)],
-    ["Capital colocado", `$${formatearMonto(capitalColocado)}`],
-    ["Total proyectado a cobrar", `$${formatearMonto(totalProyectado)}`],
-    ["Total recuperado", `$${formatearMonto(totalRecuperado)}`],
-    ["Saldo pendiente por recuperar", `$${formatearMonto(saldoPendiente)}`],
-    ["Porcentaje de recuperación", `${porcentajeRecuperacion.toFixed(1)}%`],
+    ['Total de créditos', String(totalCreditos)],
+    ['Créditos activos', String(creditosActivos)],
+    ['Créditos completados', String(creditosCompletados)],
+    ['Créditos anulados', String(creditosAnulados)],
+    ['Capital colocado', `$${formatearMonto(capitalColocado)}`],
+    ['Total proyectado a cobrar', `$${formatearMonto(totalProyectado)}`],
+    ['Total recuperado', `$${formatearMonto(totalRecuperado)}`],
+    ['Saldo pendiente por recuperar', `$${formatearMonto(saldoPendiente)}`],
+    ['Porcentaje de recuperación', `${porcentajeRecuperacion.toFixed(1)}%`],
   ];
 
   doc.autoTable({
     startY: currentY,
-    head: [["Indicador", "Valor"]],
+    head: [['Indicador', 'Valor']],
     body: resumenData,
     ...tableStyles,
   });
@@ -703,20 +753,23 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
     currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
     doc.setFontSize(11);
     doc.setTextColor(...colors.primary);
-    doc.text("3. Índice de Mora (Cartera en Riesgo)", margin, currentY);
+    doc.text('3. Índice de Mora (Cartera en Riesgo)', margin, currentY);
     currentY += 5;
 
     const im = datosCartera.indiceMora;
     const parData = [
-      ["Cartera activa total", `$${formatearMonto(im.carteraActiva || 0)}`],
-      ["Cartera en riesgo (créditos con mora)", `$${formatearMonto(im.carteraEnRiesgo || 0)}`],
-      ["Índice de mora — PAR", `${(im.porcentaje || 0).toFixed(1)}%`],
-      ["Clientes en mora", String(im.clientesEnMora || 0)],
+      ['Cartera activa total', `$${formatearMonto(im.carteraActiva || 0)}`],
+      [
+        'Cartera en riesgo (créditos con mora)',
+        `$${formatearMonto(im.carteraEnRiesgo || 0)}`,
+      ],
+      ['Índice de mora — PAR', `${(im.porcentaje || 0).toFixed(1)}%`],
+      ['Clientes en mora', String(im.clientesEnMora || 0)],
     ];
 
     doc.autoTable({
       startY: currentY,
-      head: [["Indicador", "Valor"]],
+      head: [['Indicador', 'Valor']],
       body: parData,
       ...tableStyles,
     });
@@ -725,7 +778,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
     if (datosCartera.moraAging && datosCartera.moraAging.length > 0) {
       doc.setFontSize(10);
       doc.setTextColor(...colors.primary);
-      doc.text("Antigüedad de la mora", margin, currentY);
+      doc.text('Antigüedad de la mora', margin, currentY);
       currentY += 5;
 
       const agingBody = datosCartera.moraAging.map((t) => [
@@ -736,7 +789,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
 
       doc.autoTable({
         startY: currentY,
-        head: [["Tramo de días", "Clientes", "Déficit"]],
+        head: [['Tramo de días', 'Clientes', 'Déficit']],
         body: agingBody,
         ...tableStyles,
       });
@@ -748,10 +801,12 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("4. Distribución por Frecuencia", margin, currentY);
+  doc.text('4. Distribución por Frecuencia', margin, currentY);
   currentY += 5;
 
-  const frecuenciaBody = Object.entries(datosCartera.distribucionFrecuencia).map(([freq, data]) => [
+  const frecuenciaBody = Object.entries(
+    datosCartera.distribucionFrecuencia,
+  ).map(([freq, data]) => [
     freq.charAt(0).toUpperCase() + freq.slice(1),
     String(data.cantidad),
     `$${formatearMonto(data.capital)}`,
@@ -761,7 +816,9 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
 
   doc.autoTable({
     startY: currentY,
-    head: [["Frecuencia", "Cantidad", "Capital", "Saldo Pendiente", "Recuperado"]],
+    head: [
+      ['Frecuencia', 'Cantidad', 'Capital', 'Saldo Pendiente', 'Recuperado'],
+    ],
     body: frecuenciaBody,
     ...tableStyles,
   });
@@ -771,18 +828,18 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("5. Distribución por Estado", margin, currentY);
+  doc.text('5. Distribución por Estado', margin, currentY);
   currentY += 5;
 
   const estadoBody = [
-    ["Activos", String(datosCartera.distribucionEstado.activos)],
-    ["Completados", String(datosCartera.distribucionEstado.completados)],
-    ["Anulados", String(datosCartera.distribucionEstado.anulados)],
+    ['Activos', String(datosCartera.distribucionEstado.activos)],
+    ['Completados', String(datosCartera.distribucionEstado.completados)],
+    ['Anulados', String(datosCartera.distribucionEstado.anulados)],
   ];
 
   doc.autoTable({
     startY: currentY,
-    head: [["Estado", "Cantidad"]],
+    head: [['Estado', 'Cantidad']],
     body: estadoBody,
     ...tableStyles,
   });
@@ -792,7 +849,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("6. Clientes con Mayor Saldo Pendiente", margin, currentY);
+  doc.text('6. Clientes con Mayor Saldo Pendiente', margin, currentY);
   currentY += 5;
 
   if (datosCartera.top10Clientes && datosCartera.top10Clientes.length > 0) {
@@ -804,7 +861,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
 
     doc.autoTable({
       startY: currentY,
-      head: [["Cliente", "Créditos Activos", "Saldo Pendiente"]],
+      head: [['Cliente', 'Créditos Activos', 'Saldo Pendiente']],
       body: top10Body,
       ...tableStyles,
     });
@@ -812,7 +869,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No hay datos disponibles.", margin, currentY);
+    doc.text('No hay datos disponibles.', margin, currentY);
     currentY += 6;
   }
 
@@ -820,7 +877,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("7. Resumen Consolidado por Cliente", margin, currentY);
+  doc.text('7. Resumen Consolidado por Cliente', margin, currentY);
   currentY += 5;
 
   if (datosCartera.resumenClientes && datosCartera.resumenClientes.length > 0) {
@@ -836,7 +893,15 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
 
     doc.autoTable({
       startY: currentY,
-      head: [["Cliente", "Créditos", "Capital Prestado", "Total Recuperado", "Saldo Pendiente"]],
+      head: [
+        [
+          'Cliente',
+          'Créditos',
+          'Capital Prestado',
+          'Total Recuperado',
+          'Saldo Pendiente',
+        ],
+      ],
       body: resumenClientesBody,
       ...tableStyles,
     });
@@ -844,7 +909,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No hay datos disponibles.", margin, currentY);
+    doc.text('No hay datos disponibles.', margin, currentY);
     currentY += 6;
   }
 
@@ -852,7 +917,7 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   currentY = ensurePageBreak(doc, currentY, 38, pageHeight, margin);
   doc.setFontSize(11);
   doc.setTextColor(...colors.primary);
-  doc.text("8. Detalle Completo de Créditos", margin, currentY);
+  doc.text('8. Detalle Completo de Créditos', margin, currentY);
   currentY += 5;
 
   if (datosCartera.filas && datosCartera.filas.length > 0) {
@@ -869,7 +934,18 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
 
     doc.autoTable({
       startY: currentY,
-      head: [["Cliente", "Crédito", "Frecuencia", "Capital", "Total", "Pagado", "Saldo", "Estado"]],
+      head: [
+        [
+          'Cliente',
+          'Crédito',
+          'Frecuencia',
+          'Capital',
+          'Total',
+          'Pagado',
+          'Saldo',
+          'Estado',
+        ],
+      ],
       body: creditosBody,
       ...tableStyles,
     });
@@ -877,33 +953,57 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
   } else {
     doc.setFontSize(9);
     doc.setTextColor(...colors.lightGray);
-    doc.text("No hay créditos registrados.", margin, currentY);
+    doc.text('No hay créditos registrados.', margin, currentY);
     currentY += 6;
   }
 
   // ==================== 8. TOTALES ====================
   currentY = ensurePageBreak(doc, currentY, 28, pageHeight, margin);
-  const sumCapital = datosCartera.filas?.reduce((acc, f) => acc + f.capital, 0) || 0;
-  const sumTotal = datosCartera.filas?.reduce((acc, f) => acc + f.totalPagar, 0) || 0;
-  const sumPagado = datosCartera.filas?.reduce((acc, f) => acc + f.pagado, 0) || 0;
-  const sumSaldo = datosCartera.filas?.reduce((acc, f) => acc + f.saldo, 0) || 0;
+  const sumCapital =
+    datosCartera.filas?.reduce((acc, f) => acc + f.capital, 0) || 0;
+  const sumTotal =
+    datosCartera.filas?.reduce((acc, f) => acc + f.totalPagar, 0) || 0;
+  const sumPagado =
+    datosCartera.filas?.reduce((acc, f) => acc + f.pagado, 0) || 0;
+  const sumSaldo =
+    datosCartera.filas?.reduce((acc, f) => acc + f.saldo, 0) || 0;
 
   doc.setFontSize(10);
   doc.setTextColor(...colors.primary);
-  doc.setFont(undefined, "bold");
-  doc.text("TOTALES DE CARTERA", margin, currentY);
+  doc.setFont(undefined, 'bold');
+  doc.text('TOTALES DE CARTERA', margin, currentY);
   currentY += 5;
 
-  doc.setFont(undefined, "normal");
+  doc.setFont(undefined, 'normal');
   doc.setFontSize(9);
 
   const totalesData = [
-    [`Total: ${datosCartera.filas?.length || 0} créditos`, "—", "—", `$${formatearMonto(sumCapital)}`, `$${formatearMonto(sumTotal)}`, `$${formatearMonto(sumPagado)}`, `$${formatearMonto(sumSaldo)}`, "—"],
+    [
+      `Total: ${datosCartera.filas?.length || 0} créditos`,
+      '—',
+      '—',
+      `$${formatearMonto(sumCapital)}`,
+      `$${formatearMonto(sumTotal)}`,
+      `$${formatearMonto(sumPagado)}`,
+      `$${formatearMonto(sumSaldo)}`,
+      '—',
+    ],
   ];
 
   doc.autoTable({
     startY: currentY,
-    head: [["Cliente", "Crédito", "Frecuencia", "Capital", "Total", "Pagado", "Saldo", "Estado"]],
+    head: [
+      [
+        'Cliente',
+        'Crédito',
+        'Frecuencia',
+        'Capital',
+        'Total',
+        'Pagado',
+        'Saldo',
+        'Estado',
+      ],
+    ],
     body: totalesData,
     ...tableStyles,
   });
@@ -915,8 +1015,16 @@ export function exportarCarteraGlobalPDF(datosCartera, nombreNegocio = "") {
     doc.setFontSize(8);
     doc.setTextColor(...colors.lightGray);
     doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
-    doc.text("CobraDiario — Sistema de Gestión de Créditos y Cobros", margin, pageHeight - 8);
-    doc.text(`${timeStr} | Página ${i} de ${pageCount}`, pageWidth - margin - 40, pageHeight - 8);
+    doc.text(
+      'CrediDev — Sistema de Gestión de Créditos y Cobros',
+      margin,
+      pageHeight - 8,
+    );
+    doc.text(
+      `${timeStr} | Página ${i} de ${pageCount}`,
+      pageWidth - margin - 40,
+      pageHeight - 8,
+    );
   }
 
   const filename = `Cartera_Global_${datosCartera.fecha}.pdf`;

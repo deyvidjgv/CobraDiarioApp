@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import { useCobradiarios } from "../../hooks/useCobradiarios";
@@ -12,7 +12,7 @@ export default function Cobradiarios() {
   async function handleToggle(c) {
     const nuevoEstado = c.estado === "activo" ? "inactivo" : "activo";
     const verbo = nuevoEstado === "activo" ? "activar" : "desactivar";
-    if (!confirm(`¿Seguro que quieres ${verbo} a ${c.nombre}?`)) return;
+    if (!confirm(`Â¿Seguro que quieres ${verbo} a ${c.nombre}?`)) return;
 
     setBusyUid(c.uid);
     try {
@@ -30,11 +30,11 @@ export default function Cobradiarios() {
 
       <div className="p-4 space-y-4">
         {loading ? (
-          <p className="text-sm text-gray-400 py-10 text-center">Cargando cobradiarios...</p>
+          <p className="text-sm text-primary-light/70 py-10 text-center">Cargando cobradiarios...</p>
         ) : cobradiarios.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
-            <IconUsersGroup size={48} stroke={1.5} className="text-gray-300 mb-3" />
-            <p className="text-gray-500 text-sm">Aún no has creado ningún cobradiario</p>
+            <IconUsersGroup size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
+            <p className="text-primary-light/75 text-sm">AÃºn no has creado ningÃºn cobradiario</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -48,17 +48,17 @@ export default function Cobradiarios() {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-800 truncate">{c.nombre}</p>
-                  <p className="text-xs text-gray-400 truncate">
-                    {c.email} {c.celular ? `· ${c.celular}` : ""}
+                  <p className="text-sm font-medium text-primary truncate">{c.nombre}</p>
+                  <p className="text-xs text-primary-light/70 truncate">
+                    {c.email} {c.celular ? `Â· ${c.celular}` : ""}
                   </p>
                 </div>
 
                 <span
                   className={`text-[11px] font-medium px-2 py-1 rounded-full shrink-0 ${
                     c.estado === "activo"
-                      ? "bg-emerald-50 text-emerald-600"
-                      : "bg-gray-100 text-gray-400"
+                      ? "bg-emerald-50 text-al-dia"
+                      : "bg-surface-2 text-primary-light/70"
                   }`}
                 >
                   {c.estado === "activo" ? "Activo" : "Inactivo"}
@@ -67,8 +67,8 @@ export default function Cobradiarios() {
                 <button
                   type="button"
                   onClick={() => navigate(`/cobradiarios/operacion/${c.uid}`)}
-                  title="Ver operación (solo lectura, auditado)"
-                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary-bg/50 rounded-lg transition shrink-0"
+                  title="Ver operaciÃ³n (solo lectura, auditado)"
+                  className="p-2 text-primary-light/70 hover:text-primary hover:bg-primary-bg/50 rounded-lg transition shrink-0"
                 >
                   <IconEye size={18} stroke={1.5} />
                 </button>
@@ -78,7 +78,7 @@ export default function Cobradiarios() {
                   disabled={busyUid === c.uid}
                   onClick={() => handleToggle(c)}
                   title={c.estado === "activo" ? "Desactivar" : "Activar"}
-                  className="p-2 text-gray-400 hover:text-primary hover:bg-primary-bg/50 rounded-lg transition shrink-0 disabled:opacity-40"
+                  className="p-2 text-primary-light/70 hover:text-primary hover:bg-primary-bg/50 rounded-lg transition shrink-0 disabled:opacity-40"
                 >
                   <IconPower size={18} stroke={1.5} />
                 </button>
@@ -99,3 +99,4 @@ export default function Cobradiarios() {
     </div>
   );
 }
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import Badge from "../../components/ui/Badge";
@@ -29,7 +29,7 @@ export default function DetalleCredito() {
   useEffect(() => {
     if (!orgId || !loanId) return;
 
-    // Cargar crédito
+    // Cargar crÃ©dito
     getDocument(orgId, "loans", loanId).then((doc) => {
       setLoan(doc);
       if (doc?.clientId) {
@@ -38,7 +38,7 @@ export default function DetalleCredito() {
       setLoading(false);
     });
 
-    // Suscribirse a pagos de este crédito. El cobradiario filtra por dueño:
+    // Suscribirse a pagos de este crÃ©dito. El cobradiario filtra por dueÃ±o:
     // "las reglas no son filtros", la query debe pedir solo lo suyo.
     const unsub = subscribeToCollection(
       orgId,
@@ -60,8 +60,8 @@ export default function DetalleCredito() {
   if (loading) {
     return (
       <>
-        <Header title="Detalle del crédito" showBack />
-        <p className="p-6 text-sm text-gray-400">Cargando...</p>
+        <Header title="Detalle del crÃ©dito" showBack />
+        <p className="p-6 text-sm text-primary-light/70">Cargando...</p>
       </>
     );
   }
@@ -69,8 +69,8 @@ export default function DetalleCredito() {
   if (!loan) {
     return (
       <>
-        <Header title="Detalle del crédito" showBack />
-        <p className="p-6 text-sm text-red-400">Crédito no encontrado</p>
+        <Header title="Detalle del crÃ©dito" showBack />
+        <p className="p-6 text-sm text-mora/80">CrÃ©dito no encontrado</p>
       </>
     );
   }
@@ -81,7 +81,7 @@ export default function DetalleCredito() {
   const hasPayments = payments.length > 0;
 
   async function handleAnular() {
-    if (!confirm("¿Anular este crédito? El crédito queda inactivo pero TODO su historial de pagos y movimientos se conserva.")) return;
+    if (!confirm("Â¿Anular este crÃ©dito? El crÃ©dito queda inactivo pero TODO su historial de pagos y movimientos se conserva.")) return;
     try {
       await anularLoan(loanId);
       navigate(client?.id ? `/clientes/${client.id}` : "/clientes", { replace: true });
@@ -100,9 +100,9 @@ export default function DetalleCredito() {
       navigate(client?.id ? `/clientes/${client.id}` : "/clientes", { replace: true });
     } catch (err) {
       if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
-        setPasswordError("Contraseña incorrecta. Inténtalo de nuevo.");
+        setPasswordError("ContraseÃ±a incorrecta. IntÃ©ntalo de nuevo.");
       } else {
-        setPasswordError(err.message || "Error al verificar la contraseña");
+        setPasswordError(err.message || "Error al verificar la contraseÃ±a");
       }
     } finally {
       setProcessing(false);
@@ -112,7 +112,7 @@ export default function DetalleCredito() {
   return (
     <>
       <Header 
-        title="Detalle del crédito" 
+        title="Detalle del crÃ©dito" 
         showBack 
         modalOpen={showConfirm} 
         closeModal={() => {
@@ -128,8 +128,8 @@ export default function DetalleCredito() {
             {client?.nombre?.charAt(0) || "?"}
           </div>
           <div className="flex-1">
-            <p className="font-medium text-gray-800">{client?.nombre || "Cliente"}</p>
-            <p className="text-xs text-gray-400">{client?.telefono}</p>
+            <p className="font-medium text-primary">{client?.nombre || "Cliente"}</p>
+            <p className="text-xs text-primary-light/70">{client?.telefono}</p>
           </div>
           <Badge status={mora.estado} />
         </div>
@@ -138,28 +138,28 @@ export default function DetalleCredito() {
         <div className="bg-white rounded-xl p-4 border-thin space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-xs text-gray-400">Capital</p>
+              <p className="text-xs text-primary-light/70">Capital</p>
               <p className="font-medium">${formatearMonto(loan.capital)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400">Interés</p>
+              <p className="text-xs text-primary-light/70">InterÃ©s</p>
               <p className="font-medium">{loan.interesAplicado}%</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400">Total a pagar</p>
+              <p className="text-xs text-primary-light/70">Total a pagar</p>
               <p className="font-medium">${formatearMonto(loan.montoTotalAPagar)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400">Cuota</p>
+              <p className="text-xs text-primary-light/70">Cuota</p>
               <p className="font-medium text-primary">${formatearMonto(loan.cuota)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400">Pagado</p>
-              <p className="font-medium text-emerald-600">${formatearMonto(pagado)}</p>
+              <p className="text-xs text-primary-light/70">Pagado</p>
+              <p className="font-medium text-al-dia">${formatearMonto(pagado)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400">Saldo pendiente</p>
-              <p className="font-medium text-red-600">${formatearMonto(loan.saldoPendiente ?? 0)}</p>
+              <p className="text-xs text-primary-light/70">Saldo pendiente</p>
+              <p className="font-medium text-mora">${formatearMonto(loan.saldoPendiente ?? 0)}</p>
             </div>
           </div>
 
@@ -168,34 +168,34 @@ export default function DetalleCredito() {
             <div className="w-full bg-surface-2 rounded-full h-2.5">
               <div className="bg-primary-light rounded-full h-2.5 transition-all" style={{ width: `${progreso}%` }} />
             </div>
-            <p className="text-xs text-gray-400 text-right mt-1">{progreso}% completado</p>
+            <p className="text-xs text-primary-light/70 text-right mt-1">{progreso}% completado</p>
           </div>
         </div>
 
         {/* Mora info */}
         {mora.estado === "mora" && (
-          <div className="bg-red-50 border-thin border-red-200 rounded-xl p-4 text-sm">
-            <p className="font-medium text-red-700 flex items-center gap-1">
+          <div className="bg-mora/10 border-thin border-mora/20 rounded-xl p-4 text-sm">
+            <p className="font-medium text-mora flex items-center gap-1">
               <IconAlertTriangle size={18} stroke={2} /> En mora
             </p>
-            <p className="text-red-600 mt-1">
-              Déficit: ${formatearMonto(mora.deficit)} ({mora.cuotasMora} cuotas atrasadas)
+            <p className="text-mora mt-1">
+              DÃ©ficit: ${formatearMonto(mora.deficit)} ({mora.cuotasMora} cuotas atrasadas)
             </p>
           </div>
         )}
 
         {/* Historial de pagos */}
         <div>
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Historial de pagos</h3>
+          <h3 className="text-sm font-medium text-primary mb-3">Historial de pagos</h3>
           {payments.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">Aún no hay pagos registrados</p>
+            <p className="text-sm text-primary-light/70 text-center py-8">AÃºn no hay pagos registrados</p>
           ) : (
             <div className="space-y-2">
               {payments.map((p) => (
                 <div key={p.id} className="bg-white rounded-xl px-4 py-3 border-thin flex justify-between items-center">
                   <div>
-                    <p className="text-sm font-medium text-gray-700">${formatearMonto(p.monto)}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="text-sm font-medium text-primary">${formatearMonto(p.monto)}</p>
+                    <p className="text-xs text-primary-light/70">
                       {toDate(p.fecha).toLocaleDateString("es-CO", {
                         day: "numeric",
                         month: "short",
@@ -203,7 +203,7 @@ export default function DetalleCredito() {
                       })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 text-emerald-600 text-xs font-medium">
+                  <div className="flex items-center gap-1 text-al-dia text-xs font-medium">
                     <IconCheck size={14} stroke={2} />
                     <span>Cobro</span>
                   </div>
@@ -213,7 +213,7 @@ export default function DetalleCredito() {
           )}
         </div>
         
-        {/* Zona Peligrosa — solo visible para Admin (inmutabilidad financiera) */}
+        {/* Zona Peligrosa â€” solo visible para Admin (inmutabilidad financiera) */}
         {isAdmin && loan.estado === "activo" && (
         <div className="pt-6 space-y-2">
           <button
@@ -221,14 +221,14 @@ export default function DetalleCredito() {
             className="w-full bg-amber-50 border border-amber-200 text-amber-700 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-amber-100 transition"
           >
             <IconBan size={18} stroke={1.5} />
-            Anular crédito (conserva historial)
+            Anular crÃ©dito (conserva historial)
           </button>
           <button
             onClick={() => setShowConfirm(true)}
-            className="w-full bg-red-50 border border-red-100 text-red-600 font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-red-100 transition"
+            className="w-full bg-mora/10 border border-mora/15 text-mora font-medium rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-mora/15 transition"
           >
             <IconTrash size={18} stroke={1.5} />
-            Eliminar crédito y sus movimientos
+            Eliminar crÃ©dito y sus movimientos
           </button>
         </div>
         )}
@@ -236,9 +236,9 @@ export default function DetalleCredito() {
 
       <ConfirmarPasswordModal
         isOpen={showConfirm}
-        title="Eliminar Crédito"
-        description="¿Estás seguro de que deseas eliminar permanentemente este crédito? Esta acción eliminará el crédito y borrará absolutamente todos sus movimientos del historial de la caja (préstamo inicial, pagos, seguros y recargos)."
-        warning="⚠ Esta acción altera el flujo de caja histórico y no se puede deshacer."
+        title="Eliminar CrÃ©dito"
+        description="Â¿EstÃ¡s seguro de que deseas eliminar permanentemente este crÃ©dito? Esta acciÃ³n eliminarÃ¡ el crÃ©dito y borrarÃ¡ absolutamente todos sus movimientos del historial de la caja (prÃ©stamo inicial, pagos, seguros y recargos)."
+        warning="âš  Esta acciÃ³n altera el flujo de caja histÃ³rico y no se puede deshacer."
         onConfirm={handleAction}
         onCancel={() => {
           setShowConfirm(false);
@@ -246,10 +246,11 @@ export default function DetalleCredito() {
         }}
         loading={processing}
         error={passwordError}
-        confirmText="Confirmar eliminación"
+        confirmText="Confirmar eliminaciÃ³n"
         confirmIcon={<IconTrash size={16} stroke={1.5} />}
       />
     </>
   );
 }
+
 

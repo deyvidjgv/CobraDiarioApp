@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import { IconAlertTriangle, IconLock, IconEye, IconEyeOff, IconTrash } from "@tabler/icons-react";
 
 export default function ConfirmarPasswordModal({
@@ -12,7 +12,7 @@ export default function ConfirmarPasswordModal({
   error = "",
   confirmText = "Confirmar",
   confirmIcon = <IconTrash size={16} stroke={1.5} />,
-  confirmColor = "bg-red-500 hover:bg-red-600",
+  confirmColor = "bg-mora/100 hover:bg-red-600",
 }) {
   const [password, setPassword] = useState("");
   const [showPass, setShowPass] = useState(false);
@@ -39,56 +39,56 @@ export default function ConfirmarPasswordModal({
         className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] transition-opacity"
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 border border-[#E5E5EA] space-y-4 shadow-xl max-w-lg w-full">
+        <form onSubmit={handleSubmit} className="bg-white rounded-2xl p-6 border border-[#E3DFD8] space-y-4 shadow-xl max-w-lg w-full">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center flex-shrink-0">
               <IconAlertTriangle size={24} stroke={1.5} className="text-amber-500" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-gray-800">{title}</h3>
-              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+              <h3 className="text-base font-semibold text-primary">{title}</h3>
+              <p className="text-xs text-primary-light/75 mt-1 leading-relaxed">
                 {description}
                 {warning && (
                   <>
                     <br />
-                    <span className="text-amber-600 font-medium">{warning}</span>
+                    <span className="text-gold font-medium">{warning}</span>
                   </>
                 )}
               </p>
             </div>
           </div>
 
-          {/* Error de contraseña */}
+          {/* Error de contraseÃ±a */}
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-xl px-3.5 py-2.5 flex items-center gap-2">
-              <span>⚠</span>
+            <div className="bg-mora/10 border border-mora/20 text-mora text-xs rounded-xl px-3.5 py-2.5 flex items-center gap-2">
+              <span>âš </span>
               <span>{error}</span>
             </div>
           )}
 
-          {/* Campo de confirmación de contraseña */}
+          {/* Campo de confirmaciÃ³n de contraseÃ±a */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1.5">
-              Ingresa tu contraseña para autorizar:
+            <label className="block text-xs font-medium text-primary-light mb-1.5">
+              Ingresa tu contraseÃ±a para autorizar:
             </label>
             <div className="relative">
               <IconLock
                 size={18}
                 stroke={1.5}
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-primary-light/70 pointer-events-none"
               />
               <input
                 type={showPass ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tu contraseña de usuario"
-                className="w-full rounded-xl border border-[#E5E5EA] pl-10 pr-10 py-3 text-sm text-gray-800 placeholder-gray-300 focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
+                placeholder="Tu contraseÃ±a de usuario"
+                className="w-full rounded-xl border border-[#E3DFD8] pl-10 pr-10 py-3 text-sm text-primary placeholder-gray-300 focus:outline-none focus:border-primary-light focus:ring-2 focus:ring-primary-light/20 transition"
               />
               <button
                 type="button"
                 onClick={() => setShowPass(!showPass)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-primary-light/70 hover:text-primary-light transition"
               >
                 {showPass ? (
                   <IconEyeOff size={18} stroke={1.5} />
@@ -103,7 +103,7 @@ export default function ConfirmarPasswordModal({
             <button
               type="button"
               onClick={handleCancel}
-              className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-[#E5E5EA] text-xs sm:text-sm font-medium text-gray-500 hover:bg-gray-50 transition"
+              className="flex-1 min-w-0 px-4 py-3 rounded-xl border border-[#E3DFD8] text-xs sm:text-sm font-medium text-primary-light/75 hover:bg-surface-1 transition"
             >
               Cancelar
             </button>
@@ -126,3 +126,4 @@ export default function ConfirmarPasswordModal({
     </>
   );
 }
+

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+﻿import { useState, useEffect, useMemo } from "react";
 import Header from "../../components/layout/Header";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
@@ -74,21 +74,21 @@ export default function Reportes() {
     .filter((m) => m.tipo === "cobro")
     .reduce((acc, m) => acc + m.monto, 0);
 
-  // Esperado del día: una cuota por crédito activo (tope al saldo)
+  // Esperado del dÃ­a: una cuota por crÃ©dito activo (tope al saldo)
   const esperadoHoy = loans
     .filter((l) => l.estado === "activo")
     .reduce((acc, l) => acc + Math.min(l.cuota || 0, l.saldoPendiente ?? (l.cuota ?? 0)), 0);
   const noCobradoHoy = Math.max(0, esperadoHoy - cobradoFecha);
   const efectividadDia = esperadoHoy > 0 ? round2((cobradoFecha / esperadoHoy) * 100) : null;
 
-  // Mora por antigüedad (aging): aproxima días de mora según frecuencia
+  // Mora por antigÃ¼edad (aging): aproxima dÃ­as de mora segÃºn frecuencia
   const DIAS_POR_CUOTA = { diario: 1, semanal: 7, quincenal: 15, mensual: 30 };
   const tramosAging = useMemo(() => {
     const tramos = [
-      { tramo: "1-15 días", min: 1, max: 15, clientes: 0, deficit: 0 },
-      { tramo: "16-30 días", min: 16, max: 30, clientes: 0, deficit: 0 },
-      { tramo: "31-60 días", min: 31, max: 60, clientes: 0, deficit: 0 },
-      { tramo: "Más de 60 días", min: 61, max: Infinity, clientes: 0, deficit: 0 },
+      { tramo: "1-15 dÃ­as", min: 1, max: 15, clientes: 0, deficit: 0 },
+      { tramo: "16-30 dÃ­as", min: 16, max: 30, clientes: 0, deficit: 0 },
+      { tramo: "31-60 dÃ­as", min: 31, max: 60, clientes: 0, deficit: 0 },
+      { tramo: "MÃ¡s de 60 dÃ­as", min: 61, max: Infinity, clientes: 0, deficit: 0 },
     ];
     rankingMora.forEach(({ loan, mora }) => {
       const dias = Math.round((mora.cuotasMora || 0) * (DIAS_POR_CUOTA[loan.frecuencia] || 1));
@@ -101,7 +101,7 @@ export default function Reportes() {
     return tramos.filter((t) => t.clientes > 0);
   }, [rankingMora]);
 
-  // Índice de mora (PAR): saldo de créditos con mora / cartera activa
+  // Ãndice de mora (PAR): saldo de crÃ©ditos con mora / cartera activa
   const indiceMora = useMemo(() => {
     const carteraEnRiesgo = rankingMora.reduce(
       (acc, item) => acc + (item.loan.saldoPendiente || 0),
@@ -127,14 +127,14 @@ export default function Reportes() {
 
       if (loan) {
         const mora = calcularMoraGlobal(loan);
-        const estadoLabels = { mora: "En mora", al_dia: "Al día", adelantado: "Adelanto", completado: "Completado" };
+        const estadoLabels = { mora: "En mora", al_dia: "Al dÃ­a", adelantado: "Adelanto", completado: "Completado" };
         estadoStr = estadoLabels[mora.estado] || mora.estado;
       }
 
       return {
         ...m,
         clienteNombre: nombreCliente,
-        nota: nombreCliente ? `Cobro: ${nombreCliente}` : (m.nota || "Cobro crédito"),
+        nota: nombreCliente ? `Cobro: ${nombreCliente}` : (m.nota || "Cobro crÃ©dito"),
         estado: estadoStr,
       };
     });
@@ -149,7 +149,7 @@ export default function Reportes() {
   }
 
   async function handleGenerarCierre() {
-    if (!confirm(`¿Generar reporte definitivo para el ${selectedDate}?`)) return;
+    if (!confirm(`Â¿Generar reporte definitivo para el ${selectedDate}?`)) return;
     setGenerating(true);
     try {
       const nuevosClientes = clients.filter((c) => {
@@ -159,7 +159,7 @@ export default function Reportes() {
         return getColombiaDateKey(toDate(l.createdAt)) === selectedDate;
       });
       const listaMora = rankingMora.map(item => ({
-        nombre: item.client.nombre || "—",
+        nombre: item.client.nombre || "â€”",
         cuotasMora: item.mora.cuotasMora,
         deficit: item.mora.deficit
       }));
@@ -190,7 +190,7 @@ export default function Reportes() {
       // Enriquecer nuevosCreditos con nombre del cliente
       const nuevosCreditosEnriquecidos = nuevosCreditos.map((l) => ({
         ...l,
-        clienteNombre: clientMap[l.clientId]?.nombre || "—",
+        clienteNombre: clientMap[l.clientId]?.nombre || "â€”",
       }));
 
       const cierreObj = construirCierreDiario(
@@ -239,7 +239,7 @@ export default function Reportes() {
     const saldoPendiente = loans.reduce((acc, l) => acc + (l.saldoPendiente || 0), 0);
     const porcentajeRecuperacion = capitalColocado > 0 ? (totalRecuperado / capitalColocado) * 100 : 0;
 
-    // Distribución por frecuencia
+    // DistribuciÃ³n por frecuencia
     const distribucionFrecuencia = {};
     loans.forEach((l) => {
       const freq = l.frecuencia || "Sin definir";
@@ -258,7 +258,7 @@ export default function Reportes() {
       distribucionFrecuencia[freq].recuperado += pagado;
     });
 
-    // Distribución por estado
+    // DistribuciÃ³n por estado
     const distribucionEstado = {
       activos: creditosActivos,
       completados: creditosCompletados,
@@ -271,7 +271,7 @@ export default function Reportes() {
       const clientId = l.clientId;
       if (!clientesSaldo[clientId]) {
         clientesSaldo[clientId] = {
-          nombre: clientMap[clientId]?.nombre || "—",
+          nombre: clientMap[clientId]?.nombre || "â€”",
           cantidad: 0,
           saldo: 0,
         };
@@ -302,7 +302,7 @@ export default function Reportes() {
       };
     });
 
-    // Enriquecer tabla de créditos con datos necesarios
+    // Enriquecer tabla de crÃ©ditos con datos necesarios
     const clientLoanCounts = {};
     const filas = loans.map((l) => {
       const clientId = l.clientId;
@@ -310,12 +310,12 @@ export default function Reportes() {
       const numCredito = `#${clientLoanCounts[clientId]}`;
 
       const pagado = (l.montoTotalAPagar || 0) - (l.saldoPendiente ?? 0);
-      const clienteNombre = clientMap[l.clientId]?.nombre || "—";
+      const clienteNombre = clientMap[l.clientId]?.nombre || "â€”";
 
       return {
         cliente: clienteNombre,
         credito: numCredito,
-        frecuencia: l.frecuencia ? l.frecuencia.toUpperCase() : "—",
+        frecuencia: l.frecuencia ? l.frecuencia.toUpperCase() : "â€”",
         capital: l.capital || 0,
         totalPagar: l.montoTotalAPagar || 0,
         pagado,
@@ -324,7 +324,7 @@ export default function Reportes() {
       };
     });
 
-    // Llamar la nueva función mejorada
+    // Llamar la nueva funciÃ³n mejorada
     const datos = {
       fecha: getColombiaDateKey(),
       resumenGeneral: {
@@ -367,69 +367,69 @@ export default function Reportes() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+            className="w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           />
         </div>
 
         {/* Resumen Global */}
         <div>
-          <h3 className="section-title mb-3">Resumen del día</h3>
+          <h3 className="section-title mb-3">Resumen del dÃ­a</h3>
           <div className="grid grid-cols-2 gap-3">
             <div className="card p-4 bg-gradient-to-br from-white to-primary-bg/40">
-              <p className="text-xs text-gray-400">Esperado hoy</p>
+              <p className="text-xs text-primary-light/70">Esperado hoy</p>
               <p className="text-lg font-semibold text-primary mt-1" translate="no">${formatearMonto(esperadoHoy)}</p>
             </div>
             <div className="card p-4 bg-gradient-to-br from-white to-emerald-50">
-              <p className="text-xs text-gray-400">Cobrado ({selectedDate})</p>
-              <p className="text-lg font-semibold text-emerald-600 mt-1" translate="no">${formatearMonto(cobradoFecha)}</p>
+              <p className="text-xs text-primary-light/70">Cobrado ({selectedDate})</p>
+              <p className="text-lg font-semibold text-al-dia mt-1" translate="no">${formatearMonto(cobradoFecha)}</p>
             </div>
             <div className="card p-4">
-              <p className="text-xs text-gray-400">Efectividad</p>
-              <p className={`text-lg font-semibold mt-1 ${efectividadDia >= 80 ? "text-emerald-600" : efectividadDia >= 50 ? "text-amber-600" : "text-red-600"}`}>
-                {efectividadDia !== null ? `${efectividadDia.toFixed(1)}%` : "—"}
+              <p className="text-xs text-primary-light/70">Efectividad</p>
+              <p className={`text-lg font-semibold mt-1 ${efectividadDia >= 80 ? "text-al-dia" : efectividadDia >= 50 ? "text-gold" : "text-mora"}`}>
+                {efectividadDia !== null ? `${efectividadDia.toFixed(1)}%` : "â€”"}
               </p>
             </div>
             <div className="card p-4">
-              <p className="text-xs text-gray-400">Saldo caja</p>
+              <p className="text-xs text-primary-light/70">Saldo caja</p>
               <p className="text-lg font-semibold text-primary mt-1" translate="no">${formatearMonto(saldo)}</p>
             </div>
             <div className="card p-4">
-              <p className="text-xs text-gray-400">Total prestado</p>
+              <p className="text-xs text-primary-light/70">Total prestado</p>
               <p className="text-lg font-semibold text-primary mt-1" translate="no">${formatearMonto(totalPrestado)}</p>
             </div>
             <div className="card p-4">
-              <p className="text-xs text-gray-400">Por cobrar (cartera)</p>
-              <p className="text-lg font-semibold text-red-600 mt-1" translate="no">${formatearMonto(totalPorCobrar)}</p>
+              <p className="text-xs text-primary-light/70">Por cobrar (cartera)</p>
+              <p className="text-lg font-semibold text-mora mt-1" translate="no">${formatearMonto(totalPorCobrar)}</p>
             </div>
           </div>
         </div>
 
-        {/* Índice de mora + aging */}
+        {/* Ãndice de mora + aging */}
         <div className="card p-4 space-y-3">
-          <h3 className="section-title">Índice de mora (PAR)</h3>
+          <h3 className="section-title">Ãndice de mora (PAR)</h3>
           <div className="flex items-baseline justify-between text-sm">
-            <span className="text-gray-500">Cartera en riesgo</span>
-            <span className="font-semibold text-gray-800" translate="no">
+            <span className="text-primary-light/75">Cartera en riesgo</span>
+            <span className="font-semibold text-primary" translate="no">
               ${formatearMonto(indiceMora.carteraEnRiesgo)} / ${formatearMonto(indiceMora.carteraActiva)}
             </span>
           </div>
           <div className="h-2.5 rounded-full bg-surface-2 overflow-hidden">
             <div
-              className={`h-2.5 rounded-full transition-all ${indiceMora.porcentaje <= 10 ? "bg-emerald-500" : indiceMora.porcentaje <= 25 ? "bg-amber-500" : "bg-red-500"}`}
+              className={`h-2.5 rounded-full transition-all ${indiceMora.porcentaje <= 10 ? "bg-al-dia" : indiceMora.porcentaje <= 25 ? "bg-gold" : "bg-mora/100"}`}
               style={{ width: `${Math.min(100, indiceMora.porcentaje)}%` }}
             />
           </div>
-          <p className="text-xs text-gray-400">
-            {indiceMora.porcentaje.toFixed(1)}% de la cartera activa está en riesgo ·{" "}
+          <p className="text-xs text-primary-light/70">
+            {indiceMora.porcentaje.toFixed(1)}% de la cartera activa estÃ¡ en riesgo Â·{" "}
             {indiceMora.clientesEnMora} cliente(s) en mora
           </p>
           {tramosAging.length > 0 && (
             <div className="grid grid-cols-2 gap-2 pt-1">
               {tramosAging.map((t) => (
                 <div key={t.tramo} className="rounded-xl bg-surface-1 px-3 py-2">
-                  <p className="text-[11px] text-gray-400">{t.tramo}</p>
-                  <p className="text-sm font-medium text-gray-700">
-                    {t.clientes} · ${formatearMonto(t.deficit)}
+                  <p className="text-[11px] text-primary-light/70">{t.tramo}</p>
+                  <p className="text-sm font-medium text-primary">
+                    {t.clientes} Â· ${formatearMonto(t.deficit)}
                   </p>
                 </div>
               ))}
@@ -443,30 +443,30 @@ export default function Reportes() {
 
           {/* Arqueo de caja */}
           <div className="rounded-xl bg-surface-1 p-3 space-y-2">
-            <p className="text-xs font-medium text-gray-600">
-              Arqueo de caja — efectivo contado (opcional)
+            <p className="text-xs font-medium text-primary-light">
+              Arqueo de caja â€” efectivo contado (opcional)
             </p>
             <input
               type="number"
               min="0"
               inputMode="numeric"
-              placeholder="Conteo físico del efectivo ($)"
+              placeholder="Conteo fÃ­sico del efectivo ($)"
               value={saldoContado}
               onChange={(e) => setSaldoContado(e.target.value)}
-              className="w-full rounded-xl border border-[#E5E5EA] px-4 py-2.5 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+              className="w-full rounded-xl border border-[#E3DFD8] px-4 py-2.5 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
             />
             {saldoContado !== "" && (
-              <p className={`text-xs ${Math.abs(Number(saldoContado) - saldo) < 1 ? "text-emerald-600" : "text-amber-600"}`}>
-                Esperado ${formatearMonto(saldo)} ·{" "}
+              <p className={`text-xs ${Math.abs(Number(saldoContado) - saldo) < 1 ? "text-al-dia" : "text-gold"}`}>
+                Esperado ${formatearMonto(saldo)} Â·{" "}
                 {Math.abs(Number(saldoContado) - saldo) < 1
-                  ? "cuadrado ✓"
+                  ? "cuadrado âœ“"
                   : `diferencia ${formatearMonto(Number(saldoContado) - saldo)}`}
               </p>
             )}
           </div>
 
           {loadingCierre ? (
-            <p className="text-sm text-gray-400">Cargando estado...</p>
+            <p className="text-sm text-primary-light/70">Cargando estado...</p>
           ) : cierreGuardado ? (
             <div className="space-y-3">
               <div className="bg-emerald-50 text-emerald-700 p-3 rounded-lg text-sm border-thin border-emerald-100 flex justify-between items-center">
@@ -486,7 +486,7 @@ export default function Reportes() {
                 </button>
                 <button
                   onClick={handleDescargarCierreExcel}
-                  title="Excel para trabajar los números (el PDF con firmas es el comprobante)"
+                  title="Excel para trabajar los nÃºmeros (el PDF con firmas es el comprobante)"
                   className="bg-surface-1 border-thin text-emerald-700 font-medium rounded-xl px-4 py-3 hover:bg-surface-2 transition"
                 >
                   <IconFileSpreadsheet size={20} stroke={1.5} />
@@ -494,7 +494,7 @@ export default function Reportes() {
                 <button
                   onClick={handleGenerarCierre}
                   disabled={generating}
-                  className="bg-surface-1 border-thin text-gray-600 font-medium rounded-xl px-4 py-3 hover:bg-surface-2 transition disabled:opacity-50"
+                  className="bg-surface-1 border-thin text-primary-light font-medium rounded-xl px-4 py-3 hover:bg-surface-2 transition disabled:opacity-50"
                   title="Volver a generar reporte para capturar cambios recientes"
                 >
                   <IconRefresh size={20} stroke={1.5} />
@@ -503,8 +503,8 @@ export default function Reportes() {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-sm text-amber-600 bg-amber-50 p-3 rounded-lg border-thin border-amber-100">
-                Aún no has generado el reporte de este día.
+              <p className="text-sm text-gold bg-amber-50 p-3 rounded-lg border-thin border-amber-100">
+                AÃºn no has generado el reporte de este dÃ­a.
               </p>
               <button
                 onClick={handleGenerarCierre}
@@ -539,3 +539,4 @@ export default function Reportes() {
     </div>
   );
 }
+

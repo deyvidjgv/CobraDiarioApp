@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import Badge from "../../components/ui/Badge";
@@ -66,7 +66,7 @@ export default function RegistrarCobro() {
           montoInicializado.current = true;
         }
       } catch (err) {
-        console.error("Error cargando crédito:", err);
+        console.error("Error cargando crÃ©dito:", err);
       } finally {
         setLoading(false);
       }
@@ -81,8 +81,8 @@ export default function RegistrarCobro() {
   const recargoPorcentaje = loan?.vencimiento?.porcentaje ?? 0;
   const recargoCalculado = loan ? calcularRecargo(loan.saldoPendiente ?? 0, recargoPorcentaje) : 0;
 
-  // ─── Renovación de cartulina (disponible en cualquier momento) ───
-  // Entrega = monto nuevo solicitado − saldo pendiente − seguro (sobre el
+  // â”€â”€â”€ RenovaciÃ³n de cartulina (disponible en cualquier momento) â”€â”€â”€
+  // Entrega = monto nuevo solicitado âˆ’ saldo pendiente âˆ’ seguro (sobre el
   // monto nuevo). La nueva cartulina se crea por el monto solicitado.
   const montoNuevo = montoSolicitado ? Number(montoSolicitado) || 0 : 0;
   const saldoActualRenov = loan?.saldoPendiente ?? 0;
@@ -99,7 +99,7 @@ export default function RegistrarCobro() {
   function handleCaptureCurrentGps() {
     if (!client?.id) return;
     if (!navigator.geolocation) {
-      alert("Geolocalización no disponible.");
+      alert("GeolocalizaciÃ³n no disponible.");
       return;
     }
     setCapturingGps(true);
@@ -107,12 +107,12 @@ export default function RegistrarCobro() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         updateClient(client.id, { ubicacion: { lat: latitude, lng: longitude } })
-          .then(() => alert("Ubicación del cliente guardada con éxito."))
-          .catch((e) => alert("Error guardando ubicación: " + e.message))
+          .then(() => alert("UbicaciÃ³n del cliente guardada con Ã©xito."))
+          .catch((e) => alert("Error guardando ubicaciÃ³n: " + e.message))
           .finally(() => setCapturingGps(false));
       },
       (err) => {
-        alert("No se pudo obtener la ubicación: " + err.message);
+        alert("No se pudo obtener la ubicaciÃ³n: " + err.message);
         setCapturingGps(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
@@ -123,7 +123,7 @@ export default function RegistrarCobro() {
     if (!loan) return;
     if (!loan.vencimiento || !loan.vencimiento.activo) {
       setValidacionRecargo({
-        mensaje: "El crédito no tiene vencimiento activo.",
+        mensaje: "El crÃ©dito no tiene vencimiento activo.",
         pendiente: false,
       });
       return;
@@ -136,7 +136,7 @@ export default function RegistrarCobro() {
 
     setValidacionRecargo({
       mensaje: hayCorteVencidoPendiente(loan)
-        ? "El crédito está pendiente de recargo y debe aplicarse ahora."
+        ? "El crÃ©dito estÃ¡ pendiente de recargo y debe aplicarse ahora."
         : "No es necesario aplicar recargo en este momento.",
       pendiente: hayCorteVencidoPendiente(loan),
       recargoEsperado,
@@ -148,10 +148,10 @@ export default function RegistrarCobro() {
   }
 
   /**
-   * Renovar cartulina: cierra este crédito y crea uno nuevo por el monto
+   * Renovar cartulina: cierra este crÃ©dito y crea uno nuevo por el monto
    * solicitado. El cliente recibe en efectivo el monto nuevo MENOS el
    * saldo pendiente y el seguro (calculado sobre el monto nuevo).
-   * Disponible en cualquier momento — no exige esperar el vencimiento.
+   * Disponible en cualquier momento â€” no exige esperar el vencimiento.
    */
   async function handleRenovarCartulina() {
     if (!loan) return;
@@ -169,7 +169,7 @@ export default function RegistrarCobro() {
       return;
     }
     if (!renewCuotas || renewCuotas < 1) {
-      alert("Indica el número de cuotas de la nueva cartulina.");
+      alert("Indica el nÃºmero de cuotas de la nueva cartulina.");
       return;
     }
 
@@ -204,7 +204,7 @@ export default function RegistrarCobro() {
         skipPrestamoMovimiento: true,
       });
 
-      // De caja solo sale lo entregado: monto nuevo − saldo pendiente.
+      // De caja solo sale lo entregado: monto nuevo âˆ’ saldo pendiente.
       // (El seguro lo registra addLoan como entrada aparte.)
       const entregaBruta = nuevo - saldo;
       await addDocument(
@@ -215,7 +215,7 @@ export default function RegistrarCobro() {
           monto: entregaBruta,
           orgId,
           referencia: ref.id,
-          nota: `Renovación cartulina — solicitado $${formatearMonto(nuevo)} − saldo $${formatearMonto(saldo)}`,
+          nota: `RenovaciÃ³n cartulina â€” solicitado $${formatearMonto(nuevo)} âˆ’ saldo $${formatearMonto(saldo)}`,
           clienteNombre: client?.nombre ?? null,
           cobradorNombre: usuario?.displayName ?? null,
           clientId: loan.clientId,
@@ -253,8 +253,8 @@ export default function RegistrarCobro() {
         metodoPago,
       });
 
-      // Visita de ruta (Fase 8): la gestión queda registrada con GPS.
-      // Si falla no bloquea el cobro, que ya quedó registrado.
+      // Visita de ruta (Fase 8): la gestiÃ³n queda registrada con GPS.
+      // Si falla no bloquea el cobro, que ya quedÃ³ registrado.
       try {
         await registrarVisita({
           clientId: loan?.clientId ?? null,
@@ -292,7 +292,7 @@ export default function RegistrarCobro() {
     return (
       <>
         <Header title="Registrar cobro" showBack />
-        <p className="p-6 text-sm text-gray-400">Cargando crédito...</p>
+        <p className="p-6 text-sm text-primary-light/70">Cargando crÃ©dito...</p>
       </>
     );
   }
@@ -301,7 +301,7 @@ export default function RegistrarCobro() {
     return (
       <>
         <Header title="Registrar cobro" showBack />
-        <p className="p-6 text-sm text-red-400">Crédito no encontrado</p>
+        <p className="p-6 text-sm text-mora/80">CrÃ©dito no encontrado</p>
       </>
     );
   }
@@ -322,12 +322,12 @@ export default function RegistrarCobro() {
                 {client?.nombre?.charAt(0) || "?"}
               </div>
               <div>
-                <p className="font-medium text-gray-800">{client?.nombre || "Cliente"}</p>
-                <p className="text-xs text-gray-400">{client?.telefono}</p>
+                <p className="font-medium text-primary">{client?.nombre || "Cliente"}</p>
+                <p className="text-xs text-primary-light/70">{client?.telefono}</p>
               </div>
             </div>
 
-            {/* Botón de Google Maps o Capturar GPS */}
+            {/* BotÃ³n de Google Maps o Capturar GPS */}
             {client?.ubicacion?.lat && client?.ubicacion?.lng ? (
               <a
                 href={`https://www.google.com/maps/dir/?api=1&destination=${client.ubicacion.lat},${client.ubicacion.lng}`}
@@ -336,7 +336,7 @@ export default function RegistrarCobro() {
                 className="flex items-center gap-1.5 bg-primary-light text-white px-3 py-1.5 rounded-xl text-xs font-medium hover:bg-primary transition shadow-sm shrink-0"
               >
                 <IconMapPin size={16} stroke={2} />
-                Cómo llegar
+                CÃ³mo llegar
               </a>
             ) : (
               <button
@@ -351,19 +351,19 @@ export default function RegistrarCobro() {
             )}
           </div>
 
-          {/* Detalles adicionales del cliente (Dirección y Referencia) */}
+          {/* Detalles adicionales del cliente (DirecciÃ³n y Referencia) */}
           {(client?.direccion || client?.referencia) && (
-            <div className="pt-3 border-t border-[#E5E5EA] space-y-2 text-sm">
+            <div className="pt-3 border-t border-[#E3DFD8] space-y-2 text-sm">
               {client?.direccion && (
                 <div>
-                  <p className="text-[11px] text-gray-400 mb-0.5">Dirección</p>
-                  <p className="text-gray-700">{client.direccion}</p>
+                  <p className="text-[11px] text-primary-light/70 mb-0.5">DirecciÃ³n</p>
+                  <p className="text-primary">{client.direccion}</p>
                 </div>
               )}
               {client?.referencia && (
                 <div>
-                  <p className="text-[11px] text-gray-400 mb-0.5">Referencia</p>
-                  <p className="text-gray-700">{client.referencia}</p>
+                  <p className="text-[11px] text-primary-light/70 mb-0.5">Referencia</p>
+                  <p className="text-primary">{client.referencia}</p>
                 </div>
               )}
             </div>
@@ -371,7 +371,7 @@ export default function RegistrarCobro() {
 
           {/* Progreso */}
           <div className="space-y-1">
-            <div className="flex justify-between text-xs text-gray-500">
+            <div className="flex justify-between text-xs text-primary-light/75">
               <span>Pagado: ${formatearMonto(pagado)}</span>
               <span>Total: ${formatearMonto(loan.montoTotalAPagar)}</span>
             </div>
@@ -381,36 +381,36 @@ export default function RegistrarCobro() {
                 style={{ width: `${progreso}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400 text-right">{progreso}% completado</p>
+            <p className="text-xs text-primary-light/70 text-right">{progreso}% completado</p>
           </div>
         </div>
 
-        {/* Detalles del crédito */}
+        {/* Detalles del crÃ©dito */}
         <div className="bg-white rounded-xl p-4 border-thin grid grid-cols-2 gap-3 text-sm">
           <div>
-            <p className="text-gray-400 text-xs">Cuota</p>
+            <p className="text-primary-light/70 text-xs">Cuota</p>
             <p className="font-medium text-primary">${formatearMonto(loan.cuota)}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-xs">Saldo pendiente</p>
-            <p className="font-medium text-gray-700">${formatearMonto(loan.saldoPendiente ?? 0)}</p>
+            <p className="text-primary-light/70 text-xs">Saldo pendiente</p>
+            <p className="font-medium text-primary">${formatearMonto(loan.saldoPendiente ?? 0)}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-xs">Frecuencia</p>
+            <p className="text-primary-light/70 text-xs">Frecuencia</p>
             <p className="font-medium capitalize">{loan.frecuencia}</p>
           </div>
           <div>
-            <p className="text-gray-400 text-xs">Estado</p>
+            <p className="text-primary-light/70 text-xs">Estado</p>
             <Badge status={loan.estado} />
           </div>
         </div>
 
-        {/* Validación del recargo de mora */}
+        {/* ValidaciÃ³n del recargo de mora */}
         <div className="bg-white rounded-xl p-4 border-thin space-y-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-medium text-gray-900">Validar penalización de mora</p>
-              <p className="text-xs text-gray-500">Comprueba si este crédito debe aplicar recargo por vencimiento.</p>
+              <p className="text-sm font-medium text-primary">Validar penalizaciÃ³n de mora</p>
+              <p className="text-xs text-primary-light/75">Comprueba si este crÃ©dito debe aplicar recargo por vencimiento.</p>
             </div>
             <button
               type="button"
@@ -422,18 +422,18 @@ export default function RegistrarCobro() {
           </div>
 
           {validacionRecargo && (
-            <div className="rounded-xl bg-surface-2 p-4 text-sm text-gray-700 space-y-2">
+            <div className="rounded-xl bg-surface-2 p-4 text-sm text-primary space-y-2">
               <p>
                 <span className="font-medium">Resultado:</span> {validacionRecargo.mensaje}
               </p>
               <p>
-                <span className="font-medium">Próximo corte:</span>{" "}
+                <span className="font-medium">PrÃ³ximo corte:</span>{" "}
                 {validacionRecargo.proximoCorte
                   ? formatearFecha(validacionRecargo.proximoCorte)
                   : "No definido"}
               </p>
               <p>
-                <span className="font-medium">Último recargo:</span>{" "}
+                <span className="font-medium">Ãšltimo recargo:</span>{" "}
                 {validacionRecargo.fechaUltimoRecargo
                   ? formatearFecha(validacionRecargo.fechaUltimoRecargo)
                   : "Nunca"}
@@ -447,39 +447,39 @@ export default function RegistrarCobro() {
                 ${formatearMonto(validacionRecargo.recargoEsperado)}
               </p>
               <p>
-                <span className="font-medium">¿Pendiente de aplicar?</span>{" "}
-                {validacionRecargo.pendiente ? "Sí" : "No"}
+                <span className="font-medium">Â¿Pendiente de aplicar?</span>{" "}
+                {validacionRecargo.pendiente ? "SÃ­" : "No"}
               </p>
             </div>
           )}
         </div>
 
-        {/* Aviso de crédito vencido (informativo; el cobro es libre) */}
+        {/* Aviso de crÃ©dito vencido (informativo; el cobro es libre) */}
         {recargoPendiente && (
           <div className="bg-amber-50 border-thin border-amber-200 rounded-xl p-4 flex items-start gap-3">
-            <IconAlertTriangle size={20} className="text-amber-600 flex-shrink-0 mt-0.5" stroke={2} />
+            <IconAlertTriangle size={20} className="text-gold flex-shrink-0 mt-0.5" stroke={2} />
             <div className="text-sm text-amber-800">
-              <p className="font-medium text-amber-900">Crédito vencido</p>
+              <p className="font-medium text-amber-900">CrÃ©dito vencido</p>
               <p className="mt-1">
-                Al registrar el próximo cobro se aplicará el recargo de {recargoPorcentaje}% (
+                Al registrar el prÃ³ximo cobro se aplicarÃ¡ el recargo de {recargoPorcentaje}% (
                 <span className="font-semibold">${formatearMonto(recargoCalculado)}</span>) sobre el
-                saldo de ${formatearMonto(loan.saldoPendiente ?? 0)}. También puedes renovar la
-                cartulina en cualquier momento con el botón de abajo.
+                saldo de ${formatearMonto(loan.saldoPendiente ?? 0)}. TambiÃ©n puedes renovar la
+                cartulina en cualquier momento con el botÃ³n de abajo.
               </p>
             </div>
           </div>
         )}
 
-        {/* Renovar cartulina — disponible en cualquier momento (cobradiario) */}
+        {/* Renovar cartulina â€” disponible en cualquier momento (cobradiario) */}
         {loan.estado === "activo" && !isAdmin && (
           <div className="card p-4 space-y-4">
             <div>
-              <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+              <p className="text-sm font-semibold text-primary flex items-center gap-2">
                 <IconRefresh size={18} stroke={1.5} className="text-primary" />
                 Renovar cartulina
               </p>
-              <p className="text-xs text-gray-500 mt-0.5">
-                Cierra este crédito y crea uno nuevo por el monto solicitado. Al cliente se le
+              <p className="text-xs text-primary-light/75 mt-0.5">
+                Cierra este crÃ©dito y crea uno nuevo por el monto solicitado. Al cliente se le
                 entrega el monto nuevo menos el saldo pendiente
                 {seguroRenov > 0 || settings.seguroActivo ? " y el seguro" : ""}.
               </p>
@@ -487,7 +487,7 @@ export default function RegistrarCobro() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="block">
-                <span className="text-sm font-medium text-gray-700">Monto nuevo solicitado ($)</span>
+                <span className="text-sm font-medium text-primary">Monto nuevo solicitado ($)</span>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -495,17 +495,17 @@ export default function RegistrarCobro() {
                   onChange={(e) => setMontoSolicitado(e.target.value.replace(/\D/g, ""))}
                   onKeyDown={bloquearEntradaSoloNumeros}
                   placeholder="Ej. 500000"
-                  className="mt-1 block w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+                  className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
                 />
               </label>
               <label className="block">
-                <span className="text-sm font-medium text-gray-700">Cuotas</span>
+                <span className="text-sm font-medium text-primary">Cuotas</span>
                 <input
                   type="number"
                   min="1"
                   value={renewCuotas}
                   onChange={(e) => setRenewCuotas(Number(e.target.value) || 1)}
-                  className="mt-1 block w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-sm text-gray-800 focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+                  className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-sm text-primary focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
                 />
               </label>
             </div>
@@ -513,38 +513,38 @@ export default function RegistrarCobro() {
             {montoNuevo > 0 && (
               <div className="rounded-xl bg-surface-1 p-4 text-sm space-y-1.5">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Monto nuevo solicitado</span>
-                  <span className="text-gray-800" translate="no">${formatearMonto(montoNuevo)}</span>
+                  <span className="text-primary-light/75">Monto nuevo solicitado</span>
+                  <span className="text-primary" translate="no">${formatearMonto(montoNuevo)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">(−) Saldo pendiente actual</span>
-                  <span className="text-gray-800" translate="no">${formatearMonto(saldoActualRenov)}</span>
+                  <span className="text-primary-light/75">(âˆ’) Saldo pendiente actual</span>
+                  <span className="text-primary" translate="no">${formatearMonto(saldoActualRenov)}</span>
                 </div>
                 {seguroRenov > 0 && (
                   <div className="flex justify-between">
-                    <span className="text-gray-500">(−) Seguro sobre monto nuevo</span>
-                    <span className="text-gray-800" translate="no">${formatearMonto(seguroRenov)}</span>
+                    <span className="text-primary-light/75">(âˆ’) Seguro sobre monto nuevo</span>
+                    <span className="text-primary" translate="no">${formatearMonto(seguroRenov)}</span>
                   </div>
                 )}
-                <div className="flex justify-between border-t border-[#E5E5EA] pt-2">
-                  <span className="font-medium text-gray-700">Entrega al cliente</span>
+                <div className="flex justify-between border-t border-[#E3DFD8] pt-2">
+                  <span className="font-medium text-primary">Entrega al cliente</span>
                   <span
-                    className={`font-bold translate-y-0 ${entregaRenov != null && entregaRenov >= 0 ? "text-emerald-600" : "text-red-600"}`}
+                    className={`font-bold translate-y-0 ${entregaRenov != null && entregaRenov >= 0 ? "text-al-dia" : "text-mora"}`}
                     translate="no"
                   >
                     ${formatearMonto(entregaRenov ?? 0)}
                   </span>
                 </div>
                 {totalesRenovacion && (
-                  <p className="text-xs text-gray-400 pt-1">
+                  <p className="text-xs text-primary-light/70 pt-1">
                     Nueva cartulina: total ${formatearMonto(totalesRenovacion.montoTotalAPagar)} en{" "}
                     {renewCuotas} cuotas de ${formatearMonto(totalesRenovacion.cuota)} (
-                    {settings.interesDefault ?? 20}% de interés).
+                    {settings.interesDefault ?? 20}% de interÃ©s).
                   </p>
                 )}
                 {entregaRenov != null && entregaRenov < 0 && (
-                  <p className="text-xs text-red-600">
-                    El monto solicitado no cubre el saldo pendiente: súbelo para poder renovar.
+                  <p className="text-xs text-mora">
+                    El monto solicitado no cubre el saldo pendiente: sÃºbelo para poder renovar.
                   </p>
                 )}
               </div>
@@ -556,7 +556,7 @@ export default function RegistrarCobro() {
               disabled={saving || !montoNuevo || entregaRenov == null || entregaRenov < 0}
               className="w-full bg-primary hover:bg-primary-light text-white font-medium rounded-xl py-3.5 transition disabled:opacity-50"
             >
-              {saving ? "Procesando renovación..." : "Renovar cartulina"}
+              {saving ? "Procesando renovaciÃ³n..." : "Renovar cartulina"}
             </button>
           </div>
         )}
@@ -564,7 +564,7 @@ export default function RegistrarCobro() {
         {/* Formulario de cobro */}
         <form onSubmit={handleCobro} className="space-y-4">
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Monto a cobrar ($)</span>
+              <span className="text-sm font-medium text-primary">Monto a cobrar ($)</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -587,16 +587,16 @@ export default function RegistrarCobro() {
                   }
                 }}
                 onKeyDown={bloquearEntradaSoloNumeros}
-                className="mt-1 block w-full rounded-xl border border-[#E5E5EA] px-4 py-4 text-2xl font-medium text-center text-primary focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+                className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-4 text-2xl font-medium text-center text-primary focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
               />
             </label>
 
             <label className="block">
-              <span className="text-sm font-medium text-gray-700">Método de pago</span>
+              <span className="text-sm font-medium text-primary">MÃ©todo de pago</span>
               <select
                 value={metodoPago}
                 onChange={(e) => setMetodoPago(e.target.value)}
-                className="mt-1 block w-full rounded-xl border border-[#E5E5EA] px-4 py-3 text-base text-gray-800 focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+                className="mt-1 block w-full rounded-xl border border-[#E3DFD8] px-4 py-3 text-base text-primary focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
               >
                 <option value="efectivo">Efectivo</option>
                 <option value="transferencia">Transferencia</option>
@@ -616,7 +616,7 @@ export default function RegistrarCobro() {
                 <IconCheck size={20} className="flex-shrink-0" stroke={2.5} />
                 <div>
                   <p className="text-sm font-medium">Cobro registrado exitosamente</p>
-                  <p className="text-xs text-emerald-600 mt-0.5">Se actualizó el historial y el saldo.</p>
+                  <p className="text-xs text-al-dia mt-0.5">Se actualizÃ³ el historial y el saldo.</p>
                 </div>
               </div>
             )}
@@ -628,3 +628,4 @@ export default function RegistrarCobro() {
     </>
   );
 }
+
