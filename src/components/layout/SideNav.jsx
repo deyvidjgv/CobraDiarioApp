@@ -20,6 +20,7 @@ import Logo from '../ui/Logo';
 import { cerrarSesion } from '../../firebase/auth';
 import { useAuth } from '../../context/AuthContext';
 import { useUI } from '../../context/UIContext';
+import { useNotifications } from '../../context/NotificationContext';
 
 const navItems = [
   { to: '/', label: 'Inicio', Icon: IconHome, end: true },
@@ -68,38 +69,50 @@ function Marca({ collapsed }) {
 }
 
 function NavLinks({ items, collapsed }) {
-  return items.map(({ to, label, Icon, end }) => (
-    <NavLink
-      key={to + label}
-      to={to}
-      end={end}
-      title={collapsed ? label : undefined}
-      className={({ isActive }) =>
-        `flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${
-          collapsed ? 'px-2' : 'px-4'
-        } py-3 rounded-xl text-sm font-medium transition-all ${
-          isActive
-            ? 'bg-gold/10 text-primary font-semibold'
-            : 'text-primary-light hover:bg-surface-2 hover:text-primary'
-        }`
-      }>
-      {({ isActive }) => (
-        <>
-          <Icon
-            size={20}
-            stroke={1.5}
-            className={
-              isActive ? 'text-primary shrink-0' : 'text-primary-light/70 shrink-0'
-            }
-          />
-          {!collapsed && <span className="truncate">{label}</span>}
-          {!collapsed && isActive && (
-            <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
-          )}
-        </>
-      )}
-    </NavLink>
-  ));
+  const { pendingCorrectionsCount } = useNotifications();
+
+  return items.map(({ to, label, Icon, end }) => {
+    // Aviso de correcciones pendientes: solo aplica al ítem "Correcciones"
+    // del Admin (es el único badge que existe en el nav de escritorio).
+    const badgeCount = to === '/correcciones' ? pendingCorrectionsCount : 0;
+    return (
+      <NavLink
+        key={to + label}
+        to={to}
+        end={end}
+        title={collapsed ? label : undefined}
+        className={({ isActive }) =>
+          `flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${
+            collapsed ? 'px-2' : 'px-4'
+          } py-3 rounded-xl text-sm font-medium transition-all ${
+            isActive
+              ? 'bg-gold/10 text-primary font-semibold'
+              : 'text-primary-light hover:bg-surface-2 hover:text-primary'
+          }`
+        }>
+        {({ isActive }) => (
+          <>
+            <span className="relative shrink-0">
+              <Icon
+                size={20}
+                stroke={1.5}
+                className={isActive ? 'text-primary' : 'text-primary-light/70'}
+              />
+              {badgeCount > 0 && (
+                <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-mora text-surface-1 text-[9px] font-bold flex items-center justify-center leading-none">
+                  {badgeCount > 99 ? '99+' : badgeCount}
+                </span>
+              )}
+            </span>
+            {!collapsed && <span className="truncate">{label}</span>}
+            {!collapsed && isActive && (
+              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
+            )}
+          </>
+        )}
+      </NavLink>
+    );
+  });
 }
 
 function LogoutButton({ collapsed, onDone = () => {} }) {

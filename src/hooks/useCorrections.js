@@ -204,6 +204,11 @@ export function useCorrections() {
         // Denormalizado para que Caja.jsx pueda mostrar el desglose sin releer.
         ajuste.valorOriginal = valorOriginal;
         ajuste.valorCorrecto = valorCorrecto;
+        // Sin esto, Entradas/Salidas clasifican el ajuste solo por el signo
+        // del monto: una corrección a la baja sobre un cobro caía dentro de
+        // "Salidas" junto a préstamos y gastos, como si se hubiera prestado
+        // o gastado más — cuando en realidad se cobró menos.
+        ajuste.tipoOriginal = movOriginal.tipo;
         wSet(tx, ajusteRef, ajuste);
       }
 

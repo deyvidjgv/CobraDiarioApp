@@ -11,6 +11,7 @@ import {
 } from "@tabler/icons-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRutaHoy } from "../../hooks/useRutaHoy";
+import { useNotifications } from "../../context/NotificationContext";
 import { cerrarSesion } from "../../firebase/auth";
 
 /**
@@ -47,15 +48,18 @@ const tabsAdmin = [
  * para que sus listeners de Firestore (créditos + visitas) no queden
  * activos también en la sesión del admin, que no tiene ruta personal.
  */
-function RutaPendientesBadge() {
-  const { pendientesHoy } = useRutaHoy();
-  const count = pendientesHoy.length;
-  if (count === 0) return null;
+function PuntoBadge({ count }) {
+  if (!count) return null;
   return (
     <span className="absolute -top-1 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-mora text-surface-1 text-[9px] font-bold flex items-center justify-center leading-none">
       {count > 99 ? "99+" : count}
     </span>
   );
+}
+
+function RutaPendientesBadge() {
+  const { pendientesHoy } = useRutaHoy();
+  return <PuntoBadge count={pendientesHoy.length} />;
 }
 
 const extraCobradiario = [
@@ -76,6 +80,7 @@ const extraAdmin = [
 
 export default function BottomNav() {
   const { isAdmin } = useAuth();
+  const { pendingCorrectionsCount } = useNotifications();
   const navigate = useNavigate();
   const [masOpen, setMasOpen] = useState(false);
   const extras = isAdmin ? extraAdmin : extraCobradiario;
@@ -96,19 +101,27 @@ export default function BottomNav() {
             <div className="w-9 h-1 rounded-full bg-primary/15 mx-auto" />
             <span className="eyebrow">Más</span>
             <div className="flex flex-col divide-y divide-line rounded-2xl bg-surface border border-line overflow-hidden">
-              {extras.map((e) => (
-                <button
-                  key={e.to + e.label}
-                  type="button"
-                  onClick={() => {
-                    setMasOpen(false);
-                    navigate(e.to);
-                  }}
-                  className="px-5 py-4 text-left text-[15px] font-medium text-primary"
-                >
-                  {e.label}
-                </button>
-              ))}
+              {extras.map((e) => {
+                const badgeCount = e.to === "/correcciones" ? pendingCorrectionsCount : 0;
+                return (
+                  <button
+                    key={e.to + e.label}
+                    type="button"
+                    onClick={() => {
+                      setMasOpen(false);
+                      navigate(e.to);
+                    }}
+                    className="px-5 py-4 flex items-center justify-between text-left text-[15px] font-medium text-primary"
+                  >
+                    {e.label}
+                    {badgeCount > 0 && (
+                      <span className="min-w-[20px] h-5 px-1.5 rounded-full bg-mora text-surface-1 text-[11px] font-bold flex items-center justify-center leading-none">
+                        {badgeCount > 99 ? "99+" : badgeCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
               <button
                 type="button"
                 onClick={handleLogout}
@@ -154,7 +167,10 @@ export default function BottomNav() {
           onClick={() => setMasOpen(true)}
           className="min-h-[52px] flex flex-col items-center justify-center gap-1"
         >
-          <IconDotsVertical size={21} stroke={1.5} className="text-primary/45" />
+          <span className="relative">
+            <IconDotsVertical size={21} stroke={1.5} className="text-primary/45" />
+            {isAdmin && <PuntoBadge count={pendingCorrectionsCount} />}
+          </span>
           <span className="text-[11px] font-medium text-primary/45">Más</span>
         </button>
       </nav>

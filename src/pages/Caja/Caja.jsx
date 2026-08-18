@@ -2,7 +2,7 @@
 import Header from "../../components/layout/Header";
 import { useMovements } from "../../hooks/useMovements";
 import { useCorrections } from "../../hooks/useCorrections";
-import { construirMovimiento, TIPOS_MOVIMIENTO } from "../../logic/caja";
+import { construirMovimiento, TIPOS_MOVIMIENTO, esMovimientoDeEntrada } from "../../logic/caja";
 import { formatearMonto, limpiarMonto, bloquearEntradaSoloNumeros } from "../../logic/formato";
 import { getColombiaDateKey } from "../../logic/dateUtils";
 import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
@@ -73,8 +73,10 @@ export default function Caja() {
     }
   }
 
-  const entradas = movements.filter((m) => m.monto > 0).reduce((a, m) => a + m.monto, 0);
-  const salidas = Math.abs(movements.filter((m) => m.monto < 0).reduce((a, m) => a + m.monto, 0));
+  const entradas = movements.filter(esMovimientoDeEntrada).reduce((a, m) => a + m.monto, 0);
+  const salidas = Math.abs(
+    movements.filter((m) => !esMovimientoDeEntrada(m)).reduce((a, m) => a + m.monto, 0)
+  );
 
   async function handleForm(e) {
     e.preventDefault();

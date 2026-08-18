@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { UIProvider } from "./context/UIContext";
+import { NotificationProvider } from "./context/NotificationContext";
 import AdminLayout from "./components/layout/AdminLayout";
 import CobradiarioLayout from "./components/layout/CobradiarioLayout";
 
@@ -82,14 +83,16 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <UIProvider>
-        <BrowserRouter>
-          <ScrollToTop />
-          <div className="min-h-screen bg-surface-1 text-primary font-sans antialiased flex flex-col">
-            <AppRoutes />
-          </div>
-        </BrowserRouter>
-      </UIProvider>
+      <NotificationProvider>
+        <UIProvider>
+          <BrowserRouter>
+            <ScrollToTop />
+            <div className="min-h-screen bg-surface-1 text-primary font-sans antialiased flex flex-col">
+              <AppRoutes />
+            </div>
+          </BrowserRouter>
+        </UIProvider>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

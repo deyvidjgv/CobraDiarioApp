@@ -58,6 +58,20 @@ export function construirMovimiento({
   };
 }
 
+const TIPOS_ENTRADA = [TIPOS_MOVIMIENTO.COBRO, TIPOS_MOVIMIENTO.INGRESO_BASE, TIPOS_MOVIMIENTO.SEGURO];
+
+/**
+ * Clasifica un movimiento como entrada de caja o no, por su ORIGEN (tipo),
+ * no por el signo del monto. Un "Ajuste" que corrige un cobro a la baja
+ * queda con monto negativo, pero sigue siendo una entrada (menos plata de
+ * la que se había anotado) — no un préstamo ni un gasto. Sin esto, esos
+ * ajustes se mezclaban dentro de "Salidas" e inflaban esa cifra.
+ */
+export function esMovimientoDeEntrada(m) {
+  const tipo = m.tipo === TIPOS_MOVIMIENTO.AJUSTE ? m.tipoOriginal : m.tipo;
+  return TIPOS_ENTRADA.includes(tipo);
+}
+
 /**
  * Calcula el saldo de caja sumando una lista de movimientos.
  * Se usa tanto para el saldo del dia (movimientos de hoy) como
@@ -79,8 +93,8 @@ export function construirCierreDiario(
   fechaStr,
   datosCartera = {}
 ) {
-  const entradas = movimientosDelDia.filter((m) => m.monto > 0);
-  const salidas = movimientosDelDia.filter((m) => m.monto < 0);
+  const entradas = movimientosDelDia.filter((m) => m.monto !== 0 && esMovimientoDeEntrada(m));
+  const salidas = movimientosDelDia.filter((m) => m.monto !== 0 && !esMovimientoDeEntrada(m));
   // Clasificamos movimientos
   const cobros = movimientosDelDia
     .filter((m) => m.tipo === TIPOS_MOVIMIENTO.COBRO)
