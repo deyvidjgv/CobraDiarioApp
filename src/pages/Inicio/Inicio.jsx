@@ -7,13 +7,15 @@ import { useMovements } from "../../hooks/useMovements";
 import { calcularCuotasVencidas } from "../../logic/frecuencia";
 import { calcularEstadoMora } from "../../logic/mora";
 import { formatearMonto } from "../../logic/formato";
+import { getColombiaHour } from "../../logic/dateUtils";
 import { toDate } from "../../firebase/firestore";
 import { useAuth } from "../../context/AuthContext";
 import {
   IconUserPlus,
   IconFileText,
   IconMapPin,
-  IconUserCog,
+  IconUsers,
+  IconChartBar,
   IconLayoutDashboard,
 } from "@tabler/icons-react";
 
@@ -41,16 +43,20 @@ export default function Inicio() {
   });
 
   const hoy = new Date();
-  const saludo = hoy.getHours() < 12 ? "Buenos días" : hoy.getHours() < 18 ? "Buenas tardes" : "Buenas noches";
+  // Hora de Colombia, no la del dispositivo: un celular con la zona
+  // horaria mal puesta saludaba "buenas noches" a media mañana.
+  const horaCol = getColombiaHour(hoy);
+  const saludo = horaCol < 12 ? "Buenos días" : horaCol < 18 ? "Buenas tardes" : "Buenas noches";
 
   // El Admin no opera préstamos ni clientes: sus accesos rápidos son de
   // gestión y control (Plan Maestro, sección 5). Reportes/Configuración
   // (cobrador) y Correcciones/Auditoría (admin) ya viven en "Más" —
-  // aquí solo lo que no está en ningún otro menú.
+  // aquí solo lo que no está en ningún otro menú. Cobradiarios y Créditos
+  // pasaron a ser pestañas de la barra inferior, así que ceden el puesto.
   const acciones = isAdmin
     ? [
-        { label: "Cobradiarios", Icon: IconUserCog, to: "/cobradiarios" },
-        { label: "Dashboard", Icon: IconLayoutDashboard, to: "/dashboard" },
+        { label: "Clientes", Icon: IconUsers, to: "/clientes" },
+        { label: "Desempeño", Icon: IconChartBar, to: "/desempeno" },
       ]
     : [
         { label: "Nuevo cliente", Icon: IconUserPlus, to: "/clientes/nuevo" },
@@ -65,7 +71,12 @@ export default function Inicio() {
       <div>
         <h2 className="text-2xl font-semibold text-primary">{saludo}</h2>
         <p className="text-sm text-primary-light/70 font-normal capitalize mt-0.5">
-          {hoy.toLocaleDateString("es-CO", { weekday: "long", day: "numeric", month: "long" })}
+          {hoy.toLocaleDateString("es-CO", {
+            timeZone: "America/Bogota",
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          })}
         </p>
       </div>
 

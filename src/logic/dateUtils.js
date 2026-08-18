@@ -29,6 +29,24 @@ export function getColombiaDateKey(dateInput = new Date()) {
   return `${map.year}-${map.month}-${map.day}`;
 }
 
+/**
+ * Hora del día (0-23) en Colombia, sin importar dónde esté el dispositivo.
+ * Se usa para el saludo de Inicio: con `getHours()` del navegador, un
+ * celular con la zona horaria mal configurada saludaba "buenas noches" a
+ * media mañana.
+ * @returns {number} 0-23
+ */
+export function getColombiaHour(dateInput = new Date()) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Bogota",
+    hour: "numeric",
+    hour12: false,
+  });
+  // hourCycle h23 devuelve "24" para la medianoche en algunos motores.
+  const hora = Number(formatter.format(dateInput));
+  return Number.isFinite(hora) ? hora % 24 : 0;
+}
+
 /** Convierte cualquier valor (Timestamp, Date, string) a Date JS sin desfases UTC */
 export function toDate(val) {
   if (!val) return new Date();

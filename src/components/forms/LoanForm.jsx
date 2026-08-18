@@ -4,9 +4,16 @@ import { calcularTotalesCredito } from "../../logic/credito";
 import { calcularSeguro } from "../../logic/seguro";
 import { formatearMonto, limpiarMonto, bloquearEntradaSoloNumeros, bloquearEntradaSoloNumerosConDecimal } from "../../logic/formato";
 
-export default function LoanForm({ clients = [], settings = {}, onSubmit, loading = false, onClientChange }) {
+export default function LoanForm({
+  clients = [],
+  settings = {},
+  onSubmit,
+  loading = false,
+  onClientChange,
+  initialClientId = "",
+}) {
   const [form, setForm] = useState({
-    clientId: "",
+    clientId: initialClientId,
     capital: "",
     interes: settings.interesDefault ?? 20,
     numeroCuotas: "",
@@ -35,6 +42,17 @@ export default function LoanForm({ clients = [], settings = {}, onSubmit, loadin
       }));
     }
   }, [settings]);
+
+  // Al llegar desde el perfil de un cliente (/creditos/nuevo?clientId=...)
+  // hay que avisarle al padre, que usa selectedClientId para guardar la
+  // ubicación GPS. Sin esto el cliente aparece elegido pero el padre no
+  // se entera, porque nadie tocó el desplegable.
+  useEffect(() => {
+    if (initialClientId && onClientChange) {
+      onClientChange(initialClientId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialClientId]);
 
   const numeroCuotasPreview = Number(form.numeroCuotas);
   const preview =

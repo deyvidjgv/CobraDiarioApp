@@ -149,9 +149,24 @@ service cloud.firestore {
         allow update, delete: if isAdminOf(orgId);
       }
 
-      match /daily_closings/{fecha} {
-        allow read: if isActiveMember(orgId);
-        allow write: if isAdminOf(orgId);
+      // El cierre diario es POR PERSONA: el id es "{fecha}_{uid}" y el
+      // documento lleva cobradiarioId. Antes era una sola casilla por
+      // fecha para toda la organizacion (dos cobradores se pisaban el
+      // cierre) y solo el Admin podia escribirla, asi que a un cobrador
+      // le salia "permission-denied" al generar su reporte del dia.
+      // Los cierres viejos (id solo-fecha, sin cobradiarioId) siguen
+      // siendo legibles para el Admin; el cobradiario simplemente no los
+      // encuentra al buscar por su nuevo id.
+      match /daily_closings/{cierreId} {
+        allow read: if isAdminOf(orgId)
+                    || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
+        allow create: if isAdminOf(orgId)
+                      || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
+        allow update: if isAdminOf(orgId)
+                      || (isCobradiarioOf(orgId)
+                          && ownsRecord(resource.data)
+                          && ownsRecord(request.resource.data));
+        allow delete: if isAdminOf(orgId);
       }
 
       // Solicitudes de corrección (Fase 7, seccion 11 del plan maestro):

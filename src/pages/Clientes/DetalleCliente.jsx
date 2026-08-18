@@ -7,12 +7,21 @@ import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
 import { verificarPassword } from "../../firebase/auth";
-import { IconMapPin, IconEdit, IconTrash, IconChevronRight, IconPhone } from "@tabler/icons-react";
+import { useAuth } from "../../context/AuthContext";
+import {
+  IconMapPin,
+  IconEdit,
+  IconTrash,
+  IconChevronRight,
+  IconPhone,
+  IconFileText,
+} from "@tabler/icons-react";
 import { formatearMonto } from "../../logic/formato";
 
 export default function DetalleCliente() {
   const { clientId } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const { clients, updateClient, deleteClient } = useClients();
   const { loans } = useLoans(false); // get all loans
 
@@ -199,6 +208,18 @@ export default function DetalleCliente() {
             </div>
           )}
         </div>
+
+        {/* Prestarle a este cliente sin volver a elegirlo en el formulario.
+            El Admin no presta (ver NuevoCredito), así que no lo ve. */}
+        {!isAdmin && (
+          <button
+            onClick={() => navigate(`/creditos/nuevo?clientId=${clientId}`)}
+            className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-xl py-3.5 flex items-center justify-center gap-2 transition shadow-md shadow-black/40"
+          >
+            <IconFileText size={18} stroke={1.5} />
+            Nuevo crédito para {client.nombre?.split(" ")[0] || "este cliente"}
+          </button>
+        )}
 
         {/* Zona Peligrosa */}
         <div className="pt-6">

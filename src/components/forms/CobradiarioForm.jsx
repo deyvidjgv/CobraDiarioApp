@@ -1,4 +1,5 @@
 ﻿import { useState } from "react";
+import { bloquearEntradaSoloNumeros } from "../../logic/formato";
 
 const empty = { nombre: "", cedula: "", celular: "", email: "", password: "" };
 
@@ -7,6 +8,15 @@ export default function CobradiarioForm({ onSubmit, loading = false }) {
 
   function set(field) {
     return (e) => setForm({ ...form, [field]: e.target.value });
+  }
+
+  /**
+   * Campos numéricos: se limpian en onChange además de bloquear el
+   * teclado, porque el guard de teclas no cubre pegar ni los teclados
+   * de Android (que suelen reportar key "Unidentified").
+   */
+  function setSoloDigitos(field) {
+    return (e) => setForm({ ...form, [field]: e.target.value.replace(/\D/g, "") });
   }
 
   function handleSubmit(e) {
@@ -29,11 +39,15 @@ export default function CobradiarioForm({ onSubmit, loading = false }) {
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium text-primary">Cédula</span>
+        <span className="text-sm font-medium text-primary">Cédula *</span>
         <input
           type="text"
+          required
+          inputMode="numeric"
+          maxLength={15}
           value={form.cedula}
-          onChange={set("cedula")}
+          onChange={setSoloDigitos("cedula")}
+          onKeyDown={bloquearEntradaSoloNumeros}
           className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           placeholder="1094220549"
         />
@@ -43,10 +57,13 @@ export default function CobradiarioForm({ onSubmit, loading = false }) {
         <span className="text-sm font-medium text-primary">Celular</span>
         <input
           type="tel"
+          inputMode="numeric"
+          maxLength={15}
           value={form.celular}
-          onChange={set("celular")}
+          onChange={setSoloDigitos("celular")}
+          onKeyDown={bloquearEntradaSoloNumeros}
           className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
-          placeholder="300 123 4567"
+          placeholder="3001234567"
         />
       </label>
 

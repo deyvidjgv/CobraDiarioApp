@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import Header from "../../components/layout/Header";
 import LoanForm from "../../components/forms/LoanForm";
 import { useClients } from "../../hooks/useClients";
@@ -16,8 +16,13 @@ export default function NuevoCredito() {
   const { addLoan } = useLoans();
   const [settings, setSettings] = useState({});
   const [loading, setLoading] = useState(false);
+  // Cliente preseleccionado al llegar desde su perfil. Se pasa por query
+  // string y no por state del router porque así sobrevive a un recargo de
+  // la PWA y al botón atrás de Android.
+  const [searchParams] = useSearchParams();
+  const clientIdInicial = searchParams.get("clientId") ?? "";
   // Estado React: clientId seleccionado en el formulario (fuente única de verdad)
-  const [selectedClientId, setSelectedClientId] = useState("");
+  const [selectedClientId, setSelectedClientId] = useState(clientIdInicial);
 
   useEffect(() => {
     if (!orgId) return;
@@ -90,6 +95,7 @@ export default function NuevoCredito() {
           onSubmit={handleSubmit}
           loading={loading}
           onClientChange={setSelectedClientId}
+          initialClientId={clientIdInicial}
         />
         {/* Botón opcional para capturar ubicación del cliente */}
         <div className="mt-4 flex justify-center">

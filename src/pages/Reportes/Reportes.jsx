@@ -5,7 +5,7 @@ import { useLoans } from "../../hooks/useLoans";
 import { useMovements } from "../../hooks/useMovements";
 import { calcularMoraGlobal } from "../../logic/mora";
 import { toDate, getDocument, setDocument, getSettings } from "../../firebase/firestore";
-import { exportarPDF, exportarCierreDiarioPDF, exportarCarteraGlobalPDF } from "../../logic/pdfExport";
+import { exportarCierreDiarioPDF, exportarCarteraGlobalPDF } from "../../logic/pdfExport";
 import { exportarCarteraExcel, exportarCierreExcel } from "../../logic/excelExport";
 import { getColombiaDateKey } from "../../logic/dateUtils";
 import { construirCierreDiario } from "../../logic/caja";
@@ -21,7 +21,7 @@ import {
 } from "@tabler/icons-react";
 
 export default function Reportes() {
-  const { orgId } = useAuth();
+  const { orgId, usuario } = useAuth();
   const [selectedDate, setSelectedDate] = useState(getColombiaDateKey());
   const [cierreGuardado, setCierreGuardado] = useState(null);
   const [loadingCierre, setLoadingCierre] = useState(true);
@@ -33,15 +33,22 @@ export default function Reportes() {
   const { loans } = useLoans(false); 
   const { movements, saldo } = useMovements(selectedDate);
 
+  // El cierre es POR PERSONA, no por organización. Antes el id era solo la
+  // fecha: dos cobradores del mismo día se pisaban el cierre entre ellos
+  // (y con merge:true se mezclaban en silencio), y encima las reglas solo
+  // dejaban escribirlo al Admin, así que a un cobrador le salía "no tienes
+  // permiso" al generarlo. Cada quien cierra lo suyo.
+  const cierreId = usuario ? `${selectedDate}_${usuario.uid}` : null;
+
   // Cargar si ya existe un cierre para esa fecha
   useEffect(() => {
-    if (!orgId) return;
+    if (!orgId || !cierreId) return;
     setLoadingCierre(true);
-    getDocument(orgId, "daily_closings", selectedDate).then((doc) => {
+    getDocument(orgId, "daily_closings", cierreId).then((doc) => {
       setCierreGuardado(doc);
       setLoadingCierre(false);
     });
-  }, [orgId, selectedDate]);
+  }, [orgId, cierreId]);
 
   // Nombre del negocio para los encabezados de los reportes
   useEffect(() => {
@@ -202,8 +209,11 @@ export default function Reportes() {
         datosCartera
       );
 
-      await setDocument(orgId, "daily_closings", selectedDate, cierreObj);
-      setCierreGuardado(cierreObj);
+      // cobradiarioId es lo que usan las reglas (ownsRecord) para dejar que
+      // cada quien lea y escriba únicamente su propio cierre.
+      const cierreConDueno = { ...cierreObj, cobradiarioId: usuario.uid };
+      await setDocument(orgId, "daily_closings", cierreId, cierreConDueno);
+      setCierreGuardado(cierreConDueno);
       alert("Cierre generado exitosamente.");
     } catch (err) {
       alert("Error: " + err.message);

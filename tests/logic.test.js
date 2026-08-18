@@ -7,6 +7,7 @@ import {
   calcularFechaVencimientoTotal,
 } from "../src/logic/vencimiento";
 import { calcularCuotasVencidas, esDiaDeCobro } from "../src/logic/frecuencia";
+import { getColombiaHour, getColombiaDateKey } from "../src/logic/dateUtils";
 import { calcularMoraGlobal, calcularMoraGlobalAlCierre } from "../src/logic/mora";
 import { calcularTotalesCredito } from "../src/logic/credito";
 import { calcularSeguro } from "../src/logic/seguro";
@@ -199,6 +200,35 @@ describe("frecuencia mensual: calendario, no bloques de 30 días", () => {
     const loan = { fechaInicio: inicio, frecuencia: "mensual", numeroCuotas: 3 };
     expect(esDiaDeCobro(loan, new Date(2026, 1, 28))).toBe(true); // 28 feb
     expect(esDiaDeCobro(loan, new Date(2026, 2, 2))).toBe(false); // 2 mar (lo viejo)
+  });
+});
+
+describe("hora y fecha de Colombia (independientes del dispositivo)", () => {
+  // Colombia es UTC-5 y no tiene horario de verano.
+  const saludo = (h) => (h < 12 ? "Buenos días" : h < 18 ? "Buenas tardes" : "Buenas noches");
+
+  test("convierte UTC a hora de Bogotá", () => {
+    expect(getColombiaHour(new Date("2026-08-18T14:30:00Z"))).toBe(9);
+    expect(getColombiaHour(new Date("2026-08-18T17:30:00Z"))).toBe(12);
+    expect(getColombiaHour(new Date("2026-08-18T23:30:00Z"))).toBe(18);
+  });
+
+  test("la medianoche es 0 y no 24", () => {
+    expect(getColombiaHour(new Date("2026-08-19T05:00:00Z"))).toBe(0);
+  });
+
+  test("el saludo cambia en los cortes de 12 y 18", () => {
+    expect(saludo(getColombiaHour(new Date("2026-08-18T16:59:00Z")))).toBe("Buenos días");
+    expect(saludo(getColombiaHour(new Date("2026-08-18T17:00:00Z")))).toBe("Buenas tardes");
+    expect(saludo(getColombiaHour(new Date("2026-08-18T22:59:00Z")))).toBe("Buenas tardes");
+    expect(saludo(getColombiaHour(new Date("2026-08-18T23:00:00Z")))).toBe("Buenas noches");
+  });
+
+  test("a las 8 p.m. en Colombia el día sigue siendo el de hoy, no el de UTC", () => {
+    // Es el bug que vaciaba la caja del día: toISOString() ya decía 08-19.
+    const nocheEnColombia = new Date("2026-08-19T01:00:00Z");
+    expect(nocheEnColombia.toISOString().split("T")[0]).toBe("2026-08-19");
+    expect(getColombiaDateKey(nocheEnColombia)).toBe("2026-08-18");
   });
 });
 

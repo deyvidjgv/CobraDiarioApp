@@ -1,5 +1,6 @@
 ﻿import { useState } from "react";
 import { IconMapPin, IconCheck } from "@tabler/icons-react";
+import { bloquearEntradaSoloNumeros } from "../../logic/formato";
 
 const CONSENT_VERSION = "1.0";
 
@@ -24,6 +25,18 @@ export default function ClientForm({ initial = null, onSubmit, loading = false }
 
   function set(field) {
     return (e) => setForm({ ...form, [field]: e.target.value });
+  }
+
+  /**
+   * Campos numéricos: se limpian en onChange además de bloquear el
+   * teclado, porque el guard de teclas no cubre pegar ni los teclados de
+   * Android (que suelen reportar key "Unidentified"). Importa sobre todo
+   * en la cédula: useClients la usa como ID del documento tras quitarle
+   * los no-dígitos, así que un "1094abc" se guardaba como "1094" y el
+   * control de cédulas duplicadas se rompía en silencio.
+   */
+  function setSoloDigitos(field) {
+    return (e) => setForm({ ...form, [field]: e.target.value.replace(/\D/g, "") });
   }
 
   function capturarUbicacion() {
@@ -85,8 +98,10 @@ export default function ClientForm({ initial = null, onSubmit, loading = false }
           type="text"
           required
           inputMode="numeric"
+          maxLength={15}
           value={form.cedula}
-          onChange={set("cedula")}
+          onChange={setSoloDigitos("cedula")}
+          onKeyDown={bloquearEntradaSoloNumeros}
           className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
           placeholder="1094220549"
         />
@@ -100,10 +115,13 @@ export default function ClientForm({ initial = null, onSubmit, loading = false }
         <input
           type="tel"
           required
+          inputMode="numeric"
+          maxLength={15}
           value={form.telefono}
-          onChange={set("telefono")}
+          onChange={setSoloDigitos("telefono")}
+          onKeyDown={bloquearEntradaSoloNumeros}
           className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-sm focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
-          placeholder="300 123 4567"
+          placeholder="3001234567"
         />
       </label>
 

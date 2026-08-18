@@ -302,15 +302,19 @@ export default function RutaDelDia() {
         )}
       </div>
 
-      {/* Acción flotante: crear cobro rápido, sobre la barra inferior */}
-      <button
-        type="button"
-        onClick={() => navigate("/creditos/nuevo")}
-        aria-label="Nuevo crédito"
-        className="lg:hidden fixed right-5 bottom-[92px] z-30 w-14 h-14 rounded-2xl bg-gold text-surface-1 flex items-center justify-center shadow-lg shadow-black/50 active:scale-95 transition"
-      >
-        <IconPlus size={24} stroke={1.8} />
-      </button>
+      {/* Acción flotante: crear crédito, sobre la barra inferior.
+          Solo para el cobrador: el Admin no presta, y sin este guard el
+          botón lo mandaba a NuevoCredito, que lo rebota a Inicio. */}
+      {!isAdmin && (
+        <button
+          type="button"
+          onClick={() => navigate("/creditos/nuevo")}
+          aria-label="Nuevo crédito"
+          className="lg:hidden fixed right-5 bottom-nav-safe z-30 w-14 h-14 rounded-2xl bg-gold text-surface-1 flex items-center justify-center shadow-lg shadow-black/50 active:scale-95 transition"
+        >
+          <IconPlus size={24} stroke={1.8} />
+        </button>
+      )}
 
       <VisitActionSheet
         open={Boolean(sheetItem)}

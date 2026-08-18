@@ -29,6 +29,14 @@ export default {
         xl: "0.75rem",
         "2xl": "1rem",
       },
+      spacing: {
+        // Altura de la barra inferior (67px) más holgura, contando el área
+        // segura del home indicator. Instalada como PWA en iPhone esa franja
+        // añade ~34px, y los botones flotantes a `bottom-[92px]` quedaban
+        // por debajo de la barra. Va en la config y no como clase suelta en
+        // index.css para que siga respetando los breakpoints (lg:bottom-8).
+        "nav-safe": "calc(92px + env(safe-area-inset-bottom, 0px))",
+      },
     },
   },
   plugins: [],

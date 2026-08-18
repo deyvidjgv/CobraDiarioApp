@@ -14,6 +14,7 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
   IconLogout,
+  IconFileText,
 } from '@tabler/icons-react';
 import Logo from '../ui/Logo';
 import { cerrarSesion } from '../../firebase/auth';
@@ -37,6 +38,8 @@ const adminNavItems = [
     end: false,
   },
   { to: '/cobradiarios', label: 'Cobradiarios', Icon: IconUserCog, end: false },
+  // Cartera completa en solo lectura (el Admin no entrega créditos).
+  { to: '/creditos', label: 'Créditos', Icon: IconFileText, end: true },
   { to: '/desempeno', label: 'Desempeño', Icon: IconChartBar, end: false },
   { to: '/clientes', label: 'Clientes', Icon: IconUsers, end: false },
   { to: '/caja', label: 'Caja', Icon: IconCash, end: false },

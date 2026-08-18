@@ -7,6 +7,7 @@ import {
 } from "../firebase/firestore";
 import { useAuth } from "../context/AuthContext";
 import { calcularSaldo, TIPOS_MOVIMIENTO } from "../logic/caja";
+import { getColombiaDateKey } from "../logic/dateUtils";
 
 /**
  * Hook para los movimientos de caja de un día.
@@ -19,7 +20,10 @@ export function useMovements(fechaStr = null, cobradiarioUid = null) {
   const [movements, setMovements] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const dateKey = fechaStr || new Date().toISOString().split("T")[0];
+  // getColombiaDateKey y no toISOString(): éste último da la fecha en UTC,
+  // y como Colombia es UTC-5, a partir de las 7 p.m. devolvía el día
+  // siguiente — la caja del día se vaciaba a $0 en plena jornada.
+  const dateKey = fechaStr || getColombiaDateKey();
   const dueno = isCobradiario ? usuario.uid : cobradiarioUid;
 
   useEffect(() => {

@@ -31,15 +31,22 @@ function KpiCard({ label, valor, Icon, tono = "primary" }) {
     amber: "bg-gold/10 text-gold",
     blue: "bg-adelanto/10 text-adelanto",
   };
+  // El ícono y la etiqueta van arriba, en fila, y la cifra debajo a lo
+  // ancho de toda la tarjeta. Antes compartían la fila: en dos columnas
+  // sobre un celular el número se quedaba con ~89px y cualquier cantidad
+  // de 7 dígitos salía cortada ("$1.400...."). Sin `truncate`, el peor
+  // caso ahora es que baje de línea, no que desaparezca.
   return (
-    <div className="bg-surface rounded-xl p-4 border border-line flex items-center gap-3">
-      <div className={`w-10 h-10 rounded-xl ${tonos[tono]} flex items-center justify-center shrink-0`}>
-        <Icon size={20} stroke={1.5} />
+    <div className="bg-surface rounded-xl p-4 border border-line">
+      <div className="flex items-center gap-2">
+        <div className={`w-8 h-8 rounded-lg ${tonos[tono]} flex items-center justify-center shrink-0`}>
+          <Icon size={16} stroke={1.5} />
+        </div>
+        <p className="text-[11px] text-primary-light/70 uppercase tracking-wide leading-tight">{label}</p>
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] text-primary-light/70 uppercase tracking-wide">{label}</p>
-        <p className="text-lg font-semibold text-primary truncate">{valor}</p>
-      </div>
+      <p className="num text-lg sm:text-xl font-semibold text-primary leading-tight mt-2" translate="no">
+        {valor}
+      </p>
     </div>
   );
 }

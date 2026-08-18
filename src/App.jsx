@@ -1,4 +1,5 @@
-﻿import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+﻿import { useEffect } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { UIProvider } from "./context/UIContext";
 import AdminLayout from "./components/layout/AdminLayout";
@@ -12,6 +13,7 @@ import Clientes from "./pages/Clientes/Clientes";
 import NuevoCliente from "./pages/Clientes/NuevoCliente";
 import DetalleCliente from "./pages/Clientes/DetalleCliente";
 import NuevoCredito from "./pages/Creditos/NuevoCredito";
+import CreditosAdmin from "./pages/Creditos/CreditosAdmin";
 import DetalleCredito from "./pages/Creditos/DetalleCredito";
 import RegistrarCobro from "./pages/RegistrarCobro/RegistrarCobro";
 import Reportes from "./pages/Reportes/Reportes";
@@ -24,6 +26,21 @@ import Auditoria from "./pages/Auditoria/Auditoria";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Desempeno from "./pages/Desempeno/Desempeno";
 import OperacionCobradiario from "./pages/OperacionCobradiario/OperacionCobradiario";
+
+/**
+ * React Router no reinicia el scroll al cambiar de ruta. La pantalla de
+ * login es más alta que un celular (el panel del logo va sobre el
+ * formulario) y iOS la desplaza al enfocar la contraseña; ese offset se
+ * heredaba a Inicio y dejaba el saludo debajo del header translúcido.
+ * Pasaba en toda navegación, no solo al entrar.
+ */
+function ScrollToTop() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+}
 
 function AppRoutes() {
   return (
@@ -47,6 +64,9 @@ function AppRoutes() {
 
       {/* Panel exclusivo del Admin (Plan Maestro, sección 5). */}
       <Route path="/dashboard" element={<AdminLayout><Dashboard /></AdminLayout>} />
+      {/* Cartera completa, solo lectura: el Admin no entrega créditos.
+          No choca con /creditos/nuevo ni /creditos/:loanId, más específicas. */}
+      <Route path="/creditos" element={<AdminLayout><CreditosAdmin /></AdminLayout>} />
       <Route path="/cobradiarios" element={<AdminLayout><Cobradiarios /></AdminLayout>} />
       <Route path="/cobradiarios/nuevo" element={<AdminLayout><NuevoCobradiario /></AdminLayout>} />
       <Route path="/cobradiarios/operacion/:uid" element={<AdminLayout><OperacionCobradiario /></AdminLayout>} />
@@ -64,6 +84,7 @@ export default function App() {
     <AuthProvider>
       <UIProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <div className="min-h-screen bg-surface-1 text-primary font-sans antialiased flex flex-col">
             <AppRoutes />
           </div>

@@ -6,7 +6,8 @@ import {
   IconUsers,
   IconCash,
   IconDotsVertical,
-  IconLayoutDashboard,
+  IconUserCog,
+  IconFileText,
 } from "@tabler/icons-react";
 import { useAuth } from "../../context/AuthContext";
 import { useRutaHoy } from "../../hooks/useRutaHoy";
@@ -18,9 +19,9 @@ import { cerrarSesion } from "../../firebase/auth";
  * teléfono; el SideNav sigue siendo la navegación de escritorio (lg+).
  * "Ruta" va al centro para el cobradiario: es la pantalla que más se toca
  * durante el día. El admin no tiene ruta personal (SideNav tampoco se la
- * muestra en escritorio), así que en su lugar ve "Dashboard" — antes esta
- * lista no se filtraba por rol y el admin veía "Ruta" igual en móvil,
- * apuntando a una pantalla pensada para el cobrador.
+ * muestra en escritorio), así que ve otra cosa — antes esta lista no se
+ * filtraba por rol y el admin veía "Ruta" igual en móvil, apuntando a una
+ * pantalla pensada para el cobrador.
  */
 const tabsCobradiario = [
   { to: "/", label: "Inicio", Icon: IconHome, end: true },
@@ -29,10 +30,14 @@ const tabsCobradiario = [
   { to: "/caja", label: "Caja", Icon: IconCash, end: false },
 ];
 
+// El Admin vive en su gente y su cartera, no en la lista de clientes: por
+// eso Cobradiarios y Créditos ocupan el centro. Clientes y Dashboard bajan
+// a "Más". El <nav> es grid-cols-5 (4 pestañas + "Más"), así que este
+// arreglo debe tener exactamente 4 entradas.
 const tabsAdmin = [
   { to: "/", label: "Inicio", Icon: IconHome, end: true },
-  { to: "/clientes", label: "Clientes", Icon: IconUsers, end: false },
-  { to: "/dashboard", label: "Dashboard", Icon: IconLayoutDashboard, end: false },
+  { to: "/cobradiarios", label: "Cobradiarios", Icon: IconUserCog, end: false },
+  { to: "/creditos", label: "Créditos", Icon: IconFileText, end: true },
   { to: "/caja", label: "Caja", Icon: IconCash, end: false },
 ];
 
@@ -58,8 +63,10 @@ const extraCobradiario = [
   { to: "/configuracion", label: "Configuración" },
 ];
 
+// Cobradiarios ya es pesta\u00f1a; en su lugar bajan aqu\u00ed Dashboard y Clientes.
 const extraAdmin = [
-  { to: "/cobradiarios", label: "Cobradiarios" },
+  { to: "/dashboard", label: "Dashboard" },
+  { to: "/clientes", label: "Clientes" },
   { to: "/desempeno", label: "Desempe\u00f1o" },
   { to: "/correcciones", label: "Correcciones" },
   { to: "/auditoria", label: "Auditor\u00eda" },
