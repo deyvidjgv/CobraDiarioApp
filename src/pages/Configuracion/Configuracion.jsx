@@ -15,7 +15,9 @@ import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
 import { useLoanActions } from "../../hooks/useLoanActions";
 import { useCobradiarios } from "../../hooks/useCobradiarios";
-import { bloquearEntradaSoloNumerosConDecimal, formatearMonto } from "../../logic/formato";
+import { useBackup } from "../../hooks/useBackup";
+import { esRespaldoValido, resumenRespaldo } from "../../logic/backup";
+import { bloquearEntradaSoloNumerosConDecimal, formatearMonto, formatearFecha } from "../../logic/formato";
 import {
   IconUser,
   IconShieldLock,
@@ -27,6 +29,9 @@ import {
   IconEye,
   IconEyeOff,
   IconBuildingStore,
+  IconDownload,
+  IconUpload,
+  IconDatabase,
 } from "@tabler/icons-react";
 
 export default function Configuracion() {
@@ -59,6 +64,21 @@ export default function Configuracion() {
   const { loans: activeLoans } = useLoans(true);
   const { cobradiarios } = useCobradiarios();
   const { deleteLoan } = useLoanActions();
+  const { exportarRespaldo, restaurarRespaldo } = useBackup();
+
+  // Respaldo y restauración
+  const [descargando, setDescargando] = useState(false);
+  const [showDescargarPassword, setShowDescargarPassword] = useState(false);
+  const [descargarError, setDescargarError] = useState("");
+  const [archivoRespaldo, setArchivoRespaldo] = useState(null);
+  const [archivoNombre, setArchivoNombre] = useState("");
+  const [archivoError, setArchivoError] = useState("");
+  const [entiendoRestaurar, setEntiendoRestaurar] = useState(false);
+  const [showRestaurarPassword, setShowRestaurarPassword] = useState(false);
+  const [restaurarError, setRestaurarError] = useState("");
+  const [restaurando, setRestaurando] = useState(false);
+  const [progresoRestaurar, setProgresoRestaurar] = useState(null);
+  const [restauracionCompleta, setRestauracionCompleta] = useState(false);
 
   // Cambio de contraseña (Seguridad)
   const [pwd, setPwd] = useState({ actual: "", nueva: "", confirmar: "" });
@@ -171,6 +191,100 @@ export default function Configuracion() {
     setShowDeleteCredit(false);
     setSelectedLoanId("");
     alert("Crédito eliminado correctamente.");
+  }
+
+  // ─── Respaldo y restauración ───────────────────────────────
+
+  function descargarComoArchivo(data, nombreArchivo) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nombreArchivo;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleConfirmarDescarga(password) {
+    setDescargarError("");
+    setDescargando(true);
+    try {
+      await verificarPassword(password);
+      const data = await exportarRespaldo();
+      descargarComoArchivo(data, `respaldo-${new Date().toISOString().slice(0, 10)}.json`);
+      setShowDescargarPassword(false);
+    } catch (err) {
+      if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setDescargarError("Contraseña incorrecta. Inténtalo de nuevo.");
+      } else {
+        setDescargarError(err.message || "No se pudo generar el respaldo.");
+      }
+    } finally {
+      setDescargando(false);
+    }
+  }
+
+  function handleSeleccionarArchivo(e) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permite volver a elegir el mismo archivo si se corrige algo
+    if (!file) return;
+
+    setArchivoError("");
+    setArchivoRespaldo(null);
+    setEntiendoRestaurar(false);
+    setRestauracionCompleta(false);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (!esRespaldoValido(data)) {
+          setArchivoError("Este archivo no tiene el formato de un respaldo de esta app.");
+          return;
+        }
+        setArchivoRespaldo(data);
+        setArchivoNombre(file.name);
+      } catch {
+        setArchivoError("No se pudo leer el archivo. ¿Seguro que es el .json del respaldo?");
+      }
+    };
+    reader.onerror = () => setArchivoError("No se pudo leer el archivo.");
+    reader.readAsText(file);
+  }
+
+  async function handleConfirmarRestauracion(password) {
+    setRestaurarError("");
+    setRestaurando(true);
+    try {
+      await verificarPassword(password);
+
+      // Copia de seguridad del estado actual, por si la restauración no
+      // era lo que se quería — se descarga sola, sin pedir nada más.
+      const snapshotActual = await exportarRespaldo();
+      descargarComoArchivo(
+        snapshotActual,
+        `respaldo-antes-de-restaurar-${new Date().toISOString().slice(0, 10)}.json`
+      );
+
+      await restaurarRespaldo(archivoRespaldo, { onProgress: setProgresoRestaurar });
+
+      setShowRestaurarPassword(false);
+      setRestauracionCompleta(true);
+      setArchivoRespaldo(null);
+      setArchivoNombre("");
+      setEntiendoRestaurar(false);
+    } catch (err) {
+      if (err.code === "auth/wrong-password" || err.code === "auth/invalid-credential") {
+        setRestaurarError("Contraseña incorrecta. Inténtalo de nuevo.");
+      } else {
+        setRestaurarError(err.message || "No se pudo restaurar el respaldo.");
+      }
+    } finally {
+      setRestaurando(false);
+      setProgresoRestaurar(null);
+    }
   }
 
   const inputCls =
@@ -484,7 +598,111 @@ export default function Configuracion() {
           )}
         </section>
 
-        {/* ═══ 5. ZONA DE PELIGRO (solo Admin) ═══ */}
+        {/* ═══ 5. RESPALDO Y RESTAURACIÓN (solo Admin) ═══ */}
+        {isAdmin && (
+          <section className="card p-4 space-y-4">
+            <div>
+              <h3 className="section-title">
+                <IconDatabase size={16} stroke={2} className="text-primary" /> Respaldo y restauración
+              </h3>
+              <p className="text-xs text-primary-light/70 mt-1">
+                Descarga toda la información del negocio como archivo — tu plan de contingencia si
+                algo llegara a fallar.
+              </p>
+            </div>
+
+            {/* Descargar */}
+            <div className="rounded-xl bg-surface-1 p-3.5 space-y-2.5">
+              <p className="text-sm font-medium text-primary">Descargar respaldo completo</p>
+              <p className="text-xs text-primary-light/70">
+                Incluye clientes, créditos, movimientos de caja, correcciones, visitas, auditoría,
+                cobradores y configuración.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowDescargarPassword(true)}
+                className="w-full flex items-center justify-center gap-2 rounded-xl bg-gold text-surface-1 font-medium py-2.5 text-sm hover:bg-gold/90 transition"
+              >
+                <IconDownload size={16} stroke={1.8} />
+                Descargar respaldo (.json)
+              </button>
+            </div>
+
+            {/* Restaurar */}
+            <div className="rounded-xl border border-mora/20 bg-mora/5 p-3.5 space-y-3">
+              <div>
+                <p className="text-sm font-medium text-primary">Restaurar desde un archivo</p>
+                <p className="text-xs text-mora mt-0.5">
+                  Reemplaza clientes, créditos, movimientos de caja y configuración por los del
+                  archivo. Correcciones, visitas, auditoría y cobradores no se borran ni se
+                  sobreescriben — solo se agrega lo que falte (son registros protegidos que ni el
+                  Admin puede alterar). Antes de ejecutar, se descarga sola una copia del estado
+                  actual, por si acaso.
+                </p>
+              </div>
+
+              <label className="flex items-center justify-center gap-2 rounded-xl border border-line bg-surface text-primary font-medium py-2.5 text-sm hover:bg-surface-2 transition cursor-pointer">
+                <IconUpload size={16} stroke={1.8} />
+                {archivoNombre || "Elegir archivo de respaldo (.json)"}
+                <input type="file" accept=".json,application/json" onChange={handleSeleccionarArchivo} className="hidden" />
+              </label>
+
+              {archivoError && <p className="text-xs text-mora">{archivoError}</p>}
+
+              {archivoRespaldo && (
+                <div className="rounded-xl bg-surface border border-mora/20 p-3 space-y-2 text-sm">
+                  <p className="text-xs text-primary-light/70">
+                    Respaldo generado el {formatearFecha(archivoRespaldo.exportedAt)}
+                  </p>
+                  <div className="space-y-1">
+                    {resumenRespaldo(archivoRespaldo).map(({ coleccion, cantidad }) => (
+                      <div key={coleccion} className="flex justify-between text-xs">
+                        <span className="text-primary-light/75">{coleccion}</span>
+                        <span className="font-medium text-primary">{cantidad}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <label className="flex items-start gap-2 pt-2 border-t border-line">
+                    <input
+                      type="checkbox"
+                      checked={entiendoRestaurar}
+                      onChange={(e) => setEntiendoRestaurar(e.target.checked)}
+                      className="mt-0.5 rounded border-mora/40 text-mora focus:ring-mora"
+                    />
+                    <span className="text-xs text-mora">
+                      Entiendo que esto reemplaza clientes, créditos, movimientos y configuración
+                      actuales, y no se puede deshacer directamente (aparte de restaurar de nuevo
+                      con la copia de seguridad automática).
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    disabled={!entiendoRestaurar}
+                    onClick={() => setShowRestaurarPassword(true)}
+                    className="w-full rounded-xl bg-mora text-surface-1 text-sm font-semibold py-2.5 hover:bg-mora/90 transition disabled:opacity-50"
+                  >
+                    Restaurar este respaldo
+                  </button>
+                  {progresoRestaurar && (
+                    <p className="text-xs text-primary-light/70 text-center">
+                      Paso {progresoRestaurar.paso}/{progresoRestaurar.totalPasos} —{" "}
+                      {progresoRestaurar.mensaje}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {restauracionCompleta && (
+                <div className="flex items-center gap-2 rounded-xl bg-al-dia/10 text-al-dia px-3 py-2.5 text-sm">
+                  <IconCheck size={18} stroke={2} />
+                  Restauración completada correctamente.
+                </div>
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* ═══ 6. ZONA DE PELIGRO (solo Admin) ═══ */}
         {isAdmin && (
           <section className="rounded-2xl border border-mora/20 bg-mora/10/60 p-4 space-y-3">
             <h3 className="text-sm font-semibold text-mora flex items-center gap-2">
@@ -626,6 +844,38 @@ export default function Configuracion() {
         loading={processingDelete}
         error={passwordError}
         confirmText="Eliminar crédito"
+      />
+
+      <ConfirmarPasswordModal
+        isOpen={showDescargarPassword}
+        title="Descargar respaldo"
+        description="Verifica tu contraseña para descargar toda la información del negocio en un archivo."
+        onConfirm={handleConfirmarDescarga}
+        onCancel={() => {
+          setShowDescargarPassword(false);
+          setDescargarError("");
+        }}
+        loading={descargando}
+        error={descargarError}
+        confirmText="Descargar"
+        confirmIcon={<IconDownload size={16} stroke={1.5} />}
+        confirmColor="bg-gold hover:bg-gold/90"
+      />
+
+      <ConfirmarPasswordModal
+        isOpen={showRestaurarPassword}
+        title="Restaurar respaldo"
+        description={`Vas a reemplazar todos los datos actuales por los del archivo "${archivoNombre}". Antes de continuar se descargará una copia de seguridad del estado actual.`}
+        warning="⚠ Esta acción no se puede deshacer directamente."
+        onConfirm={handleConfirmarRestauracion}
+        onCancel={() => {
+          setShowRestaurarPassword(false);
+          setRestaurarError("");
+        }}
+        loading={restaurando}
+        error={restaurarError}
+        confirmText={restaurando ? "Restaurando..." : "Restaurar"}
+        confirmIcon={<IconUpload size={16} stroke={1.5} />}
       />
     </div>
   );

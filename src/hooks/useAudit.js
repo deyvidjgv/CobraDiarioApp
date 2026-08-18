@@ -24,6 +24,8 @@ export const ACCIONES_AUDIT = {
   VISITA_REGISTRADA: "visita_registrada",
   SETTINGS_ACTUALIZADAS: "settings_actualizadas",
   ADMIN_VIEW_AS_USER: "admin_view_as_user",
+  RESPALDO_DESCARGADO: "respaldo_descargado",
+  RESPALDO_RESTAURADO: "respaldo_restaurado",
 };
 
 /** Hook de solo-escritura: registra eventos de auditoría. */

@@ -6,6 +6,7 @@ import {
   updateDoc,
   deleteDoc,
   getDoc,
+  getDocs,
   query,
   onSnapshot,
   serverTimestamp,
@@ -58,6 +59,11 @@ export function wSet(writer, ref, data) {
 }
 export function wUpdate(writer, ref, data) {
   writer.update(ref, { ...sanitizeFirestoreData(data), updatedAt: serverTimestamp() });
+}
+
+/** set sanitizado SIN inyectar createdAt/updatedAt — para restaurar un respaldo preservando sus fechas originales */
+export function wSetPreserving(writer, ref, data) {
+  writer.set(ref, sanitizeFirestoreData(data));
 }
 
 // ─── CRUD genérico ─────────────────────────────────────────────
@@ -115,6 +121,12 @@ export async function getDocument(orgId, sub, docId) {
   const ref = doc(db, "organizations", orgId, sub, docId);
   const snap = await getDoc(ref);
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
+}
+
+/** Lectura de una sola vez de toda una colección (no realtime) — para respaldos/exportaciones */
+export async function getAllDocuments(orgId, sub) {
+  const snap = await getDocs(subCollection(orgId, sub));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
 // ─── Listeners en tiempo real ──────────────────────────────────

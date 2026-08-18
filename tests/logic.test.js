@@ -6,6 +6,13 @@ import { calcularCuotasVencidas, esDiaDeCobro } from "../src/logic/frecuencia";
 import { calcularMoraGlobal, calcularMoraGlobalAlCierre } from "../src/logic/mora";
 import { calcularTotalesCredito } from "../src/logic/credito";
 import { calcularSeguro } from "../src/logic/seguro";
+import {
+  COLECCIONES_RESPALDO,
+  serializarParaRespaldo,
+  deserializarDesdeRespaldo,
+  esRespaldoValido,
+  resumenRespaldo,
+} from "../src/logic/backup";
 
 describe("round2", () => {
   test("redondea a dos decimales sin errores de coma flotante", () => {
@@ -231,6 +238,60 @@ describe("calcularCuotasVencidas con frecuencia desconocida", () => {
     expect(
       calcularCuotasVencidas({ fechaInicio: inicio, frecuencia: "quincenal-legacy" }, hoy)
     ).toBe(0);
+  });
+});
+
+describe("backup (respaldo/restauración)", () => {
+  // Simula un Timestamp de Firestore: cualquier objeto con .toDate()
+  function fakeTimestamp(date) {
+    return { toDate: () => date };
+  }
+
+  test("serializarParaRespaldo marca los Timestamp para poder reconstruirlos", () => {
+    const fecha = new Date(2026, 7, 16, 10, 0, 0);
+    const serializado = serializarParaRespaldo({
+      nombre: "Juan",
+      fecha: fakeTimestamp(fecha),
+      anidado: { creadoEn: fakeTimestamp(fecha) },
+      lista: [fakeTimestamp(fecha), 42],
+    });
+    expect(serializado.nombre).toBe("Juan");
+    expect(serializado.fecha.__firestoreTimestamp).toBe(fecha.toISOString());
+    expect(serializado.anidado.creadoEn.__firestoreTimestamp).toBe(fecha.toISOString());
+    expect(serializado.lista[0].__firestoreTimestamp).toBe(fecha.toISOString());
+    expect(serializado.lista[1]).toBe(42);
+  });
+
+  test("deserializarDesdeRespaldo reconstruye Date reales desde la marca", () => {
+    const fecha = new Date(2026, 7, 16, 10, 0, 0);
+    const serializado = serializarParaRespaldo({ fecha: fakeTimestamp(fecha), monto: 5000 });
+    const de_vuelta = deserializarDesdeRespaldo(serializado);
+    expect(de_vuelta.fecha).toBeInstanceOf(Date);
+    expect(de_vuelta.fecha.getTime()).toBe(fecha.getTime());
+    expect(de_vuelta.monto).toBe(5000);
+  });
+
+  test("esRespaldoValido exige tipo, exportedAt y las colecciones esperadas como arreglos", () => {
+    const colecciones = Object.fromEntries(COLECCIONES_RESPALDO.map((c) => [c, []]));
+    const valido = { tipo: "respaldo_credidev", exportedAt: "2026-08-16T00:00:00.000Z", colecciones };
+
+    expect(esRespaldoValido(valido)).toBe(true);
+    expect(esRespaldoValido(null)).toBe(false);
+    expect(esRespaldoValido({ ...valido, tipo: "otra_cosa" })).toBe(false);
+    expect(esRespaldoValido({ ...valido, exportedAt: undefined })).toBe(false);
+    expect(esRespaldoValido({ ...valido, colecciones: { ...colecciones, loans: "no es arreglo" } })).toBe(
+      false
+    );
+  });
+
+  test("resumenRespaldo cuenta los documentos por colección", () => {
+    const colecciones = Object.fromEntries(COLECCIONES_RESPALDO.map((c) => [c, []]));
+    colecciones.clients = [{ id: "1" }, { id: "2" }];
+    colecciones.loans = [{ id: "1" }];
+    const resumen = resumenRespaldo({ colecciones });
+    expect(resumen.find((r) => r.coleccion === "clients").cantidad).toBe(2);
+    expect(resumen.find((r) => r.coleccion === "loans").cantidad).toBe(1);
+    expect(resumen.find((r) => r.coleccion === "movements").cantidad).toBe(0);
   });
 });
 
