@@ -7,6 +7,13 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // Sin esto, el manifest y el service worker solo se generan en
+      // `npm run build` — probar la instalación por WiFi contra
+      // `npm run dev` no tendría manifest real que ofrecerle a iOS.
+      devOptions: {
+        enabled: true,
+        type: 'module',
+      },
       includeAssets: [
         'iconos/icono-16.png',
         'iconos/icono-32.png',

@@ -1,5 +1,4 @@
-﻿import { useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+﻿import { NavLink } from 'react-router-dom';
 import {
   IconHome,
   IconMapPin,
@@ -8,7 +7,6 @@ import {
   IconSettings,
   IconChartBar,
   IconCoin,
-  IconX,
   IconUserCog,
   IconClipboardCheck,
   IconHistory,
@@ -127,32 +125,15 @@ function LogoutButton({ collapsed, onDone = () => {} }) {
 }
 
 /**
- * Navegación lateral:
- *  - Escritorio (lg+, ≥1024px): barra estática a la izquierda, colapsable a
- *    solo iconos. La preferencia se guarda (UIContext → localStorage).
- *  - Móvil y tablet (<1024px): overlay controlado por el botón ☰ del
- *    Header; BottomNav es la navegación principal en ese rango.
+ * Navegación lateral: solo la barra estática de escritorio (lg+, ≥1024px),
+ * colapsable a solo iconos (preferencia guardada en UIContext →
+ * localStorage). En móvil y tablet (<1024px) la navegación es BottomNav
+ * (barra inferior + hoja "Más"); este componente no renderiza nada ahí.
  */
 export default function SideNav() {
   const { isAdmin } = useAuth();
-  const { drawerOpen, setDrawerOpen, navCollapsed, toggleNavCollapsed } =
-    useUI();
-  const { pathname } = useLocation();
+  const { navCollapsed, toggleNavCollapsed } = useUI();
   const items = isAdmin ? adminNavItems : navItems;
-
-  // Cierra el overlay móvil al navegar
-  useEffect(() => {
-    setDrawerOpen(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  // Bloquea el scroll del fondo mientras el drawer móvil está abierto
-  useEffect(() => {
-    document.body.style.overflow = drawerOpen ? 'hidden' : '';
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [drawerOpen]);
 
   return (
     <>
@@ -215,51 +196,6 @@ export default function SideNav() {
         </div>
       </aside>
 
-      {/* ─── Overlay móvil ─── */}
-      <div
-        aria-hidden="true"
-        className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px] transition-opacity duration-300 ${
-          drawerOpen
-            ? 'opacity-100 pointer-events-auto'
-            : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setDrawerOpen(false)}
-      />
-      <aside
-        role="navigation"
-        aria-label="Menú principal"
-        className={`lg:hidden fixed top-0 left-0 h-full w-72 max-w-[85vw] z-50 flex flex-col
-          bg-surface shadow-2xl shadow-black/20
-          transition-transform duration-300 ease-out
-          ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-line">
-          <Marca collapsed={false} />
-          <button
-            onClick={() => setDrawerOpen(false)}
-            aria-label="Cerrar menú"
-            className="p-1.5 rounded-lg hover:bg-surface-2 transition text-primary-light/70 hover:text-primary-light">
-            <IconX
-              size={20}
-              stroke={1.5}
-            />
-          </button>
-        </div>
-
-        <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-          <NavLinks
-            items={items}
-            collapsed={false}
-          />
-        </nav>
-
-        <div className="mt-auto px-3 py-4 border-t border-line">
-          <LogoutButton
-            collapsed={false}
-            onDone={() => setDrawerOpen(false)}
-          />
-          <p className="text-[11px] text-primary-light/50 text-center mt-3">CrediDev</p>
-        </div>
-      </aside>
     </>
   );
 }

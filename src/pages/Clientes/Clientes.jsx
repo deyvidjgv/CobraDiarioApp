@@ -126,7 +126,7 @@ export default function Clientes() {
       {!isAdmin && (
         <button
           onClick={() => navigate("/clientes/nuevo")}
-          className="fixed bottom-8 right-4 w-14 h-14 bg-gold text-surface-1 rounded-full flex items-center justify-center hover:scale-105 transition z-30"
+          className="fixed bottom-[92px] lg:bottom-8 right-4 w-14 h-14 bg-gold text-surface-1 rounded-full flex items-center justify-center hover:scale-105 transition z-30"
           aria-label="Nuevo cliente"
         >
           <IconPlus size={28} stroke={2} />

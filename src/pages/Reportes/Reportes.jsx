@@ -375,11 +375,11 @@ export default function Reportes() {
         <div>
           <h3 className="section-title mb-3">Resumen del día</h3>
           <div className="grid grid-cols-2 gap-3">
-            <div className="card p-4 bg-gradient-to-br from-white to-primary-bg/40">
+            <div className="card p-4">
               <p className="text-xs text-primary-light/70">Esperado hoy</p>
               <p className="text-lg font-semibold text-primary mt-1" translate="no">${formatearMonto(esperadoHoy)}</p>
             </div>
-            <div className="card p-4 bg-gradient-to-br from-white to-emerald-50">
+            <div className="card p-4">
               <p className="text-xs text-primary-light/70">Cobrado ({selectedDate})</p>
               <p className="text-lg font-semibold text-al-dia mt-1" translate="no">${formatearMonto(cobradoFecha)}</p>
             </div>

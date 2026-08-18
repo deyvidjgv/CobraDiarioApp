@@ -1,6 +1,5 @@
 ﻿import { useNavigate } from 'react-router-dom';
-import { IconChevronLeft, IconMenu2, IconLoader2 } from '@tabler/icons-react';
-import { useUI } from '../../context/UIContext';
+import { IconChevronLeft, IconLoader2 } from '@tabler/icons-react';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
 
 /**
@@ -8,9 +7,9 @@ import { useAndroidBack } from '../../hooks/useAndroidBack';
  *
  * Props:
  *  - title: string — título de la página
- *  - showBack: bool — muestra botón "volver" en la izquierda (el ☰ siempre aparece a la derecha)
+ *  - showBack: bool — muestra botón "volver" en la izquierda
  *  - backTo: string|null — ruta a la que debe navegar el botón "volver" en lugar de retroceder en el historial
- *  - right: ReactNode — contenido opcional en la esquina derecha (reemplaza el ☰)
+ *  - right: ReactNode — contenido opcional en la esquina derecha
  *  - loading: bool — indica que la página está cargando y deshabilita la navegación de retroceso
  */
 export default function Header({
@@ -23,7 +22,6 @@ export default function Header({
   closeModal = () => {},
 }) {
   const navigate = useNavigate();
-  const { drawerOpen, setDrawerOpen } = useUI();
 
   // Se inicializa el hook de Android Back aquí para que cada pantalla que use Header tenga la lógica centralizada
   useAndroidBack({ modalOpen, closeModal, showBack, backTo, loading });
@@ -65,8 +63,8 @@ export default function Header({
           {title}
         </h1>
 
-        {/* Derecha: contenido personalizado o botón ☰ (solo móvil/tablet;
-            en escritorio lg+ la navegación es la barra lateral estática) */}
+        {/* Derecha: contenido personalizado de la página (la navegación en
+            móvil vive en BottomNav; en escritorio lg+, en la barra lateral). */}
         <div className="flex items-center gap-2">
           {loading && (
             <IconLoader2
@@ -75,23 +73,7 @@ export default function Header({
               className="text-gold animate-spin"
             />
           )}
-          {right ? (
-            <div>{right}</div>
-          ) : (
-            <button
-              id="nav-menu-toggle"
-              onClick={() => setDrawerOpen(true)}
-              className="lg:hidden p-1 -mr-1 rounded-lg hover:bg-surface-2 transition"
-              aria-label="Abrir menú"
-              aria-expanded={drawerOpen}
-              aria-controls="nav-drawer">
-              <IconMenu2
-                size={22}
-                stroke={1.5}
-                className="text-primary"
-              />
-            </button>
-          )}
+          {right && <div>{right}</div>}
         </div>
       </header>
     </>

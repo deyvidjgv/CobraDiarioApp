@@ -55,7 +55,7 @@ function RutaPendientesBadge() {
 
 const extraCobradiario = [
   { to: "/reportes", label: "Reportes" },
-  { to: "/configuracion", label: "Configuraci\u00f3n" },
+  { to: "/configuracion", label: "Configuración" },
 ];
 
 const extraAdmin = [
@@ -64,7 +64,7 @@ const extraAdmin = [
   { to: "/correcciones", label: "Correcciones" },
   { to: "/auditoria", label: "Auditor\u00eda" },
   { to: "/reportes", label: "Reportes" },
-  { to: "/configuracion", label: "Configuraci\u00f3n" },
+  { to: "/configuracion", label: "Configuración" },
 ];
 
 export default function BottomNav() {
@@ -75,7 +75,7 @@ export default function BottomNav() {
   const tabs = isAdmin ? tabsAdmin : tabsCobradiario;
 
   async function handleLogout() {
-    if (!confirm("\u00bfCerrar sesi\u00f3n?")) return;
+    if (!confirm("\u00bfCerrar sesión?")) return;
     await cerrarSesion();
     window.location.href = "/login";
   }
@@ -87,7 +87,7 @@ export default function BottomNav() {
           <div className="absolute inset-0 bg-black/70" onClick={() => setMasOpen(false)} />
           <div className="relative w-full bg-surface-1 rounded-t-3xl px-5 pt-3.5 pb-6 pb-safe flex flex-col gap-3">
             <div className="w-9 h-1 rounded-full bg-primary/15 mx-auto" />
-            <span className="eyebrow">M\u00e1s</span>
+            <span className="eyebrow">Más</span>
             <div className="flex flex-col divide-y divide-line rounded-2xl bg-surface border border-line overflow-hidden">
               {extras.map((e) => (
                 <button
@@ -107,7 +107,7 @@ export default function BottomNav() {
                 onClick={handleLogout}
                 className="px-5 py-4 text-left text-[15px] font-medium text-primary/55"
               >
-                Cerrar sesi\u00f3n
+                Cerrar sesión
               </button>
             </div>
           </div>
@@ -115,7 +115,7 @@ export default function BottomNav() {
       )}
 
       <nav
-        aria-label="Navegaci\u00f3n principal"
+        aria-label="Navegación principal"
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 grid grid-cols-5 bg-surface-1/95 backdrop-blur border-t border-line pt-1.5 pb-safe"
       >
         {tabs.map(({ to, label, Icon, end, badge }) => (
@@ -148,7 +148,7 @@ export default function BottomNav() {
           className="min-h-[52px] flex flex-col items-center justify-center gap-1"
         >
           <IconDotsVertical size={21} stroke={1.5} className="text-primary/45" />
-          <span className="text-[11px] font-medium text-primary/45">M\u00e1s</span>
+          <span className="text-[11px] font-medium text-primary/45">Más</span>
         </button>
       </nav>
     </>
