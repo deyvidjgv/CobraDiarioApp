@@ -1,12 +1,8 @@
 import { useState, useEffect } from "react";
-import { where, orderBy, query, getDocs } from "firebase/firestore";
+import { where, orderBy } from "firebase/firestore";
 import {
   subscribeToCollection,
-  addDocument,
   updateDocument,
-  getDocument,
-  removeDocument,
-  subCollection,
   documentRef,
   newDocRef,
   getBatch,
@@ -52,9 +48,12 @@ export function useLoans(filterActive = true) {
   async function addLoan(loanData, extra = {}) {
     const { clienteNombre = null, cobradorNombre = null, skipPrestamoMovimiento = false } = extra;
     // cobradiarioId identifica al dueño operativo del crédito (Plan Maestro,
-    // sección 6); las condiciones (capital, interés, cuotas...) quedan
-    // congeladas desde aquí — updateLoan solo lo puede llamar el Admin
-    // (firestore.rules, inmutabilidad financiera).
+    // sección 6). Las condiciones (capital, interés, cuotas, frecuencia)
+    // quedan congeladas desde aquí: firestore.rules solo deja al Admin
+    // tocarlas. OJO — las reglas SÍ permiten al cobradiario escribir
+    // saldoPendiente y montoTotalAPagar, así que esos dos campos deben
+    // moverse únicamente a través de registerPayment/renovarCartulina,
+    // que son transaccionales.
     const loanRef = newDocRef(orgId, "loans");
     const batch = getBatch();
 
@@ -133,7 +132,7 @@ export function useLoans(filterActive = true) {
     const movRef = newDocRef(orgId, "movements");
     const recargoMovRef = newDocRef(orgId, "movements");
 
-    const resultado = await runInTransaction(async (tx) => {
+    await runInTransaction(async (tx) => {
       const loan = await txGet(tx, loanRef);
       if (!loan) throw new Error("Crédito no encontrado");
 
@@ -174,12 +173,18 @@ export function useLoans(filterActive = true) {
         detallePagoInfo = `Cuota es de $${formatearMonto(loanActual.cuota)}`;
       }
 
-      // Si el monto cobrado supera el saldo pendiente, el excedente se deja
-      // registrado explícitamente en vez de absorberse en silencio dentro
-      // del Math.max(0, ...) — un error de digitación (cobrar 500.000 en
-      // vez de 50.000) ya no desaparece sin dejar rastro.
+      // No se puede cobrar más que el saldo pendiente (ya con el recargo
+      // aplicado, si tocaba). Antes el exceso entraba completo a la caja
+      // mientras el crédito bajaba a 0: plata sin deuda que la respalde.
+      // El tope de la pantalla usa el saldo cargado localmente, así que
+      // solo aquí —dentro de la transacción, con el saldo recién leído—
+      // se puede verificar de verdad.
       const saldoAntesDePagar = loanActual.saldoPendiente ?? 0;
-      const excedente = montoNum > saldoAntesDePagar ? round2(montoNum - saldoAntesDePagar) : 0;
+      if (montoNum > saldoAntesDePagar) {
+        throw new Error(
+          `El cobro ($${formatearMonto(montoNum)}) supera el saldo pendiente ($${formatearMonto(saldoAntesDePagar)}). Revisa el monto.`
+        );
+      }
       const nuevoSaldo = Math.max(0, round2(saldoAntesDePagar - montoNum));
 
       const loanUpdates = { saldoPendiente: nuevoSaldo };
@@ -229,15 +234,11 @@ export function useLoans(filterActive = true) {
       });
 
       mov.tipoPago = tipoPago;
-      mov.detallePagoInfo =
-        excedente > 0
-          ? `${detallePagoInfo ? detallePagoInfo + " · " : ""}Excedente de $${formatearMonto(excedente)} sobre el saldo pendiente`
-          : detallePagoInfo;
+      mov.detallePagoInfo = detallePagoInfo;
       mov.estadoFinalLabel = estadoFinalLabel;
       mov.detalleEstadoFinal = detalleEstadoFinal;
       mov.saldoRestante = nuevoSaldo;
       mov.metodoPago = metodoPago;
-      if (excedente > 0) mov.excedente = excedente;
 
       wSet(tx, movRef, mov);
 
@@ -257,61 +258,123 @@ export function useLoans(filterActive = true) {
         recargoMov.montoRecargo = recargoMonto;
         wSet(tx, recargoMovRef, recargoMov);
       }
-
-      return { excedente };
     });
 
     registrarEvento(ACCIONES_AUDIT.COBRO_REGISTRADO, {
       entidad: "loans",
       entidadId: loanId,
-      detalle:
-        `$${formatearMonto(montoNum)} — ${clienteNombre ?? "sin nombre"}` +
-        (resultado.excedente > 0 ? ` (excedente $${formatearMonto(resultado.excedente)})` : ""),
+      detalle: `$${formatearMonto(montoNum)} — ${clienteNombre ?? "sin nombre"}`,
     });
   }
 
-  async function updateLoan(id, data) {
-    return updateDocument(orgId, "loans", id, data);
-  }
+  /**
+   * Renueva una cartulina: cierra el crédito viejo y abre uno nuevo que
+   * absorbe su saldo, todo en UNA transacción.
+   *
+   * Antes eran tres escrituras sueltas (crear crédito → movimiento de
+   * entrega → cerrar el viejo). Cobrando en la calle, perder señal a
+   * mitad dejaba al cliente debiendo LAS DOS cartulinas con el desembolso
+   * ya contabilizado. Como la mora persistente en este negocio se maneja
+   * renovando (no apilando recargos), ésta es la operación más delicada
+   * del sistema y tiene que ser todo-o-nada.
+   *
+   * El saldo del crédito viejo se vuelve a leer aquí dentro y se compara
+   * contra `saldoEsperado` (el que vio la pantalla al calcular la
+   * entrega). Si otro cobro entró en el medio se aborta en vez de
+   * recalcular en silencio: el cobrador ya acordó una cifra en efectivo
+   * con el cliente y cambiársela a sus espaldas sería peor que fallar.
+   */
+  async function renovarCartulina(loanAnteriorId, nuevoLoanData, extra = {}) {
+    const {
+      clienteNombre = null,
+      cobradorNombre = null,
+      saldoEsperado,
+      entregaBruta,
+      notaEntrega = null,
+    } = extra;
 
-  /** Aplica un recargo por vencimiento al crédito e inserta un movimiento informativo, de forma atómica */
-  async function aplicarRecargoVencimiento(loanId, recargoMonto, extra = {}) {
-    const { clienteNombre = null, cobradorNombre = null } = extra;
-    const loanRef = documentRef(orgId, "loans", loanId);
-    const movRef = newDocRef(orgId, "movements");
+    const loanAnteriorRef = documentRef(orgId, "loans", loanAnteriorId);
+    const nuevoLoanRef = newDocRef(orgId, "loans");
+    const movEntregaRef = newDocRef(orgId, "movements");
+    const movSeguroRef = newDocRef(orgId, "movements");
 
     await runInTransaction(async (tx) => {
-      const loan = await txGet(tx, loanRef);
-      if (!loan) throw new Error("Crédito no encontrado");
+      const anterior = await txGet(tx, loanAnteriorRef);
+      if (!anterior) throw new Error("No se encontró la cartulina anterior.");
+      if (anterior.estado === "completado") {
+        throw new Error("Esa cartulina ya está saldada — recarga la pantalla.");
+      }
 
-      const nuevoSaldo = round2((loan.saldoPendiente ?? 0) + recargoMonto);
-      const nuevoTotal = round2((loan.montoTotalAPagar ?? 0) + recargoMonto);
-      const recargosAcumulados = round2((loan.vencimiento?.recargosAcumulados ?? 0) + recargoMonto);
+      const saldoReal = anterior.saldoPendiente ?? 0;
+      if (round2(saldoReal) !== round2(saldoEsperado)) {
+        throw new Error(
+          `El saldo cambió mientras renovabas (era $${formatearMonto(saldoEsperado)}, ahora es $${formatearMonto(saldoReal)}). ` +
+            `Vuelve a empezar la renovación con el saldo correcto.`
+        );
+      }
 
-      wUpdate(tx, loanRef, {
-        saldoPendiente: nuevoSaldo,
-        montoTotalAPagar: nuevoTotal,
-        "vencimiento.recargosAcumulados": recargosAcumulados,
-        "vencimiento.fechaUltimoRecargo": new Date().toISOString(),
-      });
-
-      // Movimiento informativo (no altera caja directamente)
-      const mov = construirMovimiento({
-        tipo: TIPOS_MOVIMIENTO.RECARGO_VENCIMIENTO,
-        monto: 0, // No afecta la caja física
-        orgId,
-        referencia: loanId,
-        nota: clienteNombre ? `Recargo por mora - ${clienteNombre}` : "Recargo por mora",
-        clienteNombre,
-        cobradorNombre: cobradorNombre || null,
-        clientId: loan.clientId || null,
-        cobradiarioId: loan.cobradiarioId || usuario.uid,
+      const tracing = {
+        clientId: nuevoLoanData.clientId || null,
+        cobradiarioId: nuevoLoanData.cobradiarioId || anterior.cobradiarioId || usuario.uid,
         createdBy: usuario.uid,
-      });
-      mov.montoRecargo = recargoMonto;
+      };
 
-      wSet(tx, movRef, mov);
+      // 1. Crédito nuevo
+      wSet(tx, nuevoLoanRef, {
+        ...nuevoLoanData,
+        cobradiarioId: tracing.cobradiarioId,
+        createdBy: usuario.uid,
+        renovacionDe: loanAnteriorId,
+      });
+
+      // 2. Entrega en efectivo (solo lo que sale de caja: nuevo − saldo)
+      wSet(
+        tx,
+        movEntregaRef,
+        construirMovimiento({
+          tipo: TIPOS_MOVIMIENTO.PRESTAMO_NUEVO,
+          monto: entregaBruta,
+          orgId,
+          referencia: nuevoLoanRef.id,
+          nota: notaEntrega ?? "Renovación de cartulina",
+          clienteNombre,
+          cobradorNombre: cobradorNombre || null,
+          ...tracing,
+        })
+      );
+
+      // 3. Seguro de la cartulina nueva, si aplica
+      const seguro = nuevoLoanData.seguro;
+      if (seguro && seguro.activo && seguro.seguroMonto > 0) {
+        wSet(
+          tx,
+          movSeguroRef,
+          construirMovimiento({
+            tipo: TIPOS_MOVIMIENTO.SEGURO,
+            monto: seguro.seguroMonto,
+            orgId,
+            referencia: nuevoLoanRef.id,
+            nota: clienteNombre ? `Seguro renovación - ${clienteNombre}` : "Seguro renovación",
+            clienteNombre,
+            cobradorNombre: cobradorNombre || null,
+            ...tracing,
+          })
+        );
+      }
+
+      // 4. Cerrar la cartulina anterior (su saldo pasó al crédito nuevo)
+      wUpdate(tx, loanAnteriorRef, { estado: "completado", saldoPendiente: 0 });
     });
+
+    registrarEvento(ACCIONES_AUDIT.CREDITO_CREADO, {
+      entidad: "loans",
+      entidadId: nuevoLoanRef.id,
+      detalle:
+        `Renovación de ${clienteNombre ?? "cliente"} — nueva cartulina $${formatearMonto(nuevoLoanData.capital)}` +
+        ` (absorbe saldo $${formatearMonto(saldoEsperado)} de ${loanAnteriorId})`,
+    });
+
+    return nuevoLoanRef;
   }
 
   /** Perdona el recargo de hoy actualizando la fecha, para que no vuelva a molestar */
@@ -327,8 +390,7 @@ export function useLoans(filterActive = true) {
     loading,
     addLoan,
     registerPayment,
-    updateLoan,
-    aplicarRecargoVencimiento,
+    renovarCartulina,
     perdonarRecargoVencimiento
   };
 }

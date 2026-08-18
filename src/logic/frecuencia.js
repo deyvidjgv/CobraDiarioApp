@@ -7,6 +7,7 @@
  * sin fijar dia de semana - por eso no comparten la misma logica.
  */
 
+import { addMonths } from "date-fns";
 import { toDate } from "./dateUtils";
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24;
@@ -49,7 +50,17 @@ export function calcularCuotasVencidas(loan, hoy = new Date()) {
       break;
 
     case "mensual":
-      calculadas = Math.floor(diffDias(inicio, ayer) / 30);
+      // Meses de calendario, no bloques de 30 días: la cuota cae siempre
+      // en el mismo día del mes (31 ene → 28 feb → 31 mar) en vez de
+      // irse corriendo un par de días por ciclo.
+      //
+      // Se cuentan las fechas de cuota REALES que ya pasaron, en vez de
+      // usar differenceInMonths: addMonths recorta a fin de mes
+      // (31 ene + 3 = 30 abr) pero differenceInMonths no lo compensa
+      // (30 abr − 31 ene = 2, no 3). Derivándolo de addMonths, este
+      // conteo y calcularFechaVencimientoTotal comparten exactamente el
+      // mismo calendario.
+      calculadas = contarCuotasMensuales(inicio, ayer, maxCuotas);
       break;
 
     default:
@@ -79,6 +90,18 @@ export function esDiaDeCobro(loan, hoy = new Date()) {
   const manana = startOfDay(hoy);
   manana.setDate(manana.getDate() + 1);
   return calcularCuotasVencidas(normalizado, manana) > calcularCuotasVencidas(normalizado, hoy);
+}
+
+/**
+ * Cuántas fechas de cuota mensual (inicio + 1 mes, + 2 meses, ...) ya
+ * quedaron en el pasado a la fecha `fin`. El tope evita recorrer para
+ * siempre si el crédito no trae numeroCuotas.
+ */
+function contarCuotasMensuales(inicio, fin, maxCuotas) {
+  const tope = Number.isFinite(maxCuotas) ? maxCuotas : 600; // 50 años
+  let n = 0;
+  while (n < tope && addMonths(inicio, n + 1) <= fin) n++;
+  return n;
 }
 
 function contarDiasHabiles(inicio, fin, diasHabiles) {

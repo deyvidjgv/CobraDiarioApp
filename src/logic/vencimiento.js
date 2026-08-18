@@ -1,10 +1,25 @@
-import { addDays } from "date-fns";
+import { addDays, addMonths } from "date-fns";
 import { round2 } from "./formato";
+import { toDate } from "./dateUtils";
 
+/**
+ * Fecha en que vence la última cuota.
+ *
+ * "mensual" es calendario, no 30 días corridos: un crédito del 31 de
+ * enero a 3 cuotas vence el 30 de abril, no el 1 de mayo. Con días fijos
+ * la fecha se corría uno o dos días por ciclo y nunca caía en el mismo
+ * día del mes que el cliente tenía en la cabeza.
+ *
+ * "quincenal" sí es cada 15 días corridos — es lo que literalmente
+ * significa en este negocio.
+ */
 export function calcularFechaVencimientoTotal(loanBase) {
   const { fechaInicio, numeroCuotas, frecuencia, diasHabiles } = loanBase;
-  const dInicio = typeof fechaInicio === "string" ? new Date(fechaInicio) : fechaInicio;
-  
+  // toDate parsea "YYYY-MM-DD" como medianoche LOCAL; new Date() lo
+  // parseaba como UTC, y en Colombia (UTC-5) eso guardaba el día anterior:
+  // la fecha almacenada y la mostrada en pantalla no coincidían.
+  const dInicio = toDate(fechaInicio);
+
   if (frecuencia === "diario") {
     let cursor = new Date(dInicio);
     let cuotasContadas = 0;
@@ -27,7 +42,7 @@ export function calcularFechaVencimientoTotal(loanBase) {
   } else if (frecuencia === "quincenal") {
     return addDays(dInicio, numeroCuotas * 15);
   } else if (frecuencia === "mensual") {
-    return addDays(dInicio, numeroCuotas * 30);
+    return addMonths(dInicio, numeroCuotas);
   }
   return dInicio;
 }
@@ -42,7 +57,8 @@ export function construirVencimientoInicial(vencimientoConfig, loanBase) {
   
   let proximoCorte;
   if (modoInicial === "mensual") {
-    proximoCorte = addDays(typeof loanBase.fechaInicio === "string" ? new Date(loanBase.fechaInicio) : loanBase.fechaInicio, 30);
+    // Un mes de calendario, mismo criterio que calcularFechaVencimientoTotal.
+    proximoCorte = addMonths(toDate(loanBase.fechaInicio), 1);
   } else {
     proximoCorte = fechaVencimientoTotal;
   }

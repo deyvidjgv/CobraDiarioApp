@@ -11,9 +11,8 @@ import { calcularMoraGlobal } from "../../logic/mora";
 import { calcularRecargo, esCreditoVencido, hayCorteVencidoPendiente } from "../../logic/vencimiento";
 import { calcularTotalesCredito, construirCredito } from "../../logic/credito";
 import { calcularSeguro } from "../../logic/seguro";
-import { construirMovimiento, TIPOS_MOVIMIENTO } from "../../logic/caja";
 import { formatearMonto, limpiarMonto, bloquearEntradaSoloNumeros, round2 } from "../../logic/formato";
-import { getDocument, addDocument, getSettings } from "../../firebase/firestore";
+import { getDocument, getSettings } from "../../firebase/firestore";
 import { useAuth } from "../../context/AuthContext";
 import { IconCheck, IconMapPin, IconAlertTriangle, IconRefresh } from "@tabler/icons-react";
 
@@ -28,7 +27,7 @@ export default function RegistrarCobro() {
   const { loanId } = useParams();
   const navigate = useNavigate();
   const { orgId, usuario, isAdmin } = useAuth();
-  const { registerPayment, addLoan, updateLoan } = useLoans();
+  const { registerPayment, renovarCartulina } = useLoans();
   const { clients, updateClient } = useClients();
   const { payments, loading: paymentsLoading } = usePaymentHistory(loanId);
   const { registrarVisita } = useVisits();
@@ -197,33 +196,20 @@ export default function RegistrarCobro() {
       nuevoLoan.cuota = totalesFinal.cuota;
       nuevoLoan.saldoPendiente = totalesFinal.saldoPendiente;
 
-      const ref = await addLoan(nuevoLoan, {
+      // De caja solo sale lo entregado: monto nuevo − saldo pendiente.
+      // (El seguro lo registra renovarCartulina como entrada aparte.)
+      const entregaBruta = nuevo - saldo;
+
+      // Crédito nuevo + entrega + seguro + cierre del viejo, todo en una
+      // sola transacción: si se cae la señal a mitad no queda el cliente
+      // debiendo las dos cartulinas.
+      await renovarCartulina(loanId, nuevoLoan, {
         clienteNombre: client?.nombre ?? null,
         cobradorNombre: usuario?.displayName ?? null,
-        skipPrestamoMovimiento: true,
+        saldoEsperado: saldo,
+        entregaBruta,
+        notaEntrega: `Renovación cartulina — solicitado $${formatearMonto(nuevo)} − saldo $${formatearMonto(saldo)}`,
       });
-
-      // De caja solo sale lo entregado: monto nuevo − saldo pendiente.
-      // (El seguro lo registra addLoan como entrada aparte.)
-      const entregaBruta = nuevo - saldo;
-      await addDocument(
-        orgId,
-        "movements",
-        construirMovimiento({
-          tipo: TIPOS_MOVIMIENTO.PRESTAMO_NUEVO,
-          monto: entregaBruta,
-          orgId,
-          referencia: ref.id,
-          nota: `Renovación cartulina — solicitado $${formatearMonto(nuevo)} − saldo $${formatearMonto(saldo)}`,
-          clienteNombre: client?.nombre ?? null,
-          cobradorNombre: usuario?.displayName ?? null,
-          clientId: loan.clientId,
-          cobradiarioId: loan.cobradiarioId || usuario.uid,
-          createdBy: usuario.uid,
-        })
-      );
-
-      await updateLoan(loanId, { estado: "completado", saldoPendiente: 0 });
 
       alert(
         `Cartulina renovada. Entrega al cliente: $${formatearMonto(entregaBruta - seguroRenov)}${

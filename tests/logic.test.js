@@ -1,7 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { round2, formatearMonto, limpiarMonto } from "../src/logic/formato";
 import { construirMovimiento, calcularSaldo, TIPOS_MOVIMIENTO } from "../src/logic/caja";
-import { calcularRecargo, hayCorteVencidoPendiente } from "../src/logic/vencimiento";
+import {
+  calcularRecargo,
+  hayCorteVencidoPendiente,
+  calcularFechaVencimientoTotal,
+} from "../src/logic/vencimiento";
 import { calcularCuotasVencidas, esDiaDeCobro } from "../src/logic/frecuencia";
 import { calcularMoraGlobal, calcularMoraGlobalAlCierre } from "../src/logic/mora";
 import { calcularTotalesCredito } from "../src/logic/credito";
@@ -145,6 +149,89 @@ describe("frecuencia (cuotas vencidas cuentan hasta ayer)", () => {
     expect(
       calcularCuotasVencidas({ fechaInicio: new Date(2026, 7, 16), frecuencia: "diario" }, hoy)
     ).toBe(0);
+  });
+});
+
+describe("frecuencia mensual: calendario, no bloques de 30 días", () => {
+  // Un crédito que arranca el 31 sólo cae bien si se cuentan meses de
+  // calendario: con 30 días fijos vencía el 2 de marzo, el 1 de abril...
+  const inicio = new Date(2026, 0, 31); // 31 ene 2026 (2026 no es bisiesto)
+
+  test("la cuota de febrero vence el 28, no el 2 de marzo", () => {
+    // El 28 aún no cuenta como vencida (se cuenta hasta ayer); el 1 de marzo sí.
+    expect(
+      calcularCuotasVencidas({ fechaInicio: inicio, frecuencia: "mensual" }, new Date(2026, 1, 28))
+    ).toBe(0);
+    expect(
+      calcularCuotasVencidas({ fechaInicio: inicio, frecuencia: "mensual" }, new Date(2026, 2, 1))
+    ).toBe(1);
+  });
+
+  test("no se desfasa con los meses: la 2ª cuota es el 31 de marzo", () => {
+    expect(
+      calcularCuotasVencidas({ fechaInicio: inicio, frecuencia: "mensual" }, new Date(2026, 2, 31))
+    ).toBe(1);
+    expect(
+      calcularCuotasVencidas({ fechaInicio: inicio, frecuencia: "mensual" }, new Date(2026, 3, 1))
+    ).toBe(2);
+  });
+
+  test("respeta el tope de cuotas pactadas", () => {
+    expect(
+      calcularCuotasVencidas(
+        { fechaInicio: inicio, frecuencia: "mensual", numeroCuotas: 2 },
+        new Date(2027, 5, 1)
+      )
+    ).toBe(2);
+  });
+
+  test("un inicio a mitad de mes conserva su día", () => {
+    const m = new Date(2026, 2, 15); // 15 mar
+    expect(
+      calcularCuotasVencidas({ fechaInicio: m, frecuencia: "mensual" }, new Date(2026, 3, 15))
+    ).toBe(0);
+    expect(
+      calcularCuotasVencidas({ fechaInicio: m, frecuencia: "mensual" }, new Date(2026, 3, 16))
+    ).toBe(1);
+  });
+
+  test("esDiaDeCobro cae en el día de calendario correcto", () => {
+    const loan = { fechaInicio: inicio, frecuencia: "mensual", numeroCuotas: 3 };
+    expect(esDiaDeCobro(loan, new Date(2026, 1, 28))).toBe(true); // 28 feb
+    expect(esDiaDeCobro(loan, new Date(2026, 2, 2))).toBe(false); // 2 mar (lo viejo)
+  });
+});
+
+describe("calcularFechaVencimientoTotal", () => {
+  const f = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+  test("mensual usa meses de calendario y recorta a fin de mes", () => {
+    const fecha = calcularFechaVencimientoTotal({
+      fechaInicio: new Date(2026, 0, 31),
+      numeroCuotas: 3,
+      frecuencia: "mensual",
+    });
+    expect(f(fecha)).toBe("2026-04-30"); // antes daba 2026-05-01
+  });
+
+  test("quincenal sigue siendo cada 15 días corridos", () => {
+    const fecha = calcularFechaVencimientoTotal({
+      fechaInicio: new Date(2026, 0, 31),
+      numeroCuotas: 2,
+      frecuencia: "quincenal",
+    });
+    expect(f(fecha)).toBe("2026-03-02");
+  });
+
+  test("una fecha 'YYYY-MM-DD' se interpreta en hora local, no UTC", () => {
+    // Con new Date("2026-01-31") (UTC) en Colombia el día guardado se
+    // corría al 30, y la pantalla mostraba un día distinto al almacenado.
+    const fecha = calcularFechaVencimientoTotal({
+      fechaInicio: "2026-01-31",
+      numeroCuotas: 1,
+      frecuencia: "mensual",
+    });
+    expect(f(fecha)).toBe("2026-02-28");
   });
 });
 
