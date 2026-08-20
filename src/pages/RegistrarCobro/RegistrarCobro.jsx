@@ -88,10 +88,9 @@ export default function RegistrarCobro() {
 
   // ─── Renovación de cartulina (disponible en cualquier momento) ───
   // Entrega = monto nuevo solicitado − saldo pendiente − seguro (sobre el
-  // monto nuevo). La nueva cartulina se crea por el monto solicitado + el
-  // seguro: a diferencia de un crédito nuevo (donde el seguro solo reduce
-  // lo entregado en efectivo), en la renovación el seguro SÍ se suma a lo
-  // que el cliente queda debiendo — así lo pidió el usuario explícitamente.
+  // monto nuevo). Igual que en un crédito nuevo, el seguro SOLO reduce lo
+  // entregado en efectivo — no se suma al total a pagar/cuota, o el
+  // cliente terminaría pagando intereses sobre su propio seguro.
   const montoNuevo = montoSolicitado ? Number(montoSolicitado) || 0 : 0;
   const cuotasRenovNum = Number(renewCuotas) || 0;
   const saldoActualRenov = loan?.saldoPendiente ?? 0;
@@ -102,18 +101,14 @@ export default function RegistrarCobro() {
   const { seguroMonto: seguroRenov } = calcularSeguro(montoNuevo, seguroRenovConfig);
   const entregaRenov = montoNuevo > 0 ? montoNuevo - saldoActualRenov - seguroRenov : null;
 
-  function calcularTotalesRenovacion(monto, cuotas, interesPct, seguroMonto) {
+  function calcularTotalesRenovacion(monto, cuotas, interesPct) {
     if (!monto || !cuotas) return null;
-    const base = calcularTotalesCredito(monto, interesPct, cuotas);
-    const montoTotalAPagar = round2(base.montoTotalAPagar + seguroMonto);
-    return {
-      montoTotalAPagar,
-      cuota: round2(montoTotalAPagar / cuotas),
-      saldoPendiente: montoTotalAPagar,
-    };
+    // Capital + interés únicamente — el seguro no forma parte de la deuda,
+    // solo se descuenta de lo entregado (ver `entregaRenov` más abajo).
+    return calcularTotalesCredito(monto, interesPct, cuotas);
   }
 
-  const totalesRenovacion = calcularTotalesRenovacion(montoNuevo, cuotasRenovNum, interesRenov, seguroRenov);
+  const totalesRenovacion = calcularTotalesRenovacion(montoNuevo, cuotasRenovNum, interesRenov);
 
   function handleCaptureCurrentGps() {
     if (!client?.id) return;
@@ -189,12 +184,8 @@ export default function RegistrarCobro() {
         settings
       );
 
-      // El seguro se suma al total a pagar de la nueva cartulina (no solo
-      // se resta de lo entregado en efectivo) — mismo cálculo que el preview.
-      const totalesFinal = calcularTotalesRenovacion(nuevo, cuotasRenovNum, interesRenov, seguroRenov);
-      nuevoLoan.montoTotalAPagar = totalesFinal.montoTotalAPagar;
-      nuevoLoan.cuota = totalesFinal.cuota;
-      nuevoLoan.saldoPendiente = totalesFinal.saldoPendiente;
+      // `construirCredito` ya calculó montoTotalAPagar/cuota/saldoPendiente
+      // correctamente (capital + interés, sin seguro) — no hay que pisarlo.
 
       // De caja solo sale lo entregado: monto nuevo − saldo pendiente.
       // (El seguro lo registra renovarCartulina como entrada aparte.)
@@ -321,7 +312,7 @@ export default function RegistrarCobro() {
                 href={`https://www.google.com/maps/dir/?api=1&destination=${client.ubicacion.lat},${client.ubicacion.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-1.5 bg-gold text-surface-1 px-3 py-1.5 rounded-xl text-xs font-medium hover:bg-gold/90 transition shadow-sm shrink-0"
+                className="min-h-[44px] flex items-center gap-1.5 bg-gold text-surface-1 px-3 py-1.5 rounded-xl text-xs font-medium hover:bg-gold/90 transition shadow-sm shrink-0"
               >
                 <IconMapPin size={16} stroke={2} />
                 Cómo llegar
@@ -331,7 +322,7 @@ export default function RegistrarCobro() {
                 type="button"
                 onClick={handleCaptureCurrentGps}
                 disabled={capturingGps}
-                className="flex items-center gap-1 bg-surface-2 text-primary-light px-2.5 py-1.5 rounded-xl text-xs font-medium hover:bg-primary-bg transition border border-thin shrink-0"
+                className="min-h-[44px] flex items-center gap-1 bg-surface-2 text-primary-light px-2.5 py-1.5 rounded-xl text-xs font-medium hover:bg-primary-bg transition border border-thin shrink-0"
               >
                 <IconMapPin size={14} stroke={2} />
                 {capturingGps ? "Guardando..." : "Guardar GPS"}
@@ -409,6 +400,67 @@ export default function RegistrarCobro() {
           </div>
         )}
 
+        {/* Formulario de cobro */}
+        <form onSubmit={handleCobro} className="space-y-4">
+            <label className="block">
+              <span className="text-sm font-medium text-primary">Monto a cobrar ($)</span>
+              <input
+                type="text"
+                inputMode="numeric"
+                required
+                value={editingMonto ? monto : monto ? formatearMonto(Number(monto)) : ""}
+                onFocus={() => setEditingMonto(true)}
+                onBlur={() => setEditingMonto(false)}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/\D/g, "");
+                  const maxAllowed = loan.saldoPendiente ?? Infinity;
+                  if (!raw) {
+                    setMonto("");
+                    return;
+                  }
+                  const val = Number(raw);
+                  if (val <= maxAllowed) {
+                    setMonto(raw);
+                  } else {
+                    setMonto(String(maxAllowed));
+                  }
+                }}
+                onKeyDown={bloquearEntradaSoloNumeros}
+                className="mt-1 block w-full rounded-xl border border-line px-4 py-4 text-2xl font-medium text-center text-primary focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+              />
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-medium text-primary">Método de pago</span>
+              <select
+                value={metodoPago}
+                onChange={(e) => setMetodoPago(e.target.value)}
+                className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-base text-primary focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
+              >
+                <option value="efectivo">Efectivo</option>
+                <option value="transferencia">Transferencia</option>
+              </select>
+            </label>
+
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-xl py-4 text-lg transition disabled:opacity-50"
+            >
+              {saving ? "Registrando..." : "Confirmar cobro"}
+            </button>
+
+            {done && (
+              <div className="bg-al-dia/10 border-thin border-al-dia/30 text-al-dia rounded-xl p-4 flex items-center gap-3 mt-4">
+                <IconCheck size={20} className="flex-shrink-0" stroke={2.5} />
+                <div>
+                  <p className="text-sm font-medium">Cobro registrado exitosamente</p>
+                  <p className="text-xs text-al-dia mt-0.5">Se actualizó el historial y el saldo.</p>
+                </div>
+              </div>
+            )}
+          </form>
+
         {/* Renovar cartulina — disponible en cualquier momento (cobradiario) */}
         {loan.estado === "activo" && !isAdmin && (
           <div className="card p-4 space-y-4">
@@ -465,12 +517,6 @@ export default function RegistrarCobro() {
                       ${formatearMonto(round2((montoNuevo * interesRenov) / 100))}
                     </span>
                   </div>
-                  {seguroRenov > 0 && (
-                    <div className="flex justify-between">
-                      <span className="text-primary-light/75">(+) Seguro</span>
-                      <span className="text-primary" translate="no">${formatearMonto(seguroRenov)}</span>
-                    </div>
-                  )}
                   {totalesRenovacion && (
                     <div className="flex justify-between border-t border-line pt-1.5">
                       <span className="font-medium text-primary">Total a pagar</span>
@@ -534,67 +580,6 @@ export default function RegistrarCobro() {
             </button>
           </div>
         )}
-
-        {/* Formulario de cobro */}
-        <form onSubmit={handleCobro} className="space-y-4">
-            <label className="block">
-              <span className="text-sm font-medium text-primary">Monto a cobrar ($)</span>
-              <input
-                type="text"
-                inputMode="numeric"
-                required
-                value={editingMonto ? monto : monto ? formatearMonto(Number(monto)) : ""}
-                onFocus={() => setEditingMonto(true)}
-                onBlur={() => setEditingMonto(false)}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/\D/g, "");
-                  const maxAllowed = loan.saldoPendiente ?? Infinity;
-                  if (!raw) {
-                    setMonto("");
-                    return;
-                  }
-                  const val = Number(raw);
-                  if (val <= maxAllowed) {
-                    setMonto(raw);
-                  } else {
-                    setMonto(String(maxAllowed));
-                  }
-                }}
-                onKeyDown={bloquearEntradaSoloNumeros}
-                className="mt-1 block w-full rounded-xl border border-line px-4 py-4 text-2xl font-medium text-center text-primary focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
-              />
-            </label>
-
-            <label className="block">
-              <span className="text-sm font-medium text-primary">Método de pago</span>
-              <select
-                value={metodoPago}
-                onChange={(e) => setMetodoPago(e.target.value)}
-                className="mt-1 block w-full rounded-xl border border-line px-4 py-3 text-base text-primary focus:outline-none focus:border-primary-light focus:ring-1 focus:ring-primary-light transition"
-              >
-                <option value="efectivo">Efectivo</option>
-                <option value="transferencia">Transferencia</option>
-              </select>
-            </label>
-
-            <button
-              type="submit"
-              disabled={saving}
-              className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-xl py-4 text-lg transition disabled:opacity-50"
-            >
-              {saving ? "Registrando..." : "Confirmar cobro"}
-            </button>
-
-            {done && (
-              <div className="bg-al-dia/10 border-thin border-al-dia/30 text-al-dia rounded-xl p-4 flex items-center gap-3 mt-4">
-                <IconCheck size={20} className="flex-shrink-0" stroke={2.5} />
-                <div>
-                  <p className="text-sm font-medium">Cobro registrado exitosamente</p>
-                  <p className="text-xs text-al-dia mt-0.5">Se actualizó el historial y el saldo.</p>
-                </div>
-              </div>
-            )}
-          </form>
 
           {/* Historial de cobros */}
           <PaymentHistoryList payments={payments} loading={paymentsLoading} />

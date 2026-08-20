@@ -1,22 +1,41 @@
-﻿import { useState } from "react";
+﻿import { useMemo, useState } from "react";
 import Header from "../../components/layout/Header";
 import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
 import { verificarPassword } from "../../firebase/auth";
 import { useCorrections } from "../../hooks/useCorrections";
+import { useCobradiarios } from "../../hooks/useCobradiarios";
 import { formatearMonto, round2 } from "../../logic/formato";
 import { IconClipboardCheck, IconCheck, IconX } from "@tabler/icons-react";
 
+// Ordena por nombre de cliente para que las solicitudes de una misma
+// persona queden juntas en vez de saltar según cuándo se crearon.
+function ordenarPorCliente(lista) {
+  return [...lista].sort((a, b) =>
+    (a.clienteNombre || "").localeCompare(b.clienteNombre || "", "es")
+  );
+}
+
 export default function Correcciones() {
   const { corrections, loading, aprobarCorreccion, rechazarCorreccion } = useCorrections();
+  const { cobradiarios } = useCobradiarios();
   // Aprobar/rechazar ajusta caja y el saldo del crédito, así que exige la
   // misma confirmación por contraseña que borrar crédito/movimiento/cliente
   // — antes usaba confirm()/prompt() nativos, sin ninguna verificación.
   const [pendingAction, setPendingAction] = useState(null); // { req, tipo: "aprobar" | "rechazar", motivo? }
   const [processing, setProcessing] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [cobradorId, setCobradorId] = useState("todos");
 
-  const pendientes = corrections.filter((c) => c.estado === "pendiente");
-  const resueltas = corrections.filter((c) => c.estado !== "pendiente");
+  const porCobrador = (c) => cobradorId === "todos" || c.cobradorId === cobradorId;
+
+  const pendientes = useMemo(
+    () => ordenarPorCliente(corrections.filter((c) => c.estado === "pendiente" && porCobrador(c))),
+    [corrections, cobradorId]
+  );
+  const resueltas = useMemo(
+    () => ordenarPorCliente(corrections.filter((c) => c.estado !== "pendiente" && porCobrador(c))),
+    [corrections, cobradorId]
+  );
 
   function iniciarAprobar(req) {
     setPasswordError("");
@@ -71,6 +90,21 @@ export default function Correcciones() {
           </div>
         ) : (
           <>
+            {cobradiarios.length > 0 && (
+              <select
+                value={cobradorId}
+                onChange={(e) => setCobradorId(e.target.value)}
+                className="w-full rounded-xl bg-surface border border-line px-4 py-3 text-sm text-primary focus:outline-none focus:border-gold transition"
+              >
+                <option value="todos">Todos los cobradores</option>
+                {cobradiarios.map((c) => (
+                  <option key={c.uid} value={c.uid}>
+                    {c.nombre}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <section className="space-y-2">
               <h3 className="text-xs font-semibold uppercase text-primary-light/70 tracking-wider">
                 Pendientes ({pendientes.length})
@@ -80,6 +114,18 @@ export default function Correcciones() {
               ) : (
                 pendientes.map((req) => (
                   <div key={req.id} className="rounded-xl border border-gold/30 bg-gold/10 p-4 space-y-2">
+                    {(req.clienteNombre || req.cobradorNombre) && (
+                      <div className="flex justify-between items-baseline gap-3 pb-1">
+                        <span className="font-semibold text-primary text-sm">
+                          {req.clienteNombre || "Cliente"}
+                        </span>
+                        {req.cobradorNombre && (
+                          <span className="text-xs text-primary-light/60 shrink-0">
+                            Cobrador: {req.cobradorNombre}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div className="flex justify-between text-sm">
                       <span className="text-primary-light/75">Valor original</span>
                       <span className="font-medium text-primary">${formatearMonto(Math.abs(req.valorOriginal))}</span>
@@ -136,6 +182,18 @@ export default function Correcciones() {
                           {req.estado === "aprobada" ? "Aprobada" : "Rechazada"}
                         </span>
                       </div>
+                      {(req.clienteNombre || req.cobradorNombre) && (
+                        <div className="flex justify-between items-baseline gap-3">
+                          <span className="font-semibold text-primary text-sm">
+                            {req.clienteNombre || "Cliente"}
+                          </span>
+                          {req.cobradorNombre && (
+                            <span className="text-xs text-primary-light/60 shrink-0">
+                              Cobrador: {req.cobradorNombre}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       <div className="flex justify-between text-sm">
                         <span className="text-primary-light/75">Monto original</span>
                         <span className="font-medium text-primary">${formatearMonto(Math.abs(req.valorOriginal))}</span>

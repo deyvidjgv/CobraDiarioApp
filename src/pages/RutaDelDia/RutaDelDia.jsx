@@ -247,12 +247,37 @@ export default function RutaDelDia() {
               : "No hay créditos en esta sección"}
           </p>
         ) : filtro === "hoy" ? (
-          <div className="flex flex-col gap-2">
-            <p className="eyebrow">
-              {hoyFiltrado.length} crédito{hoyFiltrado.length === 1 ? "" : "s"} hoy
-            </p>
-            {hoyFiltrado.map(renderFila)}
-          </div>
+          (() => {
+            // Mismo criterio que renderFila para decidir "gestionado" —
+            // separados en dos secciones para no confundir lo que ya se
+            // cobró/visitó hoy con lo que todavía falta.
+            const esGestionado = (item) =>
+              Boolean(visitasHoyPorLoan[item.id]) || pendiente?.item.id === item.id;
+            const pendientesDeHoy = hoyFiltrado.filter((item) => !esGestionado(item));
+            const cobradosDeHoy = hoyFiltrado.filter(esGestionado);
+            return (
+              <div className="flex flex-col gap-5">
+                {pendientesDeHoy.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <p className="eyebrow flex items-center gap-2">
+                      Pendientes
+                      <span className="num text-[10.5px] opacity-50">{pendientesDeHoy.length}</span>
+                    </p>
+                    {pendientesDeHoy.map(renderFila)}
+                  </div>
+                )}
+                {cobradosDeHoy.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <p className="eyebrow flex items-center gap-2">
+                      Cobrados hoy
+                      <span className="num text-[10.5px] opacity-50">{cobradosDeHoy.length}</span>
+                    </p>
+                    {cobradosDeHoy.map(renderFila)}
+                  </div>
+                )}
+              </div>
+            );
+          })()
         ) : filtro === "mora" ? (
           <div className="flex flex-col gap-5">
             {moraGeneralFiltrada.length > 0 && (

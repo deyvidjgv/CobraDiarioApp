@@ -4,6 +4,7 @@ import Header from "../../components/layout/Header";
 import ClientRow from "../../components/ui/ClientRow";
 import { useClients } from "../../hooks/useClients";
 import { useLoans } from "../../hooks/useLoans";
+import { useCobradiarios } from "../../hooks/useCobradiarios";
 import { useAuth } from "../../context/AuthContext";
 import { calcularMoraGlobal } from "../../logic/mora";
 import { IconUsersGroup, IconPlus } from "@tabler/icons-react";
@@ -13,8 +14,10 @@ export default function Clientes() {
   const { isAdmin } = useAuth();
   const { clients, loading } = useClients();
   const { loans } = useLoans();
+  const { cobradiarios } = useCobradiarios();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("todos");
+  const [cobradorId, setCobradorId] = useState("todos");
 
   // Calcular el estado de mora de cada cliente basado en sus créditos activos
   const clientsWithStatus = useMemo(() => {
@@ -50,7 +53,9 @@ export default function Clientes() {
       (filter === "mora" && c.status === "mora") ||
       (filter === "al_dia" && c.status === "al_dia");
 
-    return matchesSearch && matchesFilter;
+    const matchesCobrador = cobradorId === "todos" || c.cobradiarioId === cobradorId;
+
+    return matchesSearch && matchesFilter && matchesCobrador;
   });
 
   const filters = [
@@ -78,13 +83,29 @@ export default function Clientes() {
           />
         </div>
 
+        {/* Filtro por cobrador — solo Admin, para acotar la lista a un cobrador */}
+        {isAdmin && cobradiarios.length > 0 && (
+          <select
+            value={cobradorId}
+            onChange={(e) => setCobradorId(e.target.value)}
+            className="w-full rounded-xl bg-surface border border-line px-4 py-3 text-sm text-primary focus:outline-none focus:border-gold transition"
+          >
+            <option value="todos">Todos los cobradores</option>
+            {cobradiarios.map((c) => (
+              <option key={c.uid} value={c.uid}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
+        )}
+
         {/* Filtros */}
         <div className="flex gap-2">
           {filters.map((f) => (
             <button
               key={f.key}
               onClick={() => setFilter(f.key)}
-              className={`px-4 py-1.5 rounded-full text-xs font-medium transition ${
+              className={`min-h-[44px] px-4 py-1.5 rounded-full text-xs font-medium transition ${
                 filter === f.key
                   ? "bg-gold text-surface-1"
                   : "bg-surface text-primary-light/75 border border-line hover:border-primary/20"
