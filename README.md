@@ -47,7 +47,7 @@ CobraDiarioApp permite:
 1. Clona el repositorio:
 ```bash
 git clone <URL_DEL_REPOSITORIO> CobraDiarioApp
-cd CobraDiarioApp/cobro-diario-app
+cd CobraDiarioApp
 ```
 
 2. Instala dependencias:
@@ -137,8 +137,9 @@ Datos clave:
 - Ver saldo pendiente y recargos por vencimiento (se aplican solos al
   registrar el cobro, sin paso manual)
 - Renovar cartulina en cualquier momento: cierra el crédito actual y
-  crea uno nuevo por el monto solicitado, sumando interés y seguro
-  (si está activo) al nuevo total a pagar
+  crea uno nuevo por el monto solicitado, sumando solo el interés al
+  nuevo total a pagar (el seguro se cobra aparte del saldo del crédito,
+  no como deuda)
 - Guardar ubicación GPS del cliente
 
 ### Clientes
@@ -264,6 +265,25 @@ en Netlify.
 - Header muestra spinner de carga mientras la página está cargando
 - Botón de confirmación de modal estandarizado para móviles
 - Soporte de instalación PWA más robusto
+- Caja: las correcciones (ajustes) se clasifican como Entrada o Salida
+  según el movimiento original que corrigen, no según el signo del monto
+- Notificaciones en vivo para el Admin (punto + sonido) cuando hay
+  solicitudes de corrección pendientes, mientras la app está abierta
+- Solicitudes de corrección: bloqueadas para el Admin (solo las pide el
+  cobrador), sin duplicados sobre el mismo movimiento, y filtrables por
+  cobrador y agrupadas por cliente
+- Eliminar un crédito ahora también limpia los ajustes huérfanos y
+  rechaza automáticamente las correcciones pendientes que dependían de él
+- Renovar cartulina ya no suma el seguro a la deuda del nuevo crédito
+- Filtro por cobrador en Clientes; corrección del selector de crédito en
+  Zona Segura, que ignoraba el filtro de cliente
+- Correcciones y Auditoría muestran nombre de cliente y cobrador en vez
+  de IDs crudos
+- Configuración reorganizada en secciones colapsables por nivel de
+  riesgo (General / Reglas de negocio / Zona de riesgo)
+- Ruta del Día: el filtro "Hoy" separa "Pendientes" de "Cobrados hoy"
+- Login y hojas/modales ajustados para no cortarse ni hacer scroll no
+  deseado en celulares en orientación horizontal
 
 ---
 
