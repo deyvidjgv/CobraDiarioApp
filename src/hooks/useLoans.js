@@ -371,7 +371,7 @@ export function useLoans(filterActive = true) {
       entidadId: nuevoLoanRef.id,
       detalle:
         `Renovación de ${clienteNombre ?? "cliente"} — nueva cartulina $${formatearMonto(nuevoLoanData.capital)}` +
-        ` (absorbe saldo $${formatearMonto(saldoEsperado)} de ${loanAnteriorId})`,
+        ` (absorbe saldo $${formatearMonto(saldoEsperado)})`,
     });
 
     return nuevoLoanRef;
