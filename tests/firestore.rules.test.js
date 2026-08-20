@@ -527,6 +527,13 @@ describe("visits (Fase 8)", () => {
   });
 
   test("cobradiario puede leer sus visitas y admin puede leer todas", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "organizations", ORG_ID, "visits", "vis-3"), {
+        clientId: "cliente-1",
+        resultado: "no_pago",
+        cobradiarioId: COBRADIARIO_UID,
+      });
+    });
     const cobCtx = testEnv.authenticatedContext(COBRADIARIO_UID);
     await assertSucceeds(
       getDoc(doc(cobCtx.firestore(), "organizations", ORG_ID, "visits", "vis-3"))
