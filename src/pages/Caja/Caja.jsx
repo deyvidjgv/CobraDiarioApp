@@ -551,6 +551,9 @@ export default function Caja() {
                             Eliminar este movimiento
                           </button>
                         ) : (
+                          // El Admin no maneja la caja físicamente — pedir
+                          // correcciones es cosa del cobrador dueño del cobro.
+                          !isAdmin &&
                           m.tipo === TIPOS_MOVIMIENTO.COBRO && (
                             <button
                               onClick={() => setMovimientoACorregir(m)}

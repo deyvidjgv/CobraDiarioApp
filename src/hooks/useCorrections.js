@@ -86,6 +86,18 @@ export function useCorrections() {
       throw new Error("Solo puedes pedir correcciones sobre tus propios movimientos.");
     }
 
+    // Sin esto se podían acumular varias solicitudes pendientes sobre el
+    // mismo cobro — la lista ya está suscrita en tiempo real, así que se
+    // verifica contra lo que el hook ya tiene cargado, sin lectura extra.
+    const yaHayPendiente = corrections.some(
+      (c) => c.movementId === movementId && c.estado === "pendiente"
+    );
+    if (yaHayPendiente) {
+      throw new Error(
+        "Ya hay una solicitud pendiente sobre este cobro. Espera a que se resuelva antes de pedir otra."
+      );
+    }
+
     const ref = await addDocument(orgId, "correctionRequests", {
       movementId,
       valorOriginal: montoReal, // el verificado, no el que llegó por parámetro
@@ -93,11 +105,18 @@ export function useCorrections() {
       motivo,
       estado: "pendiente",
       createdBy: usuario.uid,
+      // Denormalizado desde el movimiento para que Correcciones.jsx y la
+      // auditoría muestren a quién corresponde sin releer nada.
+      clienteNombre: movimiento.clienteNombre || null,
+      cobradorNombre: movimiento.cobradorNombre || null,
+      // Id además del nombre: filtrar por nombre de texto es frágil si dos
+      // cobradores comparten nombre.
+      cobradorId: movimiento.cobradiarioId || null,
     });
     registrarEvento(ACCIONES_AUDIT.CORRECCION_SOLICITADA, {
       entidad: "correctionRequests",
       entidadId: ref.id,
-      detalle: `Mov ${movementId}: $${montoReal} → $${correcto}. ${motivo}`,
+      detalle: `Cobro de ${movimiento.clienteNombre || "cliente"}: $${montoReal} → $${correcto}. ${motivo}`,
     });
     return ref;
   }
@@ -219,14 +238,25 @@ export function useCorrections() {
         ...(loanId ? { loanId, saldoAntes, saldoDespues } : {}),
       });
 
-      return { loanId, saldoAntes, saldoDespues, diferencia, motivo: reqActual.motivo, movementId: reqActual.movementId };
+      return {
+        loanId,
+        saldoAntes,
+        saldoDespues,
+        diferencia,
+        motivo: reqActual.motivo,
+        movementId: reqActual.movementId,
+        clienteNombre: movOriginal.clienteNombre || null,
+        cobradorNombre: movOriginal.cobradorNombre || null,
+      };
     });
 
     registrarEvento(ACCIONES_AUDIT.CORRECCION_APROBADA, {
       entidad: "correctionRequests",
       entidadId: request.id,
       detalle:
-        `Ajuste de $${resultado.diferencia} sobre mov ${resultado.movementId}.` +
+        `Ajuste de $${resultado.diferencia} sobre cobro de ${resultado.clienteNombre || "cliente"}` +
+        (resultado.cobradorNombre ? ` (cobrador ${resultado.cobradorNombre})` : "") +
+        `.` +
         (resultado.loanId ? ` Saldo crédito: $${resultado.saldoAntes} → $${resultado.saldoDespues}.` : "") +
         ` ${resultado.motivo}`,
     });
