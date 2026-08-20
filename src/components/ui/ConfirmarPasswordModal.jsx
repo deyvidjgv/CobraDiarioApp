@@ -39,7 +39,7 @@ export default function ConfirmarPasswordModal({
         className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] transition-opacity"
       />
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-        <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-6 border border-line space-y-4 shadow-xl max-w-lg w-full">
+        <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-6 border border-line space-y-4 shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
           <div className="flex items-start gap-4">
             <div className="w-12 h-12 rounded-2xl bg-gold/10 flex items-center justify-center flex-shrink-0">
               <IconAlertTriangle size={24} stroke={1.5} className="text-gold" />

@@ -60,20 +60,28 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-primary-bg p-4 sm:p-6 lg:p-8">
-      <div className="w-full min-w-0 max-w-md sm:max-w-4xl bg-surface rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 sm:grid-cols-2 border border-line">
-        {/* Header / Panel decorativo */}
-        <div className="bg-obsidian p-8 sm:p-10 flex flex-col justify-center items-center text-center relative overflow-hidden">
+    <div className="min-h-dvh flex items-center justify-center bg-primary-bg p-4 sm:p-6 lg:p-8">
+      <div className="w-full min-w-0 max-w-md sm:max-w-4xl max-h-[95dvh] overflow-y-auto bg-surface rounded-3xl shadow-xl grid grid-cols-1 sm:grid-cols-2 border border-line">
+        {/* Header / Panel decorativo — la versión grande (logo+título+
+            subtítulo apilados) solo cabe si hay ancho Y alto de sobra
+            (`tall-sm`, ver tailwind.config.js). Un celular en horizontal
+            supera los 640px de ancho pero tiene poco alto — con solo `sm`
+            (ancho) se le mostraba igual el panel grande en una pantalla
+            demasiado baja para contenerlo, y por eso hacía falta scroll.
+            Las columnas (grid-cols-2) sí quedan solo por ancho: usar el
+            ancho disponible en horizontal siempre ayuda, nunca estorba. */}
+        <div className="bg-obsidian p-4 tall-sm:p-10 flex flex-row tall-sm:flex-col justify-center items-center gap-3 tall-sm:gap-4 text-center relative overflow-hidden">
           <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gold/[0.04]" />
           <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary/[0.03]" />
 
-          <div className="relative z-10 flex flex-col items-center gap-4">
-            <Logo size={56} />
+          <div className="relative z-10 flex flex-row tall-sm:flex-col items-center gap-3 tall-sm:gap-4">
+            <Logo size={40} className="tall-sm:hidden" />
+            <Logo size={56} className="hidden tall-sm:block" />
             <div>
-              <h1 className="font-display text-3xl font-semibold text-primary tracking-tight">
+              <h1 className="font-display text-lg tall-sm:text-3xl font-semibold text-primary tracking-tight">
                 CrediDev
               </h1>
-              <p className="text-primary-light text-sm mt-1">
+              <p className="hidden tall-sm:block text-primary-light text-sm mt-1">
                 Gestión financiera moderna
               </p>
             </div>
@@ -81,11 +89,11 @@ export default function Login() {
         </div>
 
         {/* Panel del formulario */}
-        <div className="p-6 sm:p-10 flex flex-col justify-center bg-surface">
-          <h2 className="text-2xl font-bold text-primary mb-1">
+        <div className="p-5 tall-sm:p-10 flex flex-col justify-center bg-surface">
+          <h2 className="text-xl tall-sm:text-2xl font-bold text-primary mb-1">
             Iniciar sesión
           </h2>
-          <p className="text-sm text-primary-light/70 mb-6">
+          <p className="text-sm text-primary-light/70 mb-4 tall-sm:mb-6">
             Ingresa tus credenciales para continuar
           </p>
 
@@ -187,10 +195,10 @@ export default function Login() {
             </button>
           </form>
 
-          <p className="text-center text-primary-light/70 text-xs mt-6 leading-relaxed">
+          <p className="text-center text-primary-light/70 text-xs mt-4 sm:mt-6 leading-relaxed">
             ¿Eres cobrador? Pídele tus credenciales a tu administrador.
           </p>
-          <div className="mt-4 pt-4 border-t border-line text-center">
+          <div className="mt-3 pt-3 sm:mt-4 sm:pt-4 border-t border-line text-center">
             <p className="text-sm text-primary-light/75">
               ¿Nuevo negocio?{' '}
               <Link

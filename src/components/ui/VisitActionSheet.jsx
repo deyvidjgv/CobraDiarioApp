@@ -51,7 +51,7 @@ export default function VisitActionSheet({
       <div
         role="dialog"
         aria-label={"Acciones de " + (client.nombre || "cliente")}
-        className="relative w-full sm:max-w-md bg-surface-1 rounded-t-3xl sm:rounded-3xl sm:mb-6 px-5 pt-3.5 pb-6 pb-safe flex flex-col gap-5 shadow-2xl"
+        className="relative w-full sm:max-w-md max-h-[90vh] overflow-y-auto bg-surface-1 rounded-t-3xl sm:rounded-3xl sm:mb-6 px-5 pt-3.5 pb-6 pb-safe flex flex-col gap-5 shadow-2xl"
       >
         <div className="w-9 h-1 rounded-full bg-primary/15 mx-auto" />
 

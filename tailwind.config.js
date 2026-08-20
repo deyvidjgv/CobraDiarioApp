@@ -3,6 +3,15 @@ export default {
   content: ["./index.html", "./src/**/*.{js,jsx}"],
   theme: {
     extend: {
+      screens: {
+        // Login: el panel decorativo grande (logo+título+subtítulo
+        // apilados) solo cabe si hay ancho Y alto de sobra. Un celular en
+        // horizontal (ej. 844×390) supera los 640px de `sm` en ancho pero
+        // tiene mucho menos de 600px de alto — con solo `sm` se le mostraba
+        // el panel de escritorio en una pantalla demasiado baja para
+        // contenerlo, y esa era la causa real del scroll.
+        "tall-sm": { raw: "(min-width: 640px) and (min-height: 600px)" },
+      },
       fontFamily: {
         sans: ['"IBM Plex Sans"', "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
         display: ['"Instrument Sans"', '"IBM Plex Sans"', "sans-serif"],

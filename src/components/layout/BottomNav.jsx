@@ -97,7 +97,7 @@ export default function BottomNav() {
       {masOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex items-end">
           <div className="absolute inset-0 bg-black/70" onClick={() => setMasOpen(false)} />
-          <div className="relative w-full bg-surface-1 rounded-t-3xl px-5 pt-3.5 pb-6 pb-safe flex flex-col gap-3">
+          <div className="relative w-full max-h-[90vh] overflow-y-auto bg-surface-1 rounded-t-3xl px-5 pt-3.5 pb-6 pb-safe flex flex-col gap-3">
             <div className="w-9 h-1 rounded-full bg-primary/15 mx-auto" />
             <span className="eyebrow">Más</span>
             <div className="flex flex-col divide-y divide-line rounded-2xl bg-surface border border-line overflow-hidden">
