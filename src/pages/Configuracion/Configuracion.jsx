@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from "react";
 import Header from "../../components/layout/Header";
 import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
+import SeccionAcordeon from "../../components/ui/SeccionAcordeon";
 import { useAuth } from "../../context/AuthContext";
 import { getSettings, saveSettings } from "../../firebase/firestore";
 import { cerrarSesion, cambiarPassword, verificarPassword } from "../../firebase/auth";
@@ -303,8 +304,13 @@ export default function Configuracion() {
     <div className="pb-24">
       <Header title="Ajustes" />
 
-      <div className="p-4 space-y-5 max-w-2xl">
-        {/* ═══ 0. MI NEGOCIO ═══ */}
+      <div className="p-4 space-y-4 max-w-2xl">
+        <SeccionAcordeon
+          title="General"
+          icon={<IconUser size={16} stroke={2} className="text-primary" />}
+          defaultOpen
+        >
+        {/* ═══ MI NEGOCIO ═══ */}
         <section className="card p-4 space-y-3">
           <h3 className="section-title">
             <IconBuildingStore size={16} stroke={2} className="text-primary" /> Mi negocio
@@ -423,7 +429,58 @@ export default function Configuracion() {
           </form>
         </section>
 
-        {/* ═══ 3. REGLAS DE NEGOCIO ═══ */}
+        {/* ═══ APLICACIÓN ═══ */}
+        <section className="card p-4 space-y-3">
+          <h3 className="section-title">
+            <IconDeviceMobile size={16} stroke={2} className="text-primary" /> Aplicación
+          </h3>
+
+          {installState.instalada ? (
+            <div className="flex items-center gap-2 rounded-xl bg-al-dia/10 text-al-dia px-3 py-2.5 text-sm">
+              <IconCheck size={18} stroke={2} />
+              La app está instalada en este dispositivo.
+            </div>
+          ) : installState.puedeInstalar ? (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-primary-light/75 flex-1">
+                Instala la app para usarla como aplicación nativa: icono en el inicio, pantalla
+                completa y apertura sin navegador.
+              </p>
+              <button
+                type="button"
+                onClick={handleInstallApp}
+                className="rounded-xl bg-gold text-surface-1 px-4 py-2.5 text-sm font-medium hover:bg-gold/90 transition shrink-0"
+              >
+                Instalar app
+              </button>
+            </div>
+          ) : esIOS() ? (
+            <div className="rounded-xl bg-surface-1 p-3 space-y-2">
+              <p className="text-xs text-primary-light font-medium">
+                En iPhone/iPad la instalación es manual:
+              </p>
+              <ol className="text-xs text-primary-light/75 list-decimal list-inside space-y-1">
+                <li>Abre este sitio en el navegador Safari</li>
+                <li>Toca el botón <strong>Compartir</strong> (cuadro con flecha arriba)</li>
+                <li>Elige <strong>"Agregar a pantalla de inicio"</strong></li>
+                <li>Confirma con <strong>"Agregar"</strong></li>
+              </ol>
+            </div>
+          ) : (
+            <p className="text-xs text-primary-light/70">
+              La instalación estará disponible en navegadores compatibles cuando el dispositivo lo
+              permita (Chrome/Edge en Android, o cualquier navegador de escritorio moderno desde el
+              menú del navegador → "Instalar aplicación").
+            </p>
+          )}
+        </section>
+        </SeccionAcordeon>
+
+        <SeccionAcordeon
+          title="Reglas de negocio"
+          icon={<IconSettings2 size={16} stroke={2} className="text-primary" />}
+        >
+        {/* ═══ REGLAS DE NEGOCIO ═══ */}
         <section className="card p-4">
           <h3 className="section-title mb-1">
             <IconSettings2 size={16} stroke={2} className="text-primary" /> Reglas de negocio
@@ -481,16 +538,32 @@ export default function Configuracion() {
                   </label>
                   <label className="block">
                     <span className="text-xs text-primary-light/75">Valor</span>
-                    <input
-                      type="number"
-                      min="0"
-                      step={form.seguroTipo === "porcentaje" ? "0.1" : "1"}
-                      disabled={!isAdmin}
-                      value={form.seguroValor}
-                      onChange={(e) => setForm({ ...form, seguroValor: Number(e.target.value) })}
-                      onKeyDown={bloquearEntradaSoloNumerosConDecimal}
-                      className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm disabled:bg-surface-1"
-                    />
+                    {form.seguroTipo === "fijo" ? (
+                      // Monto en pesos: con separador de miles mientras se
+                      // escribe, igual que el resto de campos de dinero.
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        disabled={!isAdmin}
+                        value={form.seguroValor ? formatearMonto(Number(form.seguroValor)) : ""}
+                        onChange={(e) =>
+                          setForm({ ...form, seguroValor: Number(e.target.value.replace(/\D/g, "")) || 0 })
+                        }
+                        onKeyDown={bloquearEntradaSoloNumerosConDecimal}
+                        className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm disabled:bg-surface-1"
+                      />
+                    ) : (
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        disabled={!isAdmin}
+                        value={form.seguroValor}
+                        onChange={(e) => setForm({ ...form, seguroValor: Number(e.target.value) })}
+                        onKeyDown={bloquearEntradaSoloNumerosConDecimal}
+                        className="mt-1 block w-full rounded-xl border border-line px-3 py-2 text-sm disabled:bg-surface-1"
+                      />
+                    )}
                   </label>
                 </div>
               )}
@@ -552,54 +625,15 @@ export default function Configuracion() {
           </form>
         </section>
 
-        {/* ═══ 4. APLICACIÓN ═══ */}
-        <section className="card p-4 space-y-3">
-          <h3 className="section-title">
-            <IconDeviceMobile size={16} stroke={2} className="text-primary" /> Aplicación
-          </h3>
+        </SeccionAcordeon>
 
-          {installState.instalada ? (
-            <div className="flex items-center gap-2 rounded-xl bg-al-dia/10 text-al-dia px-3 py-2.5 text-sm">
-              <IconCheck size={18} stroke={2} />
-              La app está instalada en este dispositivo.
-            </div>
-          ) : installState.puedeInstalar ? (
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-xs text-primary-light/75 flex-1">
-                Instala la app para usarla como aplicación nativa: icono en el inicio, pantalla
-                completa y apertura sin navegador.
-              </p>
-              <button
-                type="button"
-                onClick={handleInstallApp}
-                className="rounded-xl bg-gold text-surface-1 px-4 py-2.5 text-sm font-medium hover:bg-gold/90 transition shrink-0"
-              >
-                Instalar app
-              </button>
-            </div>
-          ) : esIOS() ? (
-            <div className="rounded-xl bg-surface-1 p-3 space-y-2">
-              <p className="text-xs text-primary-light font-medium">
-                En iPhone/iPad la instalación es manual:
-              </p>
-              <ol className="text-xs text-primary-light/75 list-decimal list-inside space-y-1">
-                <li>Abre este sitio en el navegador Safari</li>
-                <li>Toca el botón <strong>Compartir</strong> (cuadro con flecha arriba)</li>
-                <li>Elige <strong>"Agregar a pantalla de inicio"</strong></li>
-                <li>Confirma con <strong>"Agregar"</strong></li>
-              </ol>
-            </div>
-          ) : (
-            <p className="text-xs text-primary-light/70">
-              La instalación estará disponible en navegadores compatibles cuando el dispositivo lo
-              permita (Chrome/Edge en Android, o cualquier navegador de escritorio moderno desde el
-              menú del navegador → "Instalar aplicación").
-            </p>
-          )}
-        </section>
-
-        {/* ═══ 5. RESPALDO Y RESTAURACIÓN (solo Admin) ═══ */}
         {isAdmin && (
+        <SeccionAcordeon
+          title="Zona de riesgo"
+          icon={<IconAlertTriangle size={16} stroke={2} className="text-mora" />}
+          tono="riesgo"
+        >
+        {/* ═══ RESPALDO Y RESTAURACIÓN ═══ */}
           <section className="card p-4 space-y-4">
             <div>
               <h3 className="section-title">
@@ -700,10 +734,8 @@ export default function Configuracion() {
               )}
             </div>
           </section>
-        )}
 
-        {/* ═══ 6. ZONA DE PELIGRO (solo Admin) ═══ */}
-        {isAdmin && (
+        {/* ═══ ZONA DE PELIGRO ═══ */}
           <section className="rounded-2xl border border-mora/20 bg-mora/10/60 p-4 space-y-3">
             <h3 className="text-sm font-semibold text-mora flex items-center gap-2">
               <IconAlertTriangle size={16} stroke={2} /> Zona de peligro
@@ -769,7 +801,11 @@ export default function Configuracion() {
                   {filtroClient ? "Selecciona un crédito" : "Filtra por cliente para ver sus créditos"}
                 </option>
                 {loans
-                  .filter((l) => !filtroClient || l.clientId === filtroClient)
+                  .filter(
+                    (l) =>
+                      (!filtroCob || l.cobradiarioId === filtroCob) &&
+                      (!filtroClient || l.clientId === filtroClient)
+                  )
                   .map((loan) => {
                     const client = clients.find((c) => c.id === loan.clientId);
                     return (
@@ -826,6 +862,7 @@ export default function Configuracion() {
               Eliminar crédito seleccionado
             </button>
           </section>
+        </SeccionAcordeon>
         )}
 
         <p className="text-center text-xs text-primary-light/50">Cobro Diario v0.1.0</p>
