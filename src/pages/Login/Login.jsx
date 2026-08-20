@@ -1,8 +1,10 @@
-﻿import { useState } from 'react';
+﻿import { useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import gsap from 'gsap';
 import Logo from '../../components/ui/Logo';
 import { iniciarSesion } from '../../firebase/auth';
 import { getUserIndex } from '../../firebase/firestore';
+import { DIAMOND_PATH, morphDiamondToPig } from './pigMorph';
 import {
   IconCoin,
   IconMail,
@@ -29,12 +31,87 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const stageRef = useRef(null);
+  const outlineWrapRef = useRef(null);
+  const morphIconRef = useRef(null);
+  const morphShapeRef = useRef(null);
+  const coinRef = useRef(null);
+
+  /**
+   * Logo -> marranito al iniciar sesión: el rombo se transforma (morph de
+   * path via flubber) en el icono real de marranito de @tabler/icons-react,
+   * mientras una moneda sale del logo, salta y cae justo al terminar.
+   * `landed` resuelve cuando la moneda ya cayó, para no navegar a media
+   * animación; `reset()` la corta y vuelve al rombo si el login falla.
+   */
+  function playPigAnimation() {
+    const stage = stageRef.current;
+    const outline = outlineWrapRef.current;
+    const morphIcon = morphIconRef.current;
+    const morphShape = morphShapeRef.current;
+    const coin = coinRef.current;
+    if (!stage || !coin) return { landed: Promise.resolve(), reset() {} };
+
+    gsap.killTweensOf([outline, morphIcon, coin, stage]);
+    gsap.set(outline, { opacity: 1 });
+    gsap.set(morphIcon, { opacity: 0 });
+    morphShape.setAttribute('d', DIAMOND_PATH);
+    gsap.set(coin, { opacity: 0, x: 0, y: 0, rotation: 0, scale: 1, scaleX: 1 });
+    gsap.set(stage, { scale: 1 });
+
+    const st = { t: 0 };
+    const hopH = stage.getBoundingClientRect().height * 0.55;
+    let resolveLanded;
+    const landed = new Promise((res) => {
+      resolveLanded = res;
+    });
+
+    const tl = gsap.timeline();
+    tl.to(outline, { opacity: 0, duration: 0.22 }, 0)
+      .to(morphIcon, { opacity: 1, duration: 0.22 }, 0)
+      .to(
+        st,
+        {
+          t: 1,
+          duration: 0.85,
+          ease: 'power2.inOut',
+          onUpdate() {
+            morphShape.setAttribute('d', morphDiamondToPig(st.t));
+          },
+        },
+        0.05
+      )
+      .set(coin, { opacity: 1, scale: 0.7 }, 0.15)
+      .to(coin, { opacity: 1, scale: 1, duration: 0.15, ease: 'back.out(2)' }, 0.15)
+      .to(coin, { y: -hopH, rotation: 340, duration: 0.32, ease: 'power2.out' }, 0.18)
+      .to(coin, { y: -hopH * 0.4, duration: 0.02 }, 0.5)
+      .to(coin, { y: 6, rotation: 680, scale: 0.35, duration: 0.3, ease: 'power2.in' }, 0.5)
+      .to(coin, { scaleX: 0.15, duration: 0.08, ease: 'sine.inOut', repeat: 5, yoyo: true }, 0.18)
+      .to(coin, { opacity: 0, scale: 0.1, duration: 0.1 }, 0.82)
+      .to(stage, { scale: 1.1, duration: 0.1, ease: 'power1.out' }, 0.82)
+      .to(stage, { scale: 1, duration: 0.25, ease: 'back.out(2)' }, 0.92)
+      .call(() => resolveLanded(), null, 0.95);
+
+    function reset() {
+      tl.kill();
+      gsap.set(outline, { opacity: 1 });
+      gsap.set(morphIcon, { opacity: 0 });
+      morphShape.setAttribute('d', DIAMOND_PATH);
+      gsap.set(coin, { opacity: 0 });
+      gsap.set(stage, { scale: 1 });
+    }
+
+    return { landed, reset };
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setLoading(true);
+    const anim = playPigAnimation();
     try {
       const cred = await iniciarSesion(email, password);
+      await anim.landed;
       // Redirigir según el rol resuelto en userIndex (con fallback a Inicio
       // si el índice tarda en aparecer; AuthContext lo corrige al llegar).
       let destino = '/';
@@ -46,6 +123,7 @@ export default function Login() {
       }
       navigate(destino, { replace: true });
     } catch (err) {
+      anim.reset();
       const msgs = {
         'auth/invalid-email': 'Correo no válido',
         'auth/user-not-found': 'No existe una cuenta con este correo',
@@ -75,8 +153,92 @@ export default function Login() {
           <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary/[0.03]" />
 
           <div className="relative z-10 flex flex-row tall-sm:flex-col items-center gap-3 tall-sm:gap-4">
-            <Logo size={40} className="tall-sm:hidden" />
-            <Logo size={56} className="hidden tall-sm:block" />
+            {/* Al dar clic en Entrar, el rombo se transforma en marranito
+                (morph real via flubber) mientras una moneda sale, salta y
+                cae — ver playPigAnimation() arriba. */}
+            <div
+              ref={stageRef}
+              className="relative w-10 h-10 tall-sm:w-14 tall-sm:h-14 shrink-0">
+              <div
+                ref={outlineWrapRef}
+                className="absolute inset-0">
+                <Logo
+                  size={56}
+                  className="w-full h-full"
+                />
+              </div>
+              <svg
+                ref={morphIconRef}
+                viewBox="0 0 24 24"
+                className="absolute inset-0 w-full h-full opacity-0">
+                <path
+                  ref={morphShapeRef}
+                  className="text-gold"
+                  fill="currentColor"
+                  d={DIAMOND_PATH}
+                />
+              </svg>
+              <svg
+                ref={coinRef}
+                viewBox="0 0 60 60"
+                className="absolute opacity-0 pointer-events-none"
+                style={{
+                  width: '55%',
+                  height: '55%',
+                  left: '50%',
+                  top: '40%',
+                  marginLeft: '-27.5%',
+                  marginTop: '-27.5%',
+                }}>
+                <defs>
+                  <radialGradient
+                    id="loginCoinGrad"
+                    cx="35%"
+                    cy="30%"
+                    r="75%">
+                    <stop
+                      offset="0%"
+                      stopColor="#F4EBD3"
+                    />
+                    <stop
+                      offset="55%"
+                      stopColor="#D9C9A3"
+                    />
+                    <stop
+                      offset="100%"
+                      stopColor="#A98F5D"
+                    />
+                  </radialGradient>
+                </defs>
+                <circle
+                  cx="30"
+                  cy="30"
+                  r="27"
+                  fill="url(#loginCoinGrad)"
+                  stroke="#8A7550"
+                  strokeWidth="2"
+                />
+                <circle
+                  cx="30"
+                  cy="30"
+                  r="21"
+                  fill="none"
+                  stroke="#8A7550"
+                  strokeWidth="1.4"
+                  strokeOpacity=".5"
+                />
+                <text
+                  x="30"
+                  y="39"
+                  textAnchor="middle"
+                  fontFamily="IBM Plex Sans, sans-serif"
+                  fontWeight="700"
+                  fontSize="26"
+                  fill="#0A0A09">
+                  $
+                </text>
+              </svg>
+            </div>
             <div>
               <h1 className="font-display text-lg tall-sm:text-3xl font-semibold text-primary tracking-tight">
                 CrediDev
