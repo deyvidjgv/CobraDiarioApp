@@ -76,28 +76,33 @@ export function useLoanActions() {
       solicitudesPendientes.push(...snapPendientes.docs);
     }
 
-    const batch = getBatch();
+    const operaciones = [
+      ...snapAll.docs.map((docSnap) => ({ tipo: "delete", ref: documentRef(orgId, "movements", docSnap.id) })),
+      ...ajustesHuerfanos.map((docSnap) => ({ tipo: "delete", ref: documentRef(orgId, "movements", docSnap.id) })),
+      ...solicitudesPendientes.map((docSnap) => ({
+        tipo: "update",
+        ref: documentRef(orgId, "correctionRequests", docSnap.id),
+        data: {
+          estado: "rechazada",
+          motivoRechazo: "Movimiento eliminado junto con el crédito",
+          resolvedBy: usuario.uid,
+          resolvedAt: new Date().toISOString(),
+        },
+      })),
+    ];
 
-    snapAll.docs.forEach((docSnap) => {
-      batch.delete(documentRef(orgId, "movements", docSnap.id));
-    });
-    ajustesHuerfanos.forEach((docSnap) => {
-      batch.delete(documentRef(orgId, "movements", docSnap.id));
-    });
-    // Se rechazan en vez de borrarse: quedan trazables en "Resueltas" con
-    // un motivo claro, en vez de desaparecer sin dejar rastro.
-    solicitudesPendientes.forEach((docSnap) => {
-      batch.update(documentRef(orgId, "correctionRequests", docSnap.id), {
-        estado: "rechazada",
-        motivoRechazo: "Movimiento eliminado junto con el crédito",
-        resolvedBy: usuario.uid,
-        resolvedAt: new Date().toISOString(),
-      });
-    });
+    for (let inicio = 0; inicio < operaciones.length; inicio += 400) {
+      const batch = getBatch();
+      for (const operacion of operaciones.slice(inicio, inicio + 400)) {
+        if (operacion.tipo === "delete") batch.delete(operacion.ref);
+        else batch.update(operacion.ref, operacion.data);
+      }
+      await batch.commit();
+    }
 
-    batch.delete(documentRef(orgId, "loans", id));
-
-    await batch.commit();
+    const loanBatch = getBatch();
+    loanBatch.delete(documentRef(orgId, "loans", id));
+    await loanBatch.commit();
 
     const clienteNombre = snapAll.docs.find((d) => d.data().clienteNombre)?.data().clienteNombre;
 

@@ -45,8 +45,31 @@ service cloud.firestore {
       return isActiveMember(orgId) && memberDoc(orgId, request.auth.uid).role == "cobradiario";
     }
 
+    function validMemberRole(data) {
+      return data.role == "admin" || data.role == "cobradiario";
+    }
+
+    function validMemberState(data) {
+      return data.estado == "activo" || data.estado == "inactivo";
+    }
+
     function ownsRecord(data) {
-      return data.cobradiarioId == request.auth.uid;
+      return data != null && data.cobradiarioId == request.auth.uid;
+    }
+
+    function clientOwnedBy(orgId, clientId, cobradiarioId) {
+      return clientId is string
+        && exists(/databases/$(database)/documents/organizations/$(orgId)/clients/$(clientId))
+        && get(/databases/$(database)/documents/organizations/$(orgId)/clients/$(clientId)).data.cobradiarioId == cobradiarioId;
+    }
+
+    function validMovement(data) {
+      return data.tipo in ["cobro", "prestamo_nuevo", "gasto", "ingreso_base", "seguro", "recargo_vencimiento", "ajuste"]
+        && data.monto is number
+        && ((data.tipo in ["cobro", "ingreso_base", "seguro"] && data.monto >= 0)
+            || (data.tipo in ["prestamo_nuevo", "gasto"] && data.monto <= 0)
+            || data.tipo == "ajuste"
+            || (data.tipo == "recargo_vencimiento" && data.monto == 0));
     }
 
     // Congela las condiciones sensibles del vencimiento: el cobradiario
@@ -87,11 +110,22 @@ service cloud.firestore {
         // Auto-bootstrap (un usuario se registra como admin de su propia org).
         allow create: if isSignedIn() && request.auth.uid == userId
                       && userId == orgId && orgId == request.auth.uid
-                      && request.resource.data.role == "admin";
+                      && request.resource.data.uid == userId
+                      && request.resource.data.role == "admin"
+                      && request.resource.data.estado == "activo";
         // El Admin registra a un cobradiario que acaba de crear en Auth.
-        allow create: if isAdminOf(orgId) && request.resource.data.role == "cobradiario";
+        allow create: if isAdminOf(orgId)
+                      && request.resource.data.uid == userId
+                      && request.resource.data.role == "cobradiario"
+                      && request.resource.data.estado == "activo";
         // El Admin puede activar/desactivar o editar la ficha de un miembro.
-        allow update: if isAdminOf(orgId);
+        allow update: if isAdminOf(orgId)
+                      && request.resource.data.uid == resource.data.uid
+                      && validMemberRole(request.resource.data)
+                      && validMemberState(request.resource.data)
+                      && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(["email", "nombre", "cedula", "celular",
+                                   "role", "estado", "updatedAt"]);
         allow delete: if false;
       }
 
@@ -122,7 +156,10 @@ service cloud.firestore {
       match /loans/{loanId} {
         allow read: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
         allow create: if isAdminOf(orgId)
-                      || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
+                      || (isCobradiarioOf(orgId)
+                          && ownsRecord(request.resource.data)
+                  && request.resource.data.createdBy == request.auth.uid
+                  && clientOwnedBy(orgId, request.resource.data.clientId, request.auth.uid));
         // Condiciones del credito CONGELADAS: el cobradiario dueno solo
         // puede tocar los campos del ciclo de pago (saldo/estado/recargos
         // que fluyen al registrar un cobro o aplicar un recargo). Capital,
@@ -134,6 +171,15 @@ service cloud.firestore {
                           && request.resource.data.diff(resource.data).affectedKeys()
                              .hasOnly(["saldoPendiente", "estado", "montoTotalAPagar",
                                        "vencimiento", "updatedAt"])
+                            && request.resource.data.saldoPendiente is number
+                            && request.resource.data.saldoPendiente >= 0
+                            && request.resource.data.montoTotalAPagar is number
+                            && request.resource.data.montoTotalAPagar >= request.resource.data.saldoPendiente
+                            && (request.resource.data.saldoPendiente <= resource.data.saldoPendiente
+                              || (request.resource.data.vencimiento.recargosAcumulados is number
+                                && resource.data.vencimiento.recargosAcumulados is number
+                                && request.resource.data.vencimiento.recargosAcumulados > resource.data.vencimiento.recargosAcumulados
+                                && request.resource.data.montoTotalAPagar > resource.data.montoTotalAPagar))
                           && (request.resource.data.estado == resource.data.estado
                               || request.resource.data.estado == "completado")
                           && vencimientoCongelado(resource.data.vencimiento,
@@ -144,7 +190,10 @@ service cloud.firestore {
       match /movements/{movementId} {
         allow read: if isAdminOf(orgId) || (isCobradiarioOf(orgId) && ownsRecord(resource.data));
         allow create: if isAdminOf(orgId)
-                      || (isCobradiarioOf(orgId) && ownsRecord(request.resource.data));
+                      || (isCobradiarioOf(orgId)
+                          && ownsRecord(request.resource.data)
+                  && request.resource.data.createdBy == request.auth.uid
+                  && validMovement(request.resource.data));
         // Inmutabilidad financiera: solo el Admin corrige/anula movimientos.
         allow update, delete: if isAdminOf(orgId);
       }
@@ -179,7 +228,13 @@ service cloud.firestore {
                     || (isSignedIn() && resource.data.createdBy == request.auth.uid);
         allow create: if request.resource.data.createdBy == request.auth.uid
                       && request.resource.data.estado == "pendiente"
-                      && (isAdminOf(orgId) || isCobradiarioOf(orgId));
+                && request.resource.data.valorOriginal is number
+                && request.resource.data.valorCorrecto is number
+                && request.resource.data.valorCorrecto >= 0
+                && exists(/databases/$(database)/documents/organizations/$(orgId)/movements/$(request.resource.data.movementId))
+                && (isAdminOf(orgId)
+                  || (isCobradiarioOf(orgId)
+                    && get(/databases/$(database)/documents/organizations/$(orgId)/movements/$(request.resource.data.movementId)).data.cobradiarioId == request.auth.uid));
         // Solo el Admin resuelve (aprueba/rechaza) una solicitud.
         allow update: if isAdminOf(orgId) && resource.data.estado == "pendiente";
         allow delete: if false;

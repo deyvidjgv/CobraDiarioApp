@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { where, orderBy } from "firebase/firestore";
 import { subscribeToCollection, registerCobradiarioMember, updateDocument } from "../firebase/firestore";
-import { crearCuentaCobradiario } from "../firebase/secondaryAuth";
+import { crearCuentaCobradiario, eliminarCuentaCobradiario } from "../firebase/secondaryAuth";
 import { useAuth } from "../context/AuthContext";
 
 export function useCobradiarios() {
@@ -32,13 +32,18 @@ export function useCobradiarios() {
   // Admin) y luego registra su ficha en Firestore con la sesión principal.
   async function addCobradiario({ nombre, cedula, celular, email, password }) {
     const uid = await crearCuentaCobradiario(email, password, nombre);
-    await registerCobradiarioMember(orgId, uid, {
-      email,
-      nombre,
-      cedula,
-      celular,
-      createdBy: usuario.uid,
-    });
+    try {
+      await registerCobradiarioMember(orgId, uid, {
+        email,
+        nombre,
+        cedula,
+        celular,
+        createdBy: usuario.uid,
+      });
+    } catch (error) {
+      await eliminarCuentaCobradiario(email, password).catch(() => {});
+      throw error;
+    }
     return { uid };
   }
 

@@ -73,7 +73,9 @@ beforeEach(async () => {
       interesAplicado: 20,
       cuota: 4000,
       saldoPendiente: 80000,
+      montoTotalAPagar: 80000,
       fechaInicio: new Date().toISOString(),
+      clientId: "cliente-1",
       cobradiarioId: COBRADIARIO_UID,
       vencimiento: {
         activo: true,
@@ -193,6 +195,7 @@ describe("movements (inmutabilidad financiera)", () => {
         tipo: "cobro",
         monto: 20000,
         cobradiarioId: COBRADIARIO_UID,
+        createdBy: COBRADIARIO_UID,
       })
     );
   });
@@ -216,6 +219,27 @@ describe("movements (inmutabilidad financiera)", () => {
     const db = ctx.firestore();
     await assertSucceeds(
       updateDoc(doc(db, "organizations", ORG_ID, "movements", "mov-1"), { anulado: true })
+    );
+  });
+
+  test("cobradiario NO puede crear un movimiento con tipo o signo inválido", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      addDoc(collection(db, "organizations", ORG_ID, "movements"), {
+        tipo: "movimiento_falso",
+        monto: 999999,
+        cobradiarioId: COBRADIARIO_UID,
+        createdBy: COBRADIARIO_UID,
+      })
+    );
+    await assertFails(
+      addDoc(collection(db, "organizations", ORG_ID, "movements"), {
+        tipo: "cobro",
+        monto: -500,
+        cobradiarioId: COBRADIARIO_UID,
+        createdBy: COBRADIARIO_UID,
+      })
     );
   });
 });
@@ -351,6 +375,27 @@ describe("correctionRequests (Fase 7)", () => {
     );
   });
 
+  test("cobradiario NO puede corregir un movimiento de otro cobrador", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), "organizations", ORG_ID, "movements", "mov-ajeno"), {
+        tipo: "cobro",
+        monto: 25000,
+        cobradiarioId: OTHER_COBRADIARIO_UID,
+      });
+    });
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      setDoc(doc(db, "organizations", ORG_ID, "correctionRequests", "req-ajena"), {
+        movementId: "mov-ajeno",
+        valorOriginal: 25000,
+        valorCorrecto: 20000,
+        estado: "pendiente",
+        createdBy: COBRADIARIO_UID,
+      })
+    );
+  });
+
   test("cobradiario NO puede aprobar su propia solicitud (update)", async () => {
     await testEnv.withSecurityRulesDisabled(async (context) => {
       await setDoc(doc(context.firestore(), "organizations", ORG_ID, "correctionRequests", "req-3"), {
@@ -453,6 +498,33 @@ describe("loans (actualizaciones por campo)", () => {
     const db = ctx.firestore();
     await assertFails(
       updateDoc(doc(db, ...loanPath), { estado: "anulado" })
+    );
+  });
+
+  test("cobradiario NO puede aumentar el saldo sin un recargo válido", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      updateDoc(doc(db, ...loanPath), {
+        saldoPendiente: 999999,
+        montoTotalAPagar: 999999,
+      })
+    );
+  });
+
+  test("cobradiario NO puede crear un crédito para cliente ajeno", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    const db = ctx.firestore();
+    await assertFails(
+      setDoc(doc(db, "organizations", ORG_ID, "loans", "loan-ajeno"), {
+        estado: "activo",
+        capital: 100000,
+        saldoPendiente: 100000,
+        montoTotalAPagar: 100000,
+        clientId: "cliente-ajeno-no-existe",
+        cobradiarioId: COBRADIARIO_UID,
+        createdBy: COBRADIARIO_UID,
+      })
     );
   });
 

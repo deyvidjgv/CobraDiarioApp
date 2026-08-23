@@ -241,8 +241,8 @@ export default function Configuracion() {
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result);
-        if (!esRespaldoValido(data)) {
-          setArchivoError("Este archivo no tiene el formato de un respaldo de esta app.");
+        if (!esRespaldoValido(data, orgId)) {
+          setArchivoError("El respaldo no pertenece a esta organización o no tiene un formato válido.");
           return;
         }
         setArchivoRespaldo(data);

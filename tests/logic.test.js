@@ -390,12 +390,20 @@ describe("backup (respaldo/restauración)", () => {
 
   test("esRespaldoValido exige tipo, exportedAt y las colecciones esperadas como arreglos", () => {
     const colecciones = Object.fromEntries(COLECCIONES_RESPALDO.map((c) => [c, []]));
-    const valido = { tipo: "respaldo_credidev", exportedAt: "2026-08-16T00:00:00.000Z", colecciones };
+    const valido = {
+      tipo: "respaldo_credidev",
+      version: 1,
+      orgId: "org-1",
+      exportedAt: "2026-08-16T00:00:00.000Z",
+      colecciones,
+    };
 
     expect(esRespaldoValido(valido)).toBe(true);
     expect(esRespaldoValido(null)).toBe(false);
     expect(esRespaldoValido({ ...valido, tipo: "otra_cosa" })).toBe(false);
     expect(esRespaldoValido({ ...valido, exportedAt: undefined })).toBe(false);
+    expect(esRespaldoValido(valido, "org-1")).toBe(true);
+    expect(esRespaldoValido(valido, "org-2")).toBe(false);
     expect(esRespaldoValido({ ...valido, colecciones: { ...colecciones, loans: "no es arreglo" } })).toBe(
       false
     );

@@ -53,9 +53,11 @@ export function deserializarDesdeRespaldo(valor) {
 }
 
 /** ¿Este objeto tiene la forma esperada de un archivo de respaldo de esta app? */
-export function esRespaldoValido(data) {
+export function esRespaldoValido(data, expectedOrgId = null) {
   if (!data || typeof data !== "object") return false;
   if (data.tipo !== "respaldo_credidev") return false;
+  if (data.version !== 1) return false;
+  if (expectedOrgId && data.orgId !== expectedOrgId) return false;
   if (!data.exportedAt) return false;
   return COLECCIONES_RESPALDO.every((c) => Array.isArray(data.colecciones?.[c]));
 }

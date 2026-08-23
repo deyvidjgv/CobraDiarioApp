@@ -1,5 +1,5 @@
 import { initializeApp, getApps } from "firebase/app";
-import { getAuth, createUserWithEmailAndPassword, updateProfile, signOut } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, deleteUser, signOut } from "firebase/auth";
 import { firebaseConfig } from "./config";
 
 const SECONDARY_APP_NAME = "cobradiario-creator";
@@ -27,6 +27,16 @@ export async function crearCuentaCobradiario(email, password, nombre) {
     return credential.user.uid;
   } finally {
     // La sesión secundaria no se usa para nada más; se descarta de inmediato.
+    await signOut(secondaryAuth).catch(() => {});
+  }
+}
+
+export async function eliminarCuentaCobradiario(email, password) {
+  const secondaryAuth = getSecondaryAuth();
+  try {
+    const credential = await signInWithEmailAndPassword(secondaryAuth, email, password);
+    await deleteUser(credential.user);
+  } finally {
     await signOut(secondaryAuth).catch(() => {});
   }
 }
