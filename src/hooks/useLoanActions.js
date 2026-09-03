@@ -91,6 +91,7 @@ export function useLoanActions() {
       })),
     ];
 
+    // Firestore limita cada batch a 500 operaciones.
     for (let inicio = 0; inicio < operaciones.length; inicio += 400) {
       const batch = getBatch();
       for (const operacion of operaciones.slice(inicio, inicio + 400)) {

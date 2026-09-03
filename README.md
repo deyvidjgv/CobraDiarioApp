@@ -1,6 +1,6 @@
-﻿# CobraDiarioApp — Sistema de Gestión de Cobranza Diaria
+# CrediDev — Sistema de Gestión de Cobranza Diaria
 
-**CobraDiarioApp** es una aplicación progresiva (PWA) para cobradores de campo y administradores de crédito. Está diseñada para funcionar en dispositivos móviles y escritorio, con soporte offline, GPS y reportes.
+**CrediDev** es una aplicación progresiva (PWA) para cobradores de campo y administradores de crédito. Está diseñada para funcionar en dispositivos móviles y escritorio, con soporte offline, GPS y reportes.
 
 Construida con **React 18**, **Vite**, **Tailwind CSS** y **Firebase Firestore**.
 
@@ -22,7 +22,7 @@ Construida con **React 18**, **Vite**, **Tailwind CSS** y **Firebase Firestore**
 
 ## Resumen
 
-CobraDiarioApp permite:
+CrediDev permite:
 
 - Registrar clientes y créditos
 - Controlar la ruta diaria de cobranza
@@ -46,8 +46,8 @@ CobraDiarioApp permite:
 
 1. Clona el repositorio:
 ```bash
-git clone <URL_DEL_REPOSITORIO> CobraDiarioApp
-cd CobraDiarioApp
+git clone <URL_DEL_REPOSITORIO> CrediDev
+cd CrediDev
 ```
 
 2. Instala dependencias:

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Header from "../../components/layout/Header";
 import ConfirmarPasswordModal from "../../components/ui/ConfirmarPasswordModal";
 import SeccionAcordeon from "../../components/ui/SeccionAcordeon";
@@ -865,7 +865,7 @@ export default function Configuracion() {
         </SeccionAcordeon>
         )}
 
-        <p className="text-center text-xs text-primary-light/50">Cobro Diario v0.1.0</p>
+        <p className="text-center text-xs text-primary-light/50">CrediDev v0.1.0</p>
       </div>
 
       <ConfirmarPasswordModal

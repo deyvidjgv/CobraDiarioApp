@@ -158,8 +158,8 @@ service cloud.firestore {
         allow create: if isAdminOf(orgId)
                       || (isCobradiarioOf(orgId)
                           && ownsRecord(request.resource.data)
-                  && request.resource.data.createdBy == request.auth.uid
-                  && clientOwnedBy(orgId, request.resource.data.clientId, request.auth.uid));
+                          && request.resource.data.createdBy == request.auth.uid
+                          && clientOwnedBy(orgId, request.resource.data.clientId, request.auth.uid));
         // Condiciones del credito CONGELADAS: el cobradiario dueno solo
         // puede tocar los campos del ciclo de pago (saldo/estado/recargos
         // que fluyen al registrar un cobro o aplicar un recargo). Capital,
@@ -192,8 +192,8 @@ service cloud.firestore {
         allow create: if isAdminOf(orgId)
                       || (isCobradiarioOf(orgId)
                           && ownsRecord(request.resource.data)
-                  && request.resource.data.createdBy == request.auth.uid
-                  && validMovement(request.resource.data));
+                          && request.resource.data.createdBy == request.auth.uid
+                          && validMovement(request.resource.data));
         // Inmutabilidad financiera: solo el Admin corrige/anula movimientos.
         allow update, delete: if isAdminOf(orgId);
       }
