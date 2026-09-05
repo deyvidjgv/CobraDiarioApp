@@ -95,6 +95,9 @@ Credenciales de demostración (solo para probar)
 - Correo: admin@credidev.com
 - Contraseña: 123456
 
+¿Quieres probar sin clonar? Visita la demo en vivo:
+https://credidev.netlify.app/
+
 Opcional — usar Firebase Emulator (recomendado para pruebas locales sin tocar un proyecto real):
 
 1. Instala la CLI:
@@ -117,7 +120,7 @@ Seguridad rápida
 - `src/firebase/` — inicialización de Firebase y CRUD de Firestore
 - `src/context/` — contexto de autenticación
 - `src/hooks/` — hooks personalizados para clientes, préstamos y caja
-- `src/logic/` — lógica de negocio y cálculos financieros
+- `src/logic/` — lógica de negocio y cálculos financieras
 - `src/components/` — componentes reutilizables de UI y layout
 - `src/pages/` — pantallas de la aplicación
 - `src/styles/index.css` — estilos globales
@@ -174,36 +177,6 @@ Datos clave:
   no como deuda)
 - Guardar ubicación GPS del cliente
 
-### Clientes
-
-- Crear y editar clientes
-- Eliminar cliente con contraseña si no tiene créditos activos
-- Ver historial de créditos relacionados
-
-### Créditos
-
-- Crear préstamos con capital, interés y cuotas
-- Ver saldo y pagos realizados
-- Eliminar crédito con contraseña y limpiar movimientos asociados
-
-### Caja
-
-- Registrar ingresos y egresos manuales
-- Ver saldo diario
-- Registrar movimientos para mantener el histórico financiero
-
-### Reportes
-
-- Exportar cierres diarios a PDF
-- Ver historial de cierres y caja
-
-### Configuración
-
-- Ajustar interés por defecto, seguro/comisión y recargo por vencimiento
-  (solo el Admin puede modificar estas reglas de negocio)
-- Botón de instalación PWA
-- El botón se desactiva cuando la app ya está instalada
-
 ---
 
 ## PWA e instalación
@@ -231,91 +204,12 @@ La app opera con dos roles sobre el mismo modelo multitenant
   préstamos son inmutables — nunca se editan ni se borran directamente).
 
 `userIndex/{uid}` + `organizations/{orgId}/users/{uid}` guardan el
-`role: "admin" | "cobradiario"` de cada usuario. Todo usuario existente
+role: "admin" | "cobradiario" de cada usuario. Todo usuario existente
 se auto-registra como admin de su propia organización la primera vez
 que entra (sin migración manual). `firebase/firestore.rules` autoriza
 cada operación según ese rol — el cobradiario solo puede tocar sus
 propios registros operativos, nunca editar ni borrar movimientos
 financieros ya creados; esa capacidad queda reservada al Admin.
-
-### Cómo se crean los cobradiarios (sin backend)
-
-El hosting es **Netlify (frontend) + Firebase en plan Spark (gratis)** —
-por eso no se usa Cloud Functions (requieren plan Blaze). Crear un
-cobradiario corre 100% en el navegador:
-
-1. `src/firebase/secondaryAuth.js` abre una **instancia secundaria** de
-   Firebase solo para crear la cuenta de Auth del cobradiario, sin cerrar
-   la sesión del Admin en la instancia principal.
-2. Con esa sesión (la del Admin, sin interrupciones) se registra la ficha
-   del cobradiario en Firestore (`registerCobradiarioMember` en
-   `src/firebase/firestore.js`).
-3. `firebase/firestore.rules` autoriza esa escritura solo si quien la hace
-   es un admin activo de esa organización, y solo puede *crear* (nunca
-   sobreescribir) esos documentos.
-
-Desactivar un cobradiario hoy es solo a nivel de datos (le bloquea el
-acceso a la organización); su cuenta de Auth sigue existiendo porque no
-hay backend para deshabilitarla — es la limitación aceptada de quedarse
-en el plan gratis.
-
-### Probar las reglas de Firestore
-
-Hay pruebas automatizadas contra el emulador real de Firestore (no
-mocks) en `tests/firestore.rules.test.js`:
-
-```bash
-npm run test:rules
-```
-
-Requiere Java (el emulador de Firestore lo necesita) y `firebase-tools`
-(ya está en `devDependencies`). Esto es **solo herramienta de
-desarrollo**: no se instala ni se despliega para los usuarios finales ni
-en Netlify.
-
----
-
-## Mejoras recientes
-
-- Rediseño visual completo: tema oscuro "Obsidiana + champán", tipografías
-  Instrument Sans / IBM Plex Sans / JetBrains Mono, íconos en `public/iconos/`
-- Responsive revisado a fondo para móvil/tablet (breakpoint en `1024px`,
-  antes `768px`), ya que la app se usa mayoritariamente desde el celular
-- Ruta del Día rediseñada: agrupación por próximo día de cobro con
-  prioridad de mora, filtros Hoy/Mora, badge de pendientes en la barra
-  inferior
-- Corrección de saldo: aprobar una corrección ahora también ajusta el
-  saldo pendiente del crédito (antes solo cuadraba la caja) y muestra el
-  desglose completo (monto original, corregido, diferencia) a cobrador y
-  admin
-- Renovación de cartulina: número de cuotas editable, seguro sumado al
-  total a pagar (no solo restado del efectivo entregado), y separador de
-  miles en los montos
-- Recargo por vencimiento se aplica automáticamente al registrar un cobro
-  sobre un crédito vencido, sin paso manual
-- Navegación atrás mejorada para evitar volver a créditos eliminados
-- Header muestra spinner de carga mientras la página está cargando
-- Botón de confirmación de modal estandarizado para móviles
-- Soporte de instalación PWA más robusto
-- Caja: las correcciones (ajustes) se clasifican como Entrada o Salida
-  según el movimiento original que corrigen, no según el signo del monto
-- Notificaciones en vivo para el Admin (punto + sonido) cuando hay
-  solicitudes de corrección pendientes, mientras la app está abierta
-- Solicitudes de corrección: bloqueadas para el Admin (solo las pide el
-  cobrador), sin duplicados sobre el mismo movimiento, y filtrables por
-  cobrador y agrupadas por cliente
-- Eliminar un crédito ahora también limpia los ajustes huérfanos y
-  rechaza automáticamente las correcciones pendientes que dependían de él
-- Renovar cartulina ya no suma el seguro a la deuda del nuevo crédito
-- Filtro por cobrador en Clientes; corrección del selector de crédito en
-  Zona Segura, que ignoraba el filtro de cliente
-- Correcciones y Auditoría muestran nombre de cliente y cobrador en vez
-  de IDs crudos
-- Configuración reorganizada en secciones colapsables por nivel de
-  riesgo (General / Reglas de negocio / Zona de riesgo)
-- Ruta del Día: el filtro "Hoy" separa "Pendientes" de "Cobrados hoy"
-- Login y hojas/modales ajustados para no cortarse ni hacer scroll no
-  deseado en celulares en orientación horizontal
 
 ---
 
