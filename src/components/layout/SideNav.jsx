@@ -1,4 +1,4 @@
-﻿import { NavLink } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   IconHome,
   IconMapPin,
@@ -6,13 +6,11 @@ import {
   IconCash,
   IconSettings,
   IconChartBar,
-  IconCoin,
   IconUserCog,
   IconClipboardCheck,
   IconHistory,
   IconLayoutDashboard,
-  IconChevronsLeft,
-  IconChevronsRight,
+  IconX,
   IconLogout,
   IconFileText,
 } from '@tabler/icons-react';
@@ -55,36 +53,31 @@ const adminNavItems = [
   { to: '/configuracion', label: 'Ajustes', Icon: IconSettings, end: false },
 ];
 
-function Marca({ collapsed }) {
+function Marca() {
   return (
     <div className="flex items-center gap-3 min-w-0">
       <Logo size={26} className="shrink-0" />
-      {!collapsed && (
-        <span className="font-display text-xl text-primary tracking-tight truncate">
-          CrediDev
-        </span>
-      )}
+      <span className="font-display text-xl text-primary tracking-tight truncate">
+        CrediDev
+      </span>
     </div>
   );
 }
 
-function NavLinks({ items, collapsed }) {
+function NavLinks({ items, onNavigate }) {
   const { pendingCorrectionsCount } = useNotifications();
 
   return items.map(({ to, label, Icon, end }) => {
-    // Aviso de correcciones pendientes: solo aplica al ítem "Correcciones"
-    // del Admin (es el único badge que existe en el nav de escritorio).
+    // Aviso de correcciones pendientes: solo aplica al ítem "Correcciones" del Admin.
     const badgeCount = to === '/correcciones' ? pendingCorrectionsCount : 0;
     return (
       <NavLink
         key={to + label}
         to={to}
         end={end}
-        title={collapsed ? label : undefined}
+        onClick={onNavigate}
         className={({ isActive }) =>
-          `flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${
-            collapsed ? 'px-2' : 'px-4'
-          } py-3 rounded-xl text-sm font-medium transition-all ${
+          `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
             isActive
               ? 'bg-gold/10 text-primary font-semibold'
               : 'text-primary-light hover:bg-surface-2 hover:text-primary'
@@ -96,7 +89,7 @@ function NavLinks({ items, collapsed }) {
               <Icon
                 size={20}
                 stroke={1.5}
-                className={isActive ? 'text-primary' : 'text-primary-light/70'}
+                className={isActive ? 'text-primary' : 'text-primary-light/85'}
               />
               {badgeCount > 0 && (
                 <span className="absolute -top-1.5 -right-2 min-w-[16px] h-4 px-1 rounded-full bg-mora text-surface-1 text-[9px] font-bold flex items-center justify-center leading-none">
@@ -104,10 +97,8 @@ function NavLinks({ items, collapsed }) {
                 </span>
               )}
             </span>
-            {!collapsed && <span className="truncate">{label}</span>}
-            {!collapsed && isActive && (
-              <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
-            )}
+            <span className="truncate">{label}</span>
+            {isActive && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gold shrink-0" />}
           </>
         )}
       </NavLink>
@@ -115,104 +106,75 @@ function NavLinks({ items, collapsed }) {
   });
 }
 
-function LogoutButton({ collapsed, onDone = () => {} }) {
+function LogoutButton() {
   async function handleLogout() {
     if (!confirm('¿Cerrar sesión?')) return;
     await cerrarSesion();
-    onDone();
     window.location.href = '/login';
   }
   return (
     <button
       type="button"
       onClick={handleLogout}
-      title={collapsed ? 'Cerrar sesión' : undefined}
-      className={`w-full flex items-center ${collapsed ? 'justify-center' : 'gap-3'} ${
-        collapsed ? 'px-2' : 'px-4'
-      } py-3 rounded-xl border border-line text-sm font-medium text-primary-light hover:text-primary hover:border-primary/25 transition`}>
-      <IconLogout
-        size={18}
-        stroke={1.5}
-        className="shrink-0"
-      />
-      {!collapsed && <span>Cerrar sesión</span>}
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-line text-sm font-medium text-primary-light hover:text-primary hover:border-primary/40 transition">
+      <IconLogout size={18} stroke={1.5} className="shrink-0" />
+      <span>Cerrar sesión</span>
     </button>
   );
 }
 
 /**
- * Navegación lateral: solo la barra estática de escritorio (lg+, ≥1024px),
- * colapsable a solo iconos (preferencia guardada en UIContext →
- * localStorage). En móvil y tablet (<1024px) la navegación es BottomNav
- * (barra inferior + hoja "Más"); este componente no renderiza nada ahí.
+ * Menú tipo hamburguesa: un cajón que se abre sobre el contenido (overlay
+ * + fondo oscuro) y se cierra tocando fuera, la X, un enlace o Atrás.
+ * Arranca OCULTO en cualquier tamaño de pantalla — Admin y Cobradiario
+ * comparten el mismo componente, solo cambia la lista de accesos. El
+ * botón ☰ que lo abre vive en el Header.
  */
 export default function SideNav() {
   const { isAdmin } = useAuth();
-  const { navCollapsed, toggleNavCollapsed } = useUI();
+  const { drawerOpen, setDrawerOpen } = useUI();
   const items = isAdmin ? adminNavItems : navItems;
 
   return (
     <>
-      {/* ─── Barra estática de escritorio ─── */}
-      <aside
-        className={`hidden lg:flex fixed top-0 left-0 h-full z-40 flex-col
-          bg-obsidian border-r border-line transition-[width] duration-200
-          ${navCollapsed ? 'w-[76px]' : 'w-72'}`}>
+      {drawerOpen && (
         <div
-          className={`flex items-center ${navCollapsed ? 'justify-center' : 'justify-between'}
-            px-4 py-4 border-b border-line`}>
-          <Marca collapsed={navCollapsed} />
-          {!navCollapsed && (
-            <button
-              type="button"
-              onClick={toggleNavCollapsed}
-              title="Contraer menú (se guarda la preferencia)"
-              aria-label="Contraer menú"
-              className="p-1.5 rounded-lg hover:bg-surface-2 transition text-primary-light/70 hover:text-primary-light">
-              <IconChevronsLeft
-                size={18}
-                stroke={1.5}
-              />
-            </button>
-          )}
+          className="fixed inset-0 bg-black/70 z-40"
+          onClick={() => setDrawerOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de navegación"
+        aria-hidden={!drawerOpen}
+        className={`fixed top-0 left-0 h-full w-[280px] max-w-[85vw] z-50 flex flex-col
+          bg-obsidian border-r border-line transition-transform duration-200 ease-out
+          ${drawerOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="flex items-center justify-between px-4 py-4 border-b border-line">
+          <Marca />
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Cerrar menú"
+            className="tap rounded-lg hover:bg-surface-2 transition text-primary-light hover:text-primary">
+            <IconX size={20} stroke={1.5} />
+          </button>
         </div>
 
-        {navCollapsed && (
-          <div className="flex justify-center pt-3">
-            <button
-              type="button"
-              onClick={toggleNavCollapsed}
-              title="Expandir menú (se guarda la preferencia)"
-              aria-label="Expandir menú"
-              className="p-1.5 rounded-lg hover:bg-surface-2 transition text-primary-light/70 hover:text-primary-light">
-              <IconChevronsRight
-                size={18}
-                stroke={1.5}
-              />
-            </button>
-          </div>
-        )}
-
-        <nav
-          className={`flex-1 overflow-y-auto py-4 space-y-1 ${navCollapsed ? 'px-2' : 'px-3'}`}>
-          <NavLinks
-            items={items}
-            collapsed={navCollapsed}
-          />
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          <NavLinks items={items} onNavigate={() => setDrawerOpen(false)} />
         </nav>
 
-        <div
-          className={`px-3 py-4 border-t border-line ${navCollapsed ? 'px-2' : ''}`}>
-          <LogoutButton collapsed={navCollapsed} />
-          {!navCollapsed && (
-            <p className="font-mono text-[10.5px] tracking-[0.1em] uppercase text-primary/30 text-center mt-3">
-              CrediDev
-            </p>
-          )}
+        <div className="px-3 py-4 border-t border-line">
+          <LogoutButton />
+          <p className="font-mono text-[10.5px] tracking-[0.1em] uppercase text-primary/60 text-center mt-3">
+            CrediDev
+          </p>
         </div>
       </aside>
-
     </>
   );
 }
-

@@ -285,7 +285,7 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full rounded-xl bg-surface-1 border border-line pl-10 pr-4 py-3 text-sm text-primary placeholder:text-primary/30 focus:bg-surface focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition"
+                  className="w-full rounded-xl bg-surface-1 border border-line pl-10 pr-4 py-3 text-sm text-primary placeholder:text-primary/55 focus:bg-surface focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition"
                   placeholder="tu@correo.com"
                   autoComplete="email"
                 />
@@ -309,7 +309,7 @@ export default function Login() {
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full rounded-xl bg-surface-1 border border-line pl-10 pr-12 py-3 text-sm text-primary placeholder:text-primary/30 focus:bg-surface focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition"
+                  className="w-full rounded-xl bg-surface-1 border border-line pl-10 pr-12 py-3 text-sm text-primary placeholder:text-primary/55 focus:bg-surface focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition"
                   placeholder="••••••••"
                   autoComplete="current-password"
                 />

@@ -563,7 +563,7 @@ export default function RegistrarCobro() {
                   </p>
                 )}
                 {!settings.seguroActivo && (
-                  <p className="text-xs text-primary-light/50">
+                  <p className="text-xs text-primary-light/75">
                     El seguro está desactivado en Configuración — actívalo ahí si esta renovación debe cobrarlo.
                   </p>
                 )}

@@ -201,7 +201,7 @@ export default function DetalleCliente() {
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge status={loan.estado} />
-                    <IconChevronRight size={18} stroke={1.5} className="text-primary-light/50" />
+                    <IconChevronRight size={18} stroke={1.5} className="text-primary-light/75" />
                   </div>
                 </div>
               ))}

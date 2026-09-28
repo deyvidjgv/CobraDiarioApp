@@ -1,6 +1,7 @@
 ﻿import { useNavigate } from 'react-router-dom';
-import { IconChevronLeft, IconLoader2 } from '@tabler/icons-react';
+import { IconChevronLeft, IconLoader2, IconMenu2 } from '@tabler/icons-react';
 import { useAndroidBack } from '../../hooks/useAndroidBack';
+import { useUI } from '../../context/UIContext';
 
 /**
  * Header global de la app.
@@ -22,6 +23,7 @@ export default function Header({
   closeModal = () => {},
 }) {
   const navigate = useNavigate();
+  const { setDrawerOpen } = useUI();
 
   // Se inicializa el hook de Android Back aquí para que cada pantalla que use Header tenga la lógica centralizada
   useAndroidBack({ modalOpen, closeModal, showBack, backTo, loading });
@@ -52,11 +54,14 @@ export default function Header({
             />
           </button>
         ) : (
-          /* Espacio reservado para mantener el título alineado */
-          <div
-            className="w-[30px]"
-            aria-hidden="true"
-          />
+          /* Botón ☰: abre el menú de navegación (SideNav), Admin y Cobradiario por igual */
+          <button
+            type="button"
+            onClick={() => setDrawerOpen(true)}
+            className="p-1 -ml-1 rounded-lg hover:bg-surface-2 transition"
+            aria-label="Abrir menú">
+            <IconMenu2 size={22} stroke={1.5} className="text-primary" />
+          </button>
         )}
 
         <h1 className="font-display text-lg font-semibold flex-1 text-primary tracking-tight truncate">
