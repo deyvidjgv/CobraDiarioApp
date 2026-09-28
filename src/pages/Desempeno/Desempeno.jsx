@@ -80,7 +80,7 @@ export default function Desempeno() {
           <p className="text-sm text-primary-light/70 py-10 text-center">Cargando desempeño...</p>
         ) : filas.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
-            <IconChartBar size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
+            <IconChartBar size={48} stroke={1.5} className="text-primary-light/75 mb-3" />
             <p className="text-primary-light/75 text-sm">No hay cobradiarios registrados</p>
           </div>
         ) : (

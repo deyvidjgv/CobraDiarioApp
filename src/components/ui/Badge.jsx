@@ -2,9 +2,9 @@ const styles = {
   mora: "text-mora",
   al_dia: "text-al-dia",
   adelantado: "text-adelanto",
-  completado: "text-primary/45",
+  completado: "text-primary/65",
   activo: "text-al-dia",
-  anulado: "text-primary/40",
+  anulado: "text-primary/60",
 };
 
 const labels = {

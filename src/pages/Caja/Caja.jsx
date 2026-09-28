@@ -417,7 +417,7 @@ export default function Caja() {
             <p className="text-sm text-primary-light/70 text-center py-10">Cargando...</p>
           ) : movements.length === 0 ? (
             <div className="text-center py-10 flex flex-col items-center gap-2">
-              <IconCashOff size={40} stroke={1.5} className="text-primary-light/50" />
+              <IconCashOff size={40} stroke={1.5} className="text-primary-light/75" />
               <p className="text-sm text-primary-light/70">Sin movimientos ese día</p>
             </div>
           ) : (
@@ -456,7 +456,7 @@ export default function Caja() {
                       </p>
                       <IconChevronDown
                         size={18}
-                        className={`text-primary-light/50 shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
+                        className={`text-primary-light/75 shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`}
                       />
                     </button>
 

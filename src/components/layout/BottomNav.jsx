@@ -125,7 +125,7 @@ export default function BottomNav() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="px-5 py-4 text-left text-[15px] font-medium text-primary/55"
+                className="px-5 py-4 text-left text-[15px] font-medium text-primary/70"
               >
                 Cerrar sesión
               </button>
@@ -146,14 +146,14 @@ export default function BottomNav() {
                   <Icon
                     size={21}
                     stroke={isActive ? 2 : 1.5}
-                    className={isActive ? "text-primary" : "text-primary/45"}
+                    className={isActive ? "text-primary" : "text-primary/65"}
                   />
                   {badge && !isAdmin && <RutaPendientesBadge />}
                 </span>
                 <span
                   className={
                     "text-[11px] " +
-                    (isActive ? "font-bold text-primary" : "font-medium text-primary/45")
+                    (isActive ? "font-bold text-primary" : "font-medium text-primary/65")
                   }
                 >
                   {label}
@@ -168,10 +168,10 @@ export default function BottomNav() {
           className="min-h-[52px] flex flex-col items-center justify-center gap-1"
         >
           <span className="relative">
-            <IconDotsVertical size={21} stroke={1.5} className="text-primary/45" />
+            <IconDotsVertical size={21} stroke={1.5} className="text-primary/65" />
             {isAdmin && <PuntoBadge count={pendingCorrectionsCount} />}
           </span>
-          <span className="text-[11px] font-medium text-primary/45">Más</span>
+          <span className="text-[11px] font-medium text-primary/65">Más</span>
         </button>
       </nav>
     </>

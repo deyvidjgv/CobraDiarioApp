@@ -10,7 +10,7 @@ export default function RouteProgress({ gestionados, total, enMora, montoCobrado
     <div className="rounded-2xl bg-surface-2 border border-line px-5 py-4 flex flex-col gap-3">
       <div className="flex items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-primary/50">
+          <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-primary/70">
             {montoCobrado ? "Cobrado hoy" : "Ruta de hoy"}
           </span>
           <span className="num text-3xl font-semibold text-primary tracking-tight leading-none">

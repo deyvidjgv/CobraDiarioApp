@@ -33,7 +33,7 @@ export default function Cobradiarios() {
           <p className="text-sm text-primary-light/70 py-10 text-center">Cargando cobradiarios...</p>
         ) : cobradiarios.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
-            <IconUsersGroup size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
+            <IconUsersGroup size={48} stroke={1.5} className="text-primary-light/75 mb-3" />
             <p className="text-primary-light/75 text-sm">Aún no has creado ningún cobradiario</p>
           </div>
         ) : (

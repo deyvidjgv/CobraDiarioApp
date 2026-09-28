@@ -35,7 +35,7 @@ export default function Auditoria() {
           <p className="text-sm text-primary-light/70 py-10 text-center">Cargando actividad...</p>
         ) : logs.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
-            <IconHistory size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
+            <IconHistory size={48} stroke={1.5} className="text-primary-light/75 mb-3" />
             <p className="text-primary-light/75 text-sm">Aún no hay actividad registrada</p>
             <p className="text-primary-light/70 text-xs mt-1">
               Los cobros, créditos y correcciones aparecerán aquí.

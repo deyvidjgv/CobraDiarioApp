@@ -18,6 +18,7 @@ import {
   esRespaldoValido,
   resumenRespaldo,
 } from "../src/logic/backup";
+import { MODOS_ORDEN, ordenarSegunPreferencia, moverEnOrden } from "../src/logic/ordenRuta";
 
 describe("round2", () => {
   test("redondea a dos decimales sin errores de coma flotante", () => {
@@ -449,5 +450,43 @@ describe("calcularMoraGlobalAlCierre (incluye la cuota de hoy)", () => {
     const alCierre = calcularMoraGlobalAlCierre(loan, hoy);
     expect(alCierre.estado).toBe("adelantado");
     expect(alCierre.deficit).toBe(-10000);
+  });
+});
+
+describe("ordenRuta", () => {
+  const items = [
+    { id: "a" },
+    { id: "b" },
+    { id: "c" },
+  ];
+
+  test("en modo automático no toca el orden que ya traía la lista", () => {
+    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.AUTOMATICO, ["c", "a", "b"]);
+    expect(resultado.map((i) => i.id)).toEqual(["a", "b", "c"]);
+  });
+
+  test("en modo manual respeta el orden guardado", () => {
+    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["c", "a", "b"]);
+    expect(resultado.map((i) => i.id)).toEqual(["c", "a", "b"]);
+  });
+
+  test("en modo manual sin orden guardado no cambia nada", () => {
+    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, []);
+    expect(resultado.map((i) => i.id)).toEqual(["a", "b", "c"]);
+  });
+
+  test("en modo manual, un id nuevo (sin posición guardada) queda al final", () => {
+    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["b"]);
+    expect(resultado.map((i) => i.id)).toEqual(["b", "a", "c"]);
+  });
+
+  test("moverEnOrden intercambia con el vecino de arriba o abajo", () => {
+    expect(moverEnOrden(["a", "b", "c"], 1, -1)).toEqual(["b", "a", "c"]);
+    expect(moverEnOrden(["a", "b", "c"], 1, 1)).toEqual(["a", "c", "b"]);
+  });
+
+  test("moverEnOrden no hace nada en los bordes", () => {
+    expect(moverEnOrden(["a", "b", "c"], 0, -1)).toEqual(["a", "b", "c"]);
+    expect(moverEnOrden(["a", "b", "c"], 2, 1)).toEqual(["a", "b", "c"]);
   });
 });

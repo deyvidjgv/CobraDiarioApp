@@ -59,7 +59,7 @@ export default function VisitActionSheet({
           <h2 className="text-xl font-bold text-primary tracking-tight">
             {client.nombre || "Cliente"}
           </h2>
-          <p className={"num text-xs " + (enMora ? "text-mora" : "text-primary/50")}>
+          <p className={"num text-xs " + (enMora ? "text-mora" : "text-primary/70")}>
             {item.subtitleSheet}
           </p>
         </div>

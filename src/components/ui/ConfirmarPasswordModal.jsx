@@ -83,7 +83,7 @@ export default function ConfirmarPasswordModal({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Tu contraseña de usuario"
-                className="w-full rounded-xl border border-line bg-surface-1 pl-10 pr-10 py-3 text-sm text-primary placeholder:text-primary/30 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition"
+                className="w-full rounded-xl border border-line bg-surface-1 pl-10 pr-10 py-3 text-sm text-primary placeholder:text-primary/55 focus:outline-none focus:border-gold focus:ring-2 focus:ring-gold/20 transition"
               />
               <button
                 type="button"

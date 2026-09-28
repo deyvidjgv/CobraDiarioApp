@@ -72,7 +72,7 @@ export default function CreditosAdmin() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Buscar por cliente o cobrador"
-            className="w-full rounded-xl bg-surface border border-line pl-10 pr-4 py-3 text-sm text-primary placeholder:text-primary/30 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/20 transition"
+            className="w-full rounded-xl bg-surface border border-line pl-10 pr-4 py-3 text-sm text-primary placeholder:text-primary/55 focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/20 transition"
           />
         </div>
 
@@ -125,7 +125,7 @@ export default function CreditosAdmin() {
           <p className="text-sm text-primary-light/70 py-10 text-center">Cargando créditos...</p>
         ) : filtrados.length === 0 ? (
           <div className="text-center py-16 flex flex-col items-center">
-            <IconFileText size={48} stroke={1.5} className="text-primary-light/50 mb-3" />
+            <IconFileText size={48} stroke={1.5} className="text-primary-light/75 mb-3" />
             <p className="text-primary-light/75 text-sm">No hay créditos con esos filtros</p>
           </div>
         ) : (
@@ -155,7 +155,7 @@ export default function CreditosAdmin() {
                     </span>
                   </p>
                 </div>
-                <IconChevronRight size={18} stroke={1.5} className="text-primary-light/50 shrink-0" />
+                <IconChevronRight size={18} stroke={1.5} className="text-primary-light/75 shrink-0" />
               </button>
             ))}
           </div>
