@@ -154,8 +154,13 @@ La **Ruta del día** es tu lista organizada de cobros programados.
 - **Agrupación por fecha:** Hoy, Mañana, etc.
 - **Orden de ruta — Automático o Manual** (selector arriba de la lista):
   - **Automático:** el sistema ordena cada día: primero clientes en mora (atrasados), después clientes al día
-  - **Manual:** tú armas tu propio recorrido. Usa las flechas ▲▼ de cada fila para subir o bajar a un cliente, o toca su número de posición para llevarlo directo a otro lugar (Primero, Último o un número)
-  - El orden manual es uno solo para toda la ruta: se aplica a Hoy, a los días siguientes y al filtro Mora
+  - **Manual:** tú armas tu propio recorrido. La ruta se ve como **una sola lista con todos tus créditos** (ya no separada por día); cada fila lleva su día de cobro como etiqueta (HOY, MAÑANA, LUNES…), que se mueve junto con la fila. Puedes poner un crédito del lunes arriba de todo
+  - Para mover a un cliente:
+    - **Arrastra** su número de posición hacia arriba o abajo
+    - Usa las flechas ▲▼ de la fila
+    - Toca su número, o abre el menú **···** → **Cambiar posición en la ruta**, y elige Primero, Último o un número
+  - Si estás en Automático y usas **··· → Cambiar posición en la ruta**, la ruta pasa a Manual partiendo del orden que tenías en pantalla
+  - Los filtros Hoy y Mora también muestran tus créditos en tu orden
   - Se guarda por cliente: cuando un cliente renueva, su crédito nuevo conserva el mismo lugar. Los clientes nuevos entran al final
   - **Reiniciar** descarta tu orden y vuelve a empezar desde el orden automático
   - El orden se guarda en tu celular (si cambias de celular, tendrás que armarlo de nuevo)

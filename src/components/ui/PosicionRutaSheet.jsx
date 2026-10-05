@@ -3,9 +3,19 @@ import { useEffect, useState } from "react";
 /**
  * Hoja inferior para llevar un cliente directo a una posición del
  * recorrido manual, sin tener que tocar la flecha veinte veces. Se abre
- * al tocar el número de posición de una fila en Ruta del Día.
+ * al tocar el número de posición de una fila en Ruta del Día, o desde
+ * el menú "···" del cliente. `aviso` explica, en modo automático, que
+ * mover al cliente activa el orden manual.
  */
-export default function PosicionRutaSheet({ open, nombre, posicion, total, onClose, onMover }) {
+export default function PosicionRutaSheet({
+  open,
+  nombre,
+  posicion,
+  total,
+  aviso = null,
+  onClose,
+  onMover,
+}) {
   const [valor, setValor] = useState("");
 
   useEffect(() => {
@@ -18,6 +28,9 @@ export default function PosicionRutaSheet({ open, nombre, posicion, total, onClo
 
   if (!open) return null;
 
+  // Con aviso (modo automático) la posición manual no está a la vista:
+  // no se desactiva ningún destino por coincidir con ella.
+  const actual = aviso ? null : posicion;
   const numero = parseInt(valor, 10);
   const valido = Number.isInteger(numero) && numero >= 1 && numero <= total;
 
@@ -43,16 +56,20 @@ export default function PosicionRutaSheet({ open, nombre, posicion, total, onClo
 
         <div className="flex flex-col gap-1">
           <h2 className="text-xl font-bold text-primary tracking-tight">{nombre || "Cliente"}</h2>
-          <p className="num text-xs text-primary/70">
-            Posición actual {posicion} de {total}
-          </p>
+          {aviso ? (
+            <p className="text-xs text-primary/70 leading-snug">{aviso}</p>
+          ) : (
+            <p className="num text-xs text-primary/70">
+              Posición actual {posicion} de {total}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-2.5">
           <button
             type="button"
             onClick={() => mover(1)}
-            disabled={posicion === 1}
+            disabled={actual === 1}
             className="h-12 rounded-xl bg-surface-2 text-sm font-semibold text-primary disabled:opacity-40"
           >
             Primero
@@ -60,7 +77,7 @@ export default function PosicionRutaSheet({ open, nombre, posicion, total, onClo
           <button
             type="button"
             onClick={() => mover(total)}
-            disabled={posicion === total}
+            disabled={actual === total}
             className="h-12 rounded-xl bg-surface-2 text-sm font-semibold text-primary disabled:opacity-40"
           >
             Último
@@ -83,7 +100,7 @@ export default function PosicionRutaSheet({ open, nombre, posicion, total, onClo
 
         <button
           type="submit"
-          disabled={!valido || numero === posicion}
+          disabled={!valido || numero === actual}
           className="h-14 rounded-2xl bg-gold text-surface-1 font-bold text-base active:scale-[0.99] transition disabled:opacity-40"
         >
           Mover

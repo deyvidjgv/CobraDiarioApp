@@ -25,6 +25,7 @@ import {
   ordenarSegunPreferencia,
   vecinoVisible,
   moverJuntoA,
+  moverArrastrando,
   moverAPosicion,
 } from "../src/logic/ordenRuta";
 
@@ -531,6 +532,22 @@ describe("ordenRuta", () => {
     // Clave desconocida o la misma: no cambia nada
     expect(moverJuntoA(["a", "b"], "a", "a", 1)).toEqual(["a", "b"]);
     expect(moverJuntoA(["a", "b"], "z", "a", -1)).toEqual(["a", "b"]);
+  });
+
+  test("moverArrastrando: bajando queda después de la fila soltada, subiendo antes", () => {
+    const orden = ["a", "b", "c", "d"];
+    // Lista visible completa: soltar "a" sobre "c" la deja después de "c"
+    expect(moverArrastrando(orden, ["a", "b", "c", "d"], 0, 2)).toEqual(["b", "c", "a", "d"]);
+    // Soltar "d" sobre "b" la deja antes de "b"
+    expect(moverArrastrando(orden, ["a", "b", "c", "d"], 3, 1)).toEqual(["a", "d", "b", "c"]);
+    // Sin moverse, o fuera de la lista: no cambia nada
+    expect(moverArrastrando(orden, ["a", "b"], 1, 1)).toEqual(orden);
+    expect(moverArrastrando(orden, ["a", "b"], -1, 0)).toEqual(orden);
+  });
+
+  test("moverArrastrando sobre otra fila del mismo cliente no cambia nada", () => {
+    // "b" tiene dos créditos visibles (filas 1 y 2)
+    expect(moverArrastrando(["a", "b", "c"], ["a", "b", "b", "c"], 1, 2)).toEqual(["a", "b", "c"]);
   });
 
   test("moverAPosicion lleva el cliente a la posición pedida (1 = primero)", () => {

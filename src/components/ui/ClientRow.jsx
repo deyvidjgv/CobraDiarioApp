@@ -1,5 +1,11 @@
 import Badge from "./Badge";
-import { IconDots, IconChevronRight, IconChevronUp, IconChevronDown } from "@tabler/icons-react";
+import {
+  IconDots,
+  IconChevronRight,
+  IconChevronUp,
+  IconChevronDown,
+  IconGripHorizontal,
+} from "@tabler/icons-react";
 
 /**
  * Fila de cliente. Una sola acción primaria: toda la fila abre la pantalla
@@ -9,12 +15,14 @@ import { IconDots, IconChevronRight, IconChevronUp, IconChevronDown } from "@tab
  * Props nuevas:
  *  - onMore: si se pasa, muestra el botón "···" en lugar del chevron
  *  - done: atenúa la fila (gestión ya registrada hoy)
- *  - reorder: { onUp, onDown, canUp, canDown, posicion, onPosicion } — si
- *    se pasa, agrega flechas arriba/abajo a la izquierda y el número de
- *    posición en el recorrido, que al tocarlo permite llevar el cliente
- *    directo a otro lugar (orden manual de Ruta del Día). Flechas en vez
- *    de arrastrar: en la calle, con el celular en una mano y cobertura
- *    floja, un "drag" táctil falla mucho más que un toque.
+ *  - tag: { texto, destacado } — etiqueta corta antes del subtítulo (el
+ *    día de cobro en la lista manual de Ruta del Día)
+ *  - reorder: { onUp, onDown, canUp, canDown, posicion, onPosicion, drag }
+ *    — si se pasa, agrega flechas arriba/abajo a la izquierda y el número
+ *    de posición en el recorrido (orden manual de Ruta del Día). El número
+ *    es también la agarradera: arrastrarlo mueve la fila (`drag`, ver
+ *    ListaOrdenable) y tocarlo permite elegir la posición. Las flechas
+ *    quedan como alternativa de un toque cuando arrastrar no es cómodo.
  */
 export default function ClientRow({
   name,
@@ -25,17 +33,25 @@ export default function ClientRow({
   onClick,
   onMore = null,
   done = false,
+  tag = null,
   reorder = null,
 }) {
   const enMora = status === "mora";
+  const drag = reorder?.drag;
 
   return (
     <div
+      ref={drag?.setNodeRef}
+      style={drag?.style}
       className={
         "w-full flex items-center gap-2 rounded-2xl bg-surface border border-line pr-2 py-3 transition " +
         (reorder ? "pl-2 " : "pl-4 ") +
         (enMora ? "border-l-[3px] border-l-mora border-l-solid " : "") +
-        (done ? "opacity-55 " : "hover:border-primary/25 ")
+        (drag?.isDragging
+          ? "border-gold/60 shadow-xl shadow-black/60 "
+          : done
+          ? "opacity-55 "
+          : "hover:border-primary/25 ")
       }
     >
       {reorder && (
@@ -63,10 +79,21 @@ export default function ClientRow({
           {reorder.posicion != null && (
             <button
               type="button"
+              ref={drag?.handleRef}
+              {...drag?.listeners}
               onClick={reorder.onPosicion}
-              aria-label={"Posición " + reorder.posicion + " de " + name + ", tocar para cambiarla"}
-              className="num min-w-[32px] h-8 px-1.5 rounded-lg border border-line bg-surface-2 text-[12px] font-semibold text-primary/80 hover:text-primary hover:border-primary/25 transition"
+              aria-label={
+                "Posición " + reorder.posicion + " de " + name + ": arrastra para mover o toca para elegir posición"
+              }
+              className={
+                "num min-w-[34px] h-11 px-1 flex flex-col items-center justify-center gap-0.5 rounded-lg border bg-surface-2 text-[12px] font-semibold leading-none transition touch-none select-none " +
+                (drag ? "cursor-grab active:cursor-grabbing " : "") +
+                (drag?.isDragging
+                  ? "border-gold text-gold"
+                  : "border-line text-primary/80 hover:text-primary hover:border-primary/25")
+              }
             >
+              {drag && <IconGripHorizontal size={12} stroke={2} className="opacity-60" />}
               {reorder.posicion}
             </button>
           )}
@@ -83,6 +110,16 @@ export default function ClientRow({
             "num text-[11.5px] mt-0.5 truncate " + (enMora ? "text-mora" : "text-primary/70")
           }
         >
+          {tag && (
+            <span
+              className={
+                "mr-1.5 px-1.5 py-px rounded-md text-[10px] font-semibold uppercase tracking-wide " +
+                (tag.destacado ? "bg-gold/15 text-gold" : "bg-surface-2 text-primary/75")
+              }
+            >
+              {tag.texto}
+            </span>
+          )}
           {subtitle || phone}
         </p>
       </button>

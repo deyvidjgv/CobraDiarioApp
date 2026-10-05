@@ -5,18 +5,18 @@
  * useRutaHoy.js). El cobradiario conoce su calle mejor que cualquier
  * algoritmo — cerca del cliente A, luego el que queda de paso, etc. — así
  * que puede preferir armar su propio recorrido. Ese orden manual es UNO
- * solo para toda la ruta: se aplica a Hoy, a cada día siguiente y al
- * filtro de Mora, cada lista mostrando sus créditos en el orden del
- * recorrido.
+ * solo para toda la ruta: la lista completa y los filtros Hoy y Mora
+ * muestran sus créditos en el orden del recorrido.
  *
  * El orden se guarda por CLIENTE, no por crédito: en cobro diario un
  * cliente renueva seguido, y el crédito nuevo debe heredar el lugar que
  * el cliente ya tenía en la calle en vez de irse al final. Dos créditos
  * del mismo cliente comparten lugar (es la misma casa) y quedan juntos.
  *
- * No requiere arrastrar y soltar (poco confiable en pantallas táctiles en
- * la calle, con cobertura floja): se reordena con flechas arriba/abajo
- * por fila, o llevando un cliente directo a una posición.
+ * En modo manual la ruta se ve como UNA lista con todos los créditos (no
+ * agrupada por día; cada fila lleva su día como etiqueta) y se reordena
+ * arrastrando la fila, con flechas arriba/abajo, o llevando un cliente
+ * directo a una posición.
  */
 export const MODOS_ORDEN = { AUTOMATICO: "automatico", MANUAL: "manual" };
 
@@ -117,6 +117,17 @@ export function moverJuntoA(orden, clave, claveVecina, direccion) {
   const idxVecina = sinClave.indexOf(claveVecina);
   sinClave.splice(direccion < 0 ? idxVecina : idxVecina + 1, 0, clave);
   return sinClave;
+}
+
+/**
+ * Resultado de soltar una fila arrastrada: la de `desde` cae en el lugar
+ * de la de `hasta` dentro de la lista visible. Bajando queda justo
+ * después del cliente sobre el que se soltó; subiendo, justo antes.
+ * Soltarla sobre otra fila del mismo cliente no cambia nada.
+ */
+export function moverArrastrando(orden, clavesVisibles, desde, hasta) {
+  if (desde === hasta || desde < 0 || hasta < 0) return orden;
+  return moverJuntoA(orden, clavesVisibles[desde], clavesVisibles[hasta], hasta > desde ? 1 : -1);
 }
 
 /**

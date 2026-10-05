@@ -1,11 +1,14 @@
 import { useEffect } from "react";
-import { IconPhone, IconBrandWhatsapp, IconMapPin } from "@tabler/icons-react";
+import { IconPhone, IconBrandWhatsapp, IconMapPin, IconArrowsSort } from "@tabler/icons-react";
 
 /**
  * Hoja inferior de acciones de un cliente de la ruta.
  * Orden por frecuencia real de uso: cobrar (primario) → no encontrado →
  * promesa → no pagó. Lo negativo al final y sin color de alarma.
  * Todos los objetivos táctiles ≥ 48px, en la zona natural del pulgar.
+ *
+ * `onOrdenar` (opcional) agrega "Cambiar posición en la ruta"; con
+ * `posicionRuta` muestra además su número actual en el orden manual.
  */
 export default function VisitActionSheet({
   open,
@@ -14,6 +17,8 @@ export default function VisitActionSheet({
   onCobrar,
   onGestion,
   montoCuota = null,
+  onOrdenar = null,
+  posicionRuta = null,
 }) {
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
@@ -88,6 +93,25 @@ export default function VisitActionSheet({
             </button>
           ))}
         </div>
+
+        {onOrdenar && (
+          <div className="flex flex-col gap-2.5">
+            <span className="eyebrow">Ruta</span>
+            <button
+              type="button"
+              onClick={onOrdenar}
+              className="h-[52px] rounded-2xl bg-surface border border-line px-5 flex items-center justify-between gap-3 text-[15px] font-semibold text-primary transition hover:border-primary/25"
+            >
+              <span className="flex items-center gap-2.5">
+                <IconArrowsSort size={18} stroke={1.8} className="text-primary/70" />
+                Cambiar posición en la ruta
+              </span>
+              {posicionRuta != null && (
+                <span className="num text-xs font-medium text-primary/60">#{posicionRuta}</span>
+              )}
+            </button>
+          </div>
+        )}
 
         {(tel || client.ubicacion?.lat) && (
           <div className="flex flex-col gap-2.5">

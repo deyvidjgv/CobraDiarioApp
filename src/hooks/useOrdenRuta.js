@@ -7,6 +7,7 @@ import {
   fusionarConGuardado,
   ordenarSegunPreferencia,
   moverJuntoA,
+  moverArrastrando,
   moverAPosicion,
 } from "../logic/ordenRuta";
 
@@ -51,7 +52,7 @@ function escribir(clave, valor) {
  * sistema) o "manual" (su propio recorrido). La preferencia y el orden
  * armado se guardan por usuario en este dispositivo.
  *
- * @param {object[]} rutaOrdenada - créditos de la ruta en orden automático (useRutaHoy)
+ * @param {object[]} rutaOrdenada - créditos de la ruta en el orden automático que se ve en pantalla
  * @param {boolean} loading - mientras carga no se siembra el orden manual
  */
 export function useOrdenRuta(rutaOrdenada, loading) {
@@ -125,6 +126,9 @@ export function useOrdenRuta(rutaOrdenada, loading) {
     totalPosiciones: ordenVigente.length,
     moverJuntoA: (clave, claveVecina, direccion) =>
       aplicar(moverJuntoA(ordenVigente, clave, claveVecina, direccion)),
+    /** Soltar una fila arrastrada de `desde` a `hasta` (índices en clavesVisibles). */
+    moverArrastrando: (clavesVisibles, desde, hasta) =>
+      aplicar(moverArrastrando(ordenVigente, clavesVisibles, desde, hasta)),
     moverAPosicion: (clave, posicion) => aplicar(moverAPosicion(ordenVigente, clave, posicion)),
     /** Descarta el orden armado y arranca de nuevo desde el automático actual. */
     restablecer: () => guardar(construirOrdenVigente(clavesAutomaticas, [])),
