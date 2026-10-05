@@ -160,7 +160,12 @@ Datos clave:
 - Lista principal agrupada por el próximo día de cobro de cada crédito
   (Hoy, Mañana, y así sucesivamente), con "Ver más" para ir revelando
   días siguientes sin saturar la pantalla
-- Dentro de cada día, ordena por prioridad: mora primero, luego al día
+- Orden de ruta Automático (agrupada por día; dentro de cada día: mora
+  primero, luego al día) o Manual (una sola lista con todos los créditos,
+  cada uno con su día como etiqueta; el cobradiario la reordena
+  arrastrando, con flechas o eligiendo la posición, también desde el menú
+  "···"; cada crédito por separado, la renovación conserva el lugar;
+  guardado en el dispositivo)
 - Filtro "Hoy" (la ruta del día actual) y filtro "Mora" (todos los
   créditos atrasados sin importar cuándo les toque la próxima cuota,
   separados entre mora general y mora que además cobra hoy)

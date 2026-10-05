@@ -5,12 +5,15 @@ import ClientRow from "../../components/ui/ClientRow";
 import RouteProgress from "../../components/ui/RouteProgress";
 import VisitActionSheet from "../../components/ui/VisitActionSheet";
 import UndoToast from "../../components/ui/UndoToast";
+import PosicionRutaSheet from "../../components/ui/PosicionRutaSheet";
+import { ListaOrdenable, FilaOrdenable } from "../../components/ui/ListaOrdenable";
 import { useRutaHoy } from "../../hooks/useRutaHoy";
+import { useOrdenRuta } from "../../hooks/useOrdenRuta";
 import { useMovements } from "../../hooks/useMovements";
 import { RESULTADOS_VISITA } from "../../hooks/useVisits";
 import { useAuth } from "../../context/AuthContext";
 import { formatearMonto } from "../../logic/formato";
-import { MODOS_ORDEN, ordenarSegunPreferencia, moverEnOrden } from "../../logic/ordenRuta";
+import { MODOS_ORDEN, claveDeOrden, vecinoVisible } from "../../logic/ordenRuta";
 import { IconSearch, IconPlus, IconChevronDown } from "@tabler/icons-react";
 
 const ETIQUETA_GESTION = {
@@ -22,16 +25,14 @@ const ETIQUETA_GESTION = {
 const DIAS_INICIALES = 2;
 const DIAS_POR_CLIC = 3;
 
-function claveModoOrden(uid) {
-  return `ruta-modo-orden-${uid}`;
-}
-function claveOrdenManual(uid) {
-  return `ruta-orden-manual-${uid}`;
-}
+// Etiqueta de los créditos sin cuota en el horizonte de la ruta (cuotas
+// ya agotadas): en orden automático no aparecen en la lista por días,
+// pero la lista manual muestra todos.
+const SIN_FECHA = { texto: "Sin fecha", destacado: false };
 
 export default function RutaDelDia() {
   const navigate = useNavigate();
-  const { isAdmin, usuario } = useAuth();
+  const { isAdmin } = useAuth();
   const {
     diasAgrupados,
     moraGeneral,
@@ -56,42 +57,20 @@ export default function RutaDelDia() {
   const [pendiente, setPendiente] = useState(null);
   const timerRef = useRef(null);
 
-  // Orden de la cola de hoy: "automático" (mora primero, decide el
-  // sistema) o "manual" (el cobrador arma su propio recorrido). La
-  // preferencia y el orden armado se guardan por usuario en este
-  // dispositivo — ver logic/ordenRuta.js.
-  const [modoOrden, setModoOrden] = useState(MODOS_ORDEN.AUTOMATICO);
-  const [ordenManual, setOrdenManual] = useState([]);
+  // Lo que se ve en orden automático, aplanado: día por día (Hoy, Mañana,
+  // ...) y al final los créditos sin fecha. Es el punto de partida del
+  // orden manual, para que al cambiar de modo nada salte de lugar.
+  const ordenAutomatico = useMemo(() => {
+    const porDias = diasAgrupados.flatMap((grupo) => grupo.items);
+    const enDias = new Set(porDias.map((item) => item.id));
+    return [...porDias, ...rutaOrdenada.filter((item) => !enDias.has(item.id))];
+  }, [diasAgrupados, rutaOrdenada]);
 
-  useEffect(() => {
-    if (!usuario?.uid) return;
-    try {
-      const modoGuardado = localStorage.getItem(claveModoOrden(usuario.uid));
-      if (modoGuardado === MODOS_ORDEN.MANUAL) setModoOrden(MODOS_ORDEN.MANUAL);
-      const ordenGuardado = localStorage.getItem(claveOrdenManual(usuario.uid));
-      if (ordenGuardado) setOrdenManual(JSON.parse(ordenGuardado));
-    } catch {
-      /* sin almacenamiento: la ruta se ve en orden automático */
-    }
-  }, [usuario?.uid]);
-
-  function cambiarModoOrden(nuevo) {
-    setModoOrden(nuevo);
-    try {
-      if (usuario?.uid) localStorage.setItem(claveModoOrden(usuario.uid), nuevo);
-    } catch {
-      /* sin almacenamiento: la preferencia solo dura esta sesión */
-    }
-  }
-
-  function guardarOrdenManual(nuevosIds) {
-    setOrdenManual(nuevosIds);
-    try {
-      if (usuario?.uid) localStorage.setItem(claveOrdenManual(usuario.uid), JSON.stringify(nuevosIds));
-    } catch {
-      /* sin almacenamiento: el orden solo dura esta sesión */
-    }
-  }
+  // Orden de la ruta: "automático" (mora primero, decide el sistema) o
+  // "manual" (el cobrador arma su propio recorrido, que se aplica a todas
+  // las vistas). Ver hooks/useOrdenRuta.js y logic/ordenRuta.js.
+  const orden = useOrdenRuta(ordenAutomatico, loading);
+  const [posicionItem, setPosicionItem] = useState(null);
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
@@ -121,6 +100,27 @@ export default function RutaDelDia() {
     [diasAgrupados, busqueda]
   );
   const moraGeneralFiltrada = useMemo(() => moraGeneral.filter(coincide), [moraGeneral, busqueda]);
+  // Orden manual: una sola lista con TODOS los créditos, sin agrupar por
+  // día — el cobrador puede poner un crédito del lunes arriba de todo.
+  const listaManual = useMemo(() => ordenAutomatico.filter(coincide), [ordenAutomatico, busqueda]);
+
+  // Día de cobro de cada crédito, como etiqueta de su fila en la lista
+  // manual (el día viaja con la fila al moverla). Pasada una semana el
+  // nombre del día solo es ambiguo, así que se agrega la fecha.
+  const diaPorCredito = useMemo(() => {
+    const hoy = new Date();
+    const dias = new Map();
+    for (const grupo of diasAgrupados) {
+      let texto = grupo.titulo;
+      if (grupo.offset >= 7) {
+        const fecha = new Date(hoy);
+        fecha.setDate(fecha.getDate() + grupo.offset);
+        texto = grupo.titulo.slice(0, 3) + " " + fecha.getDate() + "/" + (fecha.getMonth() + 1);
+      }
+      for (const item of grupo.items) dias.set(item.id, { texto, destacado: grupo.offset === 0 });
+    }
+    return dias;
+  }, [diasAgrupados]);
   const moraHoyFiltrada = useMemo(() => moraHoy.filter(coincide), [moraHoy, busqueda]);
 
   // Reinicia cuántos días se ven al cambiar de filtro o buscar, para no
@@ -135,11 +135,14 @@ export default function RutaDelDia() {
       ? hoyFiltrado.length
       : filtro === "mora"
       ? moraGeneralFiltrada.length + moraHoyFiltrada.length
+      : orden.esManual
+      ? listaManual.length
       : diasMostrados.reduce((acc, g) => acc + g.items.length, 0);
 
   // Dos filtros: Hoy (la ruta del día actual) y Mora (todos los atrasados,
   // sin importar cuándo les toque la próxima cuota). Por defecto (ninguno
-  // activo) se ve la lista completa agrupada por día.
+  // activo) se ve la lista completa: agrupada por día en orden automático,
+  // o una sola lista en el orden del cobrador en manual.
   const chips = [
     { id: "hoy", label: "Hoy", count: pendientesHoy.length },
     { id: "mora", label: "Mora", count: enMoraCount },
@@ -175,7 +178,7 @@ export default function RutaDelDia() {
     setPendiente(null);
   }
 
-  function renderFila(item, reorder = null) {
+  function renderFila(item, reorder = null, tag = null) {
     const visita = visitasHoyPorLoan[item.id];
     const retenida = pendiente?.item.id === item.id;
     const gestionada = Boolean(visita) || retenida;
@@ -197,6 +200,7 @@ export default function RutaDelDia() {
         }
         onClick={() => navigate("/cobro/" + item.id)}
         onMore={gestionada ? null : () => setSheetItem({ ...item, subtitleSheet: subtituloDe(item) })}
+        tag={tag}
         reorder={reorder}
       />
     );
@@ -207,36 +211,69 @@ export default function RutaDelDia() {
   }
 
   /**
-   * Renderiza la cola de "pendientes de hoy": la única sección donde el
-   * orden manual tiene sentido (lo demás ya está gestionado o no toca hoy).
-   * En modo manual muestra flechas arriba/abajo por fila; en automático,
-   * filas normales.
+   * Renderiza una sección de la ruta (la lista manual completa, un día,
+   * pendientes/cobrados de hoy, mora). En modo manual la ordena según el
+   * recorrido del cobrador y la vuelve arrastrable, con flechas y número
+   * de posición por fila. Arrastre y flechas se mueven respecto a las
+   * filas VISIBLES en la sección, pero el cambio se guarda en el orden de
+   * toda la ruta, así que se refleja en las demás vistas.
+   * @param {string} key - identifica la sección (una lista arrastrable por sección)
+   * @param {boolean} conDia - etiqueta cada fila con su día de cobro
    */
-  function renderPendientesHoy(itemsHoyDelDia) {
-    const pendientes = ordenarSegunPreferencia(
-      itemsHoyDelDia.filter((i) => !esGestionadoHoy(i)),
-      modoOrden,
-      ordenManual
+  function renderSeccion(items, key, conDia = false) {
+    const lista = orden.ordenar(items);
+    const tagDe = (item) => (conDia ? diaPorCredito.get(item.id) ?? SIN_FECHA : null);
+    if (!orden.esManual) return lista.map((item) => renderFila(item, null, tagDe(item)));
+    const claves = lista.map(claveDeOrden);
+    return (
+      <ListaOrdenable
+        key={key}
+        ids={lista.map((item) => item.id)}
+        onMover={(desde, hasta) => orden.moverArrastrando(claves, desde, hasta)}
+      >
+        {lista.map((item, idx) => {
+          const clave = claves[idx];
+          const arriba = vecinoVisible(claves, idx, -1);
+          const abajo = vecinoVisible(claves, idx, 1);
+          return (
+            <FilaOrdenable key={item.id} id={item.id}>
+              {(drag) =>
+                renderFila(
+                  item,
+                  {
+                    posicion: orden.posicionDe(clave),
+                    canUp: arriba != null,
+                    canDown: abajo != null,
+                    onUp: () => orden.moverJuntoA(clave, arriba, -1),
+                    onDown: () => orden.moverJuntoA(clave, abajo, 1),
+                    onPosicion: () => setPosicionItem(item),
+                    drag,
+                  },
+                  tagDe(item)
+                )
+              }
+            </FilaOrdenable>
+          );
+        })}
+      </ListaOrdenable>
     );
-    const ids = pendientes.map((i) => i.id);
-    return pendientes.map((item, idx) =>
-      renderFila(
-        item,
-        modoOrden === MODOS_ORDEN.MANUAL
-          ? {
-              canUp: idx > 0,
-              canDown: idx < pendientes.length - 1,
-              onUp: () => guardarOrdenManual(moverEnOrden(ids, idx, -1)),
-              onDown: () => guardarOrdenManual(moverEnOrden(ids, idx, 1)),
-            }
-          : null
-      )
-    );
+  }
+
+  function restablecerOrden() {
+    if (!confirm("¿Descartar tu orden y volver a empezar desde el orden del sistema (mora primero)?")) return;
+    orden.restablecer();
   }
 
   return (
     <div>
-      <Header title="Ruta de hoy" />
+      <Header
+        title="Ruta de hoy"
+        modalOpen={Boolean(sheetItem || posicionItem)}
+        closeModal={() => {
+          setSheetItem(null);
+          setPosicionItem(null);
+        }}
+      />
 
       <div className="py-4 flex flex-col gap-4">
         <RouteProgress
@@ -300,36 +337,47 @@ export default function RutaDelDia() {
           )}
         </div>
 
-        {/* Orden de la cola de hoy: decide el sistema (mora primero) o el
+        {/* Orden de la ruta: decide el sistema (mora primero) o el
             cobrador arma su propio recorrido con flechas por fila. */}
-        <div className="flex items-center gap-2">
-          <span className="eyebrow shrink-0">Orden de hoy</span>
-          <div className="flex rounded-xl border border-line bg-surface p-1 gap-1">
-            <button
-              type="button"
-              onClick={() => cambiarModoOrden(MODOS_ORDEN.AUTOMATICO)}
-              className={
-                "px-3 py-1.5 rounded-lg text-xs font-semibold transition " +
-                (modoOrden === MODOS_ORDEN.AUTOMATICO
-                  ? "bg-gold text-surface-1"
-                  : "text-primary/65 hover:text-primary")
-              }
-            >
-              Automático
-            </button>
-            <button
-              type="button"
-              onClick={() => cambiarModoOrden(MODOS_ORDEN.MANUAL)}
-              className={
-                "px-3 py-1.5 rounded-lg text-xs font-semibold transition " +
-                (modoOrden === MODOS_ORDEN.MANUAL
-                  ? "bg-gold text-surface-1"
-                  : "text-primary/65 hover:text-primary")
-              }
-            >
-              Manual
-            </button>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="eyebrow shrink-0">Orden de ruta</span>
+            <div className="flex rounded-xl border border-line bg-surface p-1 gap-1">
+              {[
+                { modo: MODOS_ORDEN.AUTOMATICO, label: "Automático" },
+                { modo: MODOS_ORDEN.MANUAL, label: "Manual" },
+              ].map((op) => (
+                <button
+                  key={op.modo}
+                  type="button"
+                  aria-pressed={orden.modo === op.modo}
+                  onClick={() => orden.cambiarModo(op.modo)}
+                  className={
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold transition " +
+                    (orden.modo === op.modo
+                      ? "bg-gold text-surface-1"
+                      : "text-primary/65 hover:text-primary")
+                  }
+                >
+                  {op.label}
+                </button>
+              ))}
+            </div>
+            {orden.esManual && rutaOrdenada.length > 0 && (
+              <button
+                type="button"
+                onClick={restablecerOrden}
+                className="ml-auto text-xs font-medium text-primary/60 underline underline-offset-4 shrink-0"
+              >
+                Reiniciar
+              </button>
+            )}
           </div>
+          <p className="text-[11.5px] text-primary/60 leading-snug">
+            {orden.esManual
+              ? "Todos tus créditos en una sola lista. Arrastra el número de cada cliente para moverlo, usa las flechas, o toca el número (o ···) para elegir su posición. Se guarda en este celular."
+              : "El sistema ordena cada día: primero los clientes en mora, luego los que están al día."}
+          </p>
         </div>
 
         {loading ? (
@@ -371,7 +419,7 @@ export default function RutaDelDia() {
                       Pendientes
                       <span className="num text-[10.5px] opacity-50">{pendientesDeHoy.length}</span>
                     </p>
-                    {renderPendientesHoy(hoyFiltrado)}
+                    {renderSeccion(pendientesDeHoy, "pendientes")}
                   </div>
                 )}
                 {cobradosDeHoy.length > 0 && (
@@ -380,7 +428,7 @@ export default function RutaDelDia() {
                       Cobrados hoy
                       <span className="num text-[10.5px] opacity-50">{cobradosDeHoy.length}</span>
                     </p>
-                    {cobradosDeHoy.map((item) => renderFila(item))}
+                    {renderSeccion(cobradosDeHoy, "cobrados")}
                   </div>
                 )}
               </div>
@@ -394,7 +442,7 @@ export default function RutaDelDia() {
                   Mora
                   <span className="num text-[10.5px] opacity-50">{moraGeneralFiltrada.length}</span>
                 </p>
-                {moraGeneralFiltrada.map(renderFila)}
+                {renderSeccion(moraGeneralFiltrada, "mora")}
               </div>
             )}
             {moraHoyFiltrada.length > 0 && (
@@ -403,9 +451,17 @@ export default function RutaDelDia() {
                   Mora · cobro hoy
                   <span className="num text-[10.5px] opacity-50">{moraHoyFiltrada.length}</span>
                 </p>
-                {moraHoyFiltrada.map(renderFila)}
+                {renderSeccion(moraHoyFiltrada, "mora-hoy")}
               </div>
             )}
+          </div>
+        ) : orden.esManual ? (
+          <div className="flex flex-col gap-2">
+            <p className="eyebrow flex items-center gap-2">
+              Mi ruta
+              <span className="num text-[10.5px] opacity-50">{listaManual.length}</span>
+            </p>
+            {renderSeccion(listaManual, "ruta", true)}
           </div>
         ) : (
           <div className="flex flex-col gap-5">
@@ -418,12 +474,14 @@ export default function RutaDelDia() {
                   {grupo.titulo}
                   <span className="num text-[10.5px] opacity-50">{grupo.items.length}</span>
                 </p>
-                {grupo.offset === 0
-                  ? [
-                      ...renderPendientesHoy(grupo.items),
-                      ...grupo.items.filter(esGestionadoHoy).map((item) => renderFila(item)),
-                    ]
-                  : grupo.items.map((item) => renderFila(item))}
+                {grupo.offset === 0 ? (
+                  <>
+                    {renderSeccion(grupo.items.filter((item) => !esGestionadoHoy(item)), "pendientes")}
+                    {renderSeccion(grupo.items.filter(esGestionadoHoy), "gestionados")}
+                  </>
+                ) : (
+                  renderSeccion(grupo.items, "dia")
+                )}
               </div>
             ))}
             {hayMasDias && (
@@ -465,6 +523,31 @@ export default function RutaDelDia() {
           navigate("/cobro/" + id);
         }}
         onGestion={(resultado) => programarGestion(sheetItem, resultado)}
+        onOrdenar={() => {
+          const item = sheetItem;
+          setSheetItem(null);
+          setPosicionItem(item);
+        }}
+        posicionRuta={
+          orden.esManual && sheetItem ? orden.posicionDe(claveDeOrden(sheetItem)) : null
+        }
+      />
+
+      <PosicionRutaSheet
+        open={Boolean(posicionItem)}
+        nombre={posicionItem?.client.nombre}
+        posicion={posicionItem ? orden.posicionDe(claveDeOrden(posicionItem)) : null}
+        total={orden.totalPosiciones}
+        aviso={
+          orden.esManual
+            ? null
+            : "Tu ruta está en orden automático. Al mover a este cliente pasa a orden manual, partiendo del orden actual."
+        }
+        onClose={() => setPosicionItem(null)}
+        onMover={(destino) => {
+          if (!orden.esManual) orden.cambiarModo(MODOS_ORDEN.MANUAL);
+          orden.moverAPosicion(claveDeOrden(posicionItem), destino);
+        }}
       />
 
       <UndoToast
