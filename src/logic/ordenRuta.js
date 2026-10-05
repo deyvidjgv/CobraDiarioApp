@@ -8,10 +8,10 @@
  * solo para toda la ruta: la lista completa y los filtros Hoy y Mora
  * muestran sus créditos en el orden del recorrido.
  *
- * El orden se guarda por CLIENTE, no por crédito: en cobro diario un
- * cliente renueva seguido, y el crédito nuevo debe heredar el lugar que
- * el cliente ya tenía en la calle en vez de irse al final. Dos créditos
- * del mismo cliente comparten lugar (es la misma casa) y quedan juntos.
+ * El orden se guarda por CRÉDITO: cada casilla se mueve sola, aunque el
+ * cliente tenga varios créditos. Al renovar la cartulina (crédito nuevo
+ * con `renovacionDe`), el crédito nuevo hereda el lugar del anterior en
+ * vez de irse al final — ver aplicarRenovaciones.
  *
  * En modo manual la ruta se ve como UNA lista con todos los créditos (no
  * agrupada por día; cada fila lleva su día como etiqueta) y se reordena
@@ -20,8 +20,32 @@
  */
 export const MODOS_ORDEN = { AUTOMATICO: "automatico", MANUAL: "manual" };
 
-/** Clave de orden de un ítem de la ruta: su cliente. */
-export const claveDeOrden = (item) => item.clientId;
+/** Clave de orden de un ítem de la ruta: el crédito. */
+export const claveDeOrden = (item) => item.id;
+
+/**
+ * Orden guardado con las renovaciones aplicadas: el crédito anterior cede
+ * su lugar al crédito nuevo que lo renovó. Si el anterior sigue en la
+ * ruta (se cerró hoy mismo), el nuevo queda justo detrás de él.
+ * @param {string[]} ordenGuardado
+ * @param {Map<string, string>} renovaciones - id anterior → id del crédito nuevo
+ * @param {Set<string>} presentes - ids de los créditos que hoy están en la ruta
+ */
+export function aplicarRenovaciones(ordenGuardado, renovaciones, presentes) {
+  if (renovaciones.size === 0) return ordenGuardado;
+  const guardados = new Set(ordenGuardado);
+  const resultado = [];
+  for (const clave of ordenGuardado) {
+    const nuevo = renovaciones.get(clave);
+    if (!nuevo || guardados.has(nuevo)) {
+      resultado.push(clave);
+      continue;
+    }
+    if (presentes.has(clave)) resultado.push(clave);
+    resultado.push(nuevo);
+  }
+  return resultado;
+}
 
 /**
  * Orden vigente de la ruta: primero las claves del orden guardado que
@@ -29,7 +53,7 @@ export const claveDeOrden = (item) => item.clientId;
  * lugar (clientes nuevos), en el orden automático que ya traían. Las
  * claves guardadas que hoy no están en la ruta no cuentan aquí (pero
  * no se borran del guardado, ver fusionarConGuardado).
- * @param {string[]} clavesAutomaticas - claves en orden automático (puede haber repetidas)
+ * @param {string[]} clavesAutomaticas - claves en orden automático
  * @param {string[]} ordenGuardado - claves en el orden armado por el cobradiario
  */
 export function construirOrdenVigente(clavesAutomaticas, ordenGuardado = []) {
@@ -47,9 +71,8 @@ export function construirOrdenVigente(clavesAutomaticas, ordenGuardado = []) {
 /**
  * Orden a guardar tras reordenar: el nuevo orden vigente, con cada clave
  * que hoy no está en la ruta colgada detrás de la que la precedía en el
- * guardado. Así un cliente que terminó su crédito y renueva unos días
- * después recupera su lugar en la calle, y una lista incompleta (caché
- * offline a medio sincronizar) no borra lugares ya armados.
+ * guardado. Así una lista incompleta (caché offline a medio sincronizar)
+ * no borra lugares ya armados.
  */
 export function fusionarConGuardado(ordenGuardado, ordenVigente) {
   const vigentes = new Set(ordenVigente);
@@ -90,8 +113,7 @@ export function ordenarSegunPreferencia(items, modo, orden, clave = claveDeOrden
 
 /**
  * Vecino visible de una fila: la clave más cercana arriba (-1) o abajo
- * (+1) que sea de OTRO cliente. Las filas de un mismo cliente comparten
- * lugar, así que "subir" debe saltar por encima de las suyas propias.
+ * (+1) distinta de la propia.
  * @param {string[]} clavesVisibles - claves en el orden que se está mostrando
  * @returns {string | null} null si no hay a dónde moverse
  */
@@ -105,9 +127,9 @@ export function vecinoVisible(clavesVisibles, index, direccion) {
 
 /**
  * Mueve `clave` justo antes (-1) o justo después (+1) de `claveVecina`
- * dentro del orden completo. Solo cambia de lugar la clave movida: los
- * demás conservan su orden relativo, aunque no estén a la vista (otro
- * día, filtro de búsqueda, etc.).
+ * dentro del orden completo. Solo cambia de lugar la clave movida: las
+ * demás conservan su orden relativo, aunque no estén a la vista
+ * (filtro de búsqueda, etc.).
  */
 export function moverJuntoA(orden, clave, claveVecina, direccion) {
   if (clave === claveVecina || !orden.includes(clave) || !orden.includes(claveVecina)) {
@@ -122,8 +144,7 @@ export function moverJuntoA(orden, clave, claveVecina, direccion) {
 /**
  * Resultado de soltar una fila arrastrada: la de `desde` cae en el lugar
  * de la de `hasta` dentro de la lista visible. Bajando queda justo
- * después del cliente sobre el que se soltó; subiendo, justo antes.
- * Soltarla sobre otra fila del mismo cliente no cambia nada.
+ * después de la fila sobre la que se soltó; subiendo, justo antes.
  */
 export function moverArrastrando(orden, clavesVisibles, desde, hasta) {
   if (desde === hasta || desde < 0 || hasta < 0) return orden;

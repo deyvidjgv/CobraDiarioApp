@@ -161,7 +161,7 @@ La **Ruta del día** es tu lista organizada de cobros programados.
     - Toca su número, o abre el menú **···** → **Cambiar posición en la ruta**, y elige Primero, Último o un número
   - Si estás en Automático y usas **··· → Cambiar posición en la ruta**, la ruta pasa a Manual partiendo del orden que tenías en pantalla
   - Los filtros Hoy y Mora también muestran tus créditos en tu orden
-  - Se guarda por cliente: cuando un cliente renueva, su crédito nuevo conserva el mismo lugar. Los clientes nuevos entran al final
+  - Cada crédito se ordena por separado, aunque el cliente tenga varios. Al renovar la cartulina, el crédito nuevo conserva el lugar del anterior. Los créditos nuevos entran al final
   - **Reiniciar** descarta tu orden y vuelve a empezar desde el orden automático
   - El orden se guarda en tu celular (si cambias de celular, tendrás que armarlo de nuevo)
 - **Botón GPS:** Abre Google Maps con la ubicación del cliente

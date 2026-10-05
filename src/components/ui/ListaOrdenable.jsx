@@ -33,6 +33,10 @@ export function ListaOrdenable({ ids, onMover, children }) {
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
+      // Desplazamiento automático suave y solo vertical al acercar el dedo
+      // al borde: con el valor por defecto la lista corría tan rápido que
+      // la fila caía más lejos de donde se apuntaba.
+      autoScroll={{ threshold: { x: 0, y: 0.15 }, acceleration: 4 }}
       onDragEnd={alSoltar}
       accessibility={{
         announcements: anuncios,

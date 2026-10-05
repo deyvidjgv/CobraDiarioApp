@@ -20,6 +20,7 @@ import {
 } from "../src/logic/backup";
 import {
   MODOS_ORDEN,
+  aplicarRenovaciones,
   construirOrdenVigente,
   fusionarConGuardado,
   ordenarSegunPreferencia,
@@ -463,22 +464,25 @@ describe("calcularMoraGlobalAlCierre (incluye la cuota de hoy)", () => {
 });
 
 describe("ordenRuta", () => {
-  // Ítems de la ruta en orden automático; el orden manual va por cliente.
+  // Ítems de la ruta en orden automático; el orden manual va por crédito.
   const items = [
     { id: "l1", clientId: "a" },
     { id: "l2", clientId: "b" },
-    { id: "l3", clientId: "c" },
+    { id: "l3", clientId: "a" }, // segundo crédito del mismo cliente
   ];
   const ids = (lista) => lista.map((i) => i.id);
 
   test("en modo automático no toca el orden que ya traía la lista", () => {
-    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.AUTOMATICO, ["c", "a", "b"]);
+    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.AUTOMATICO, ["l3", "l1", "l2"]);
     expect(ids(resultado)).toEqual(["l1", "l2", "l3"]);
   });
 
-  test("en modo manual respeta el orden guardado por cliente", () => {
-    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["c", "a", "b"]);
-    expect(ids(resultado)).toEqual(["l3", "l1", "l2"]);
+  test("en modo manual respeta el orden guardado, crédito por crédito", () => {
+    // Los dos créditos del cliente "a" quedan separados si así se ordenaron
+    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["l1", "l2", "l3"]);
+    expect(ids(resultado)).toEqual(["l1", "l2", "l3"]);
+    const otro = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["l3", "l2", "l1"]);
+    expect(ids(otro)).toEqual(["l3", "l2", "l1"]);
   });
 
   test("en modo manual sin orden guardado no cambia nada", () => {
@@ -486,15 +490,35 @@ describe("ordenRuta", () => {
     expect(ids(resultado)).toEqual(["l1", "l2", "l3"]);
   });
 
-  test("en modo manual, un cliente sin posición guardada queda al final", () => {
-    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["b"]);
+  test("en modo manual, un crédito sin posición guardada queda al final", () => {
+    const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["l2"]);
     expect(ids(resultado)).toEqual(["l2", "l1", "l3"]);
   });
 
-  test("un crédito renovado hereda el lugar de su cliente", () => {
-    const renovado = [{ id: "l9", clientId: "c" }, ...items.slice(0, 2)];
-    const resultado = ordenarSegunPreferencia(renovado, MODOS_ORDEN.MANUAL, ["c", "a", "b"]);
-    expect(ids(resultado)).toEqual(["l9", "l1", "l2"]);
+  test("mover un crédito no arrastra a los otros créditos del mismo cliente", () => {
+    // l1 y l3 son del mismo cliente: subir l3 al primer lugar solo mueve l3
+    expect(moverAPosicion(["l1", "l2", "l3"], "l3", 1)).toEqual(["l3", "l1", "l2"]);
+    expect(moverArrastrando(["l1", "l2", "l3"], ["l1", "l2", "l3"], 2, 1)).toEqual(["l1", "l3", "l2"]);
+  });
+
+  test("al renovar la cartulina, el crédito nuevo hereda el lugar del anterior", () => {
+    // l2 se renovó en l9: l2 ya no está en la ruta, l9 toma su lugar
+    const renovaciones = new Map([["l2", "l9"]]);
+    expect(aplicarRenovaciones(["l1", "l2", "l3"], renovaciones, new Set(["l1", "l3", "l9"]))).toEqual([
+      "l1",
+      "l9",
+      "l3",
+    ]);
+    // Si el anterior sigue en la ruta (se cerró hoy), el nuevo va justo detrás
+    expect(
+      aplicarRenovaciones(["l1", "l2", "l3"], renovaciones, new Set(["l1", "l2", "l3", "l9"]))
+    ).toEqual(["l1", "l2", "l9", "l3"]);
+    // Si el nuevo ya tiene lugar propio, no se toca
+    expect(aplicarRenovaciones(["l9", "l1", "l2"], renovaciones, new Set(["l1", "l9"]))).toEqual([
+      "l9",
+      "l1",
+      "l2",
+    ]);
   });
 
   test("construirOrdenVigente: guardados presentes, luego nuevos en orden automático", () => {
@@ -504,20 +528,20 @@ describe("ordenRuta", () => {
       "b",
       "d",
     ]);
-    // Un cliente con dos créditos aparece una sola vez
+    // Una clave repetida aparece una sola vez
     expect(construirOrdenVigente(["a", "a", "b"], [])).toEqual(["a", "b"]);
   });
 
   test("fusionarConGuardado conserva a los ausentes detrás de quien los precedía", () => {
-    // "x" terminó su crédito: no está en la ruta, pero estaba detrás de "a"
+    // "x" terminó: no está en la ruta, pero estaba detrás de "a"
     const guardado = ["a", "x", "b", "c"];
-    const vigenteNuevo = ["b", "a", "c"]; // el cobrador subió a "b"
+    const vigenteNuevo = ["b", "a", "c"]; // el cobradiario subió a "b"
     expect(fusionarConGuardado(guardado, vigenteNuevo)).toEqual(["b", "a", "x", "c"]);
     // Ausentes al inicio se quedan al inicio
     expect(fusionarConGuardado(["x", "a", "b"], ["b", "a"])).toEqual(["x", "b", "a"]);
   });
 
-  test("vecinoVisible salta las filas del mismo cliente", () => {
+  test("vecinoVisible salta las filas con la misma clave", () => {
     const claves = ["a", "b", "b", "c"];
     expect(vecinoVisible(claves, 2, -1)).toBe("a");
     expect(vecinoVisible(claves, 1, 1)).toBe("c");
@@ -525,7 +549,7 @@ describe("ordenRuta", () => {
     expect(vecinoVisible(claves, 3, 1)).toBe(null);
   });
 
-  test("moverJuntoA solo cambia de lugar al cliente movido", () => {
+  test("moverJuntoA solo cambia de lugar al crédito movido", () => {
     // La sección visible es [a, c]: "c" sube por encima de "a" y "b" no se mueve de su lugar relativo
     expect(moverJuntoA(["a", "b", "c", "d"], "c", "a", -1)).toEqual(["c", "a", "b", "d"]);
     expect(moverJuntoA(["a", "b", "c", "d"], "a", "c", 1)).toEqual(["b", "c", "a", "d"]);
@@ -545,12 +569,7 @@ describe("ordenRuta", () => {
     expect(moverArrastrando(orden, ["a", "b"], -1, 0)).toEqual(orden);
   });
 
-  test("moverArrastrando sobre otra fila del mismo cliente no cambia nada", () => {
-    // "b" tiene dos créditos visibles (filas 1 y 2)
-    expect(moverArrastrando(["a", "b", "c"], ["a", "b", "b", "c"], 1, 2)).toEqual(["a", "b", "c"]);
-  });
-
-  test("moverAPosicion lleva el cliente a la posición pedida (1 = primero)", () => {
+  test("moverAPosicion lleva el crédito a la posición pedida (1 = primero)", () => {
     expect(moverAPosicion(["a", "b", "c", "d"], "d", 1)).toEqual(["d", "a", "b", "c"]);
     expect(moverAPosicion(["a", "b", "c", "d"], "a", 3)).toEqual(["b", "c", "a", "d"]);
     // Fuera de rango se ajusta al primero o al último
