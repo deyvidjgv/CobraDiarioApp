@@ -9,10 +9,12 @@ import { IconDots, IconChevronRight, IconChevronUp, IconChevronDown } from "@tab
  * Props nuevas:
  *  - onMore: si se pasa, muestra el botón "···" en lugar del chevron
  *  - done: atenúa la fila (gestión ya registrada hoy)
- *  - reorder: { onUp, onDown, canUp, canDown } — si se pasa, agrega
- *    flechas arriba/abajo a la izquierda (orden manual de Ruta del Día).
- *    Flechas en vez de arrastrar: en la calle, con el celular en una mano
- *    y cobertura floja, un "drag" táctil falla mucho más que un toque.
+ *  - reorder: { onUp, onDown, canUp, canDown, posicion, onPosicion } — si
+ *    se pasa, agrega flechas arriba/abajo a la izquierda y el número de
+ *    posición en el recorrido, que al tocarlo permite llevar el cliente
+ *    directo a otro lugar (orden manual de Ruta del Día). Flechas en vez
+ *    de arrastrar: en la calle, con el celular en una mano y cobertura
+ *    floja, un "drag" táctil falla mucho más que un toque.
  */
 export default function ClientRow({
   name,
@@ -37,25 +39,37 @@ export default function ClientRow({
       }
     >
       {reorder && (
-        <div className="flex flex-col shrink-0">
-          <button
-            type="button"
-            onClick={reorder.onUp}
-            disabled={!reorder.canUp}
-            aria-label={"Subir " + name}
-            className="w-7 h-6 flex items-center justify-center rounded-md text-primary/60 hover:text-primary hover:bg-surface-2 disabled:opacity-25 disabled:pointer-events-none transition"
-          >
-            <IconChevronUp size={15} stroke={2} />
-          </button>
-          <button
-            type="button"
-            onClick={reorder.onDown}
-            disabled={!reorder.canDown}
-            aria-label={"Bajar " + name}
-            className="w-7 h-6 flex items-center justify-center rounded-md text-primary/60 hover:text-primary hover:bg-surface-2 disabled:opacity-25 disabled:pointer-events-none transition"
-          >
-            <IconChevronDown size={15} stroke={2} />
-          </button>
+        <div className="flex items-center gap-1 shrink-0">
+          <div className="flex flex-col">
+            <button
+              type="button"
+              onClick={reorder.onUp}
+              disabled={!reorder.canUp}
+              aria-label={"Subir " + name}
+              className="w-8 h-6 flex items-center justify-center rounded-md text-primary/60 hover:text-primary hover:bg-surface-2 disabled:opacity-25 disabled:pointer-events-none transition"
+            >
+              <IconChevronUp size={15} stroke={2} />
+            </button>
+            <button
+              type="button"
+              onClick={reorder.onDown}
+              disabled={!reorder.canDown}
+              aria-label={"Bajar " + name}
+              className="w-8 h-6 flex items-center justify-center rounded-md text-primary/60 hover:text-primary hover:bg-surface-2 disabled:opacity-25 disabled:pointer-events-none transition"
+            >
+              <IconChevronDown size={15} stroke={2} />
+            </button>
+          </div>
+          {reorder.posicion != null && (
+            <button
+              type="button"
+              onClick={reorder.onPosicion}
+              aria-label={"Posición " + reorder.posicion + " de " + name + ", tocar para cambiarla"}
+              className="num min-w-[32px] h-8 px-1.5 rounded-lg border border-line bg-surface-2 text-[12px] font-semibold text-primary/80 hover:text-primary hover:border-primary/25 transition"
+            >
+              {reorder.posicion}
+            </button>
+          )}
         </div>
       )}
       <button

@@ -18,7 +18,15 @@ import {
   esRespaldoValido,
   resumenRespaldo,
 } from "../src/logic/backup";
-import { MODOS_ORDEN, ordenarSegunPreferencia, moverEnOrden } from "../src/logic/ordenRuta";
+import {
+  MODOS_ORDEN,
+  construirOrdenVigente,
+  fusionarConGuardado,
+  ordenarSegunPreferencia,
+  vecinoVisible,
+  moverJuntoA,
+  moverAPosicion,
+} from "../src/logic/ordenRuta";
 
 describe("round2", () => {
   test("redondea a dos decimales sin errores de coma flotante", () => {
@@ -454,39 +462,82 @@ describe("calcularMoraGlobalAlCierre (incluye la cuota de hoy)", () => {
 });
 
 describe("ordenRuta", () => {
+  // Ítems de la ruta en orden automático; el orden manual va por cliente.
   const items = [
-    { id: "a" },
-    { id: "b" },
-    { id: "c" },
+    { id: "l1", clientId: "a" },
+    { id: "l2", clientId: "b" },
+    { id: "l3", clientId: "c" },
   ];
+  const ids = (lista) => lista.map((i) => i.id);
 
   test("en modo automático no toca el orden que ya traía la lista", () => {
     const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.AUTOMATICO, ["c", "a", "b"]);
-    expect(resultado.map((i) => i.id)).toEqual(["a", "b", "c"]);
+    expect(ids(resultado)).toEqual(["l1", "l2", "l3"]);
   });
 
-  test("en modo manual respeta el orden guardado", () => {
+  test("en modo manual respeta el orden guardado por cliente", () => {
     const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["c", "a", "b"]);
-    expect(resultado.map((i) => i.id)).toEqual(["c", "a", "b"]);
+    expect(ids(resultado)).toEqual(["l3", "l1", "l2"]);
   });
 
   test("en modo manual sin orden guardado no cambia nada", () => {
     const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, []);
-    expect(resultado.map((i) => i.id)).toEqual(["a", "b", "c"]);
+    expect(ids(resultado)).toEqual(["l1", "l2", "l3"]);
   });
 
-  test("en modo manual, un id nuevo (sin posición guardada) queda al final", () => {
+  test("en modo manual, un cliente sin posición guardada queda al final", () => {
     const resultado = ordenarSegunPreferencia(items, MODOS_ORDEN.MANUAL, ["b"]);
-    expect(resultado.map((i) => i.id)).toEqual(["b", "a", "c"]);
+    expect(ids(resultado)).toEqual(["l2", "l1", "l3"]);
   });
 
-  test("moverEnOrden intercambia con el vecino de arriba o abajo", () => {
-    expect(moverEnOrden(["a", "b", "c"], 1, -1)).toEqual(["b", "a", "c"]);
-    expect(moverEnOrden(["a", "b", "c"], 1, 1)).toEqual(["a", "c", "b"]);
+  test("un crédito renovado hereda el lugar de su cliente", () => {
+    const renovado = [{ id: "l9", clientId: "c" }, ...items.slice(0, 2)];
+    const resultado = ordenarSegunPreferencia(renovado, MODOS_ORDEN.MANUAL, ["c", "a", "b"]);
+    expect(ids(resultado)).toEqual(["l9", "l1", "l2"]);
   });
 
-  test("moverEnOrden no hace nada en los bordes", () => {
-    expect(moverEnOrden(["a", "b", "c"], 0, -1)).toEqual(["a", "b", "c"]);
-    expect(moverEnOrden(["a", "b", "c"], 2, 1)).toEqual(["a", "b", "c"]);
+  test("construirOrdenVigente: guardados presentes, luego nuevos en orden automático", () => {
+    expect(construirOrdenVigente(["a", "b", "c", "d"], ["c", "x", "a"])).toEqual([
+      "c",
+      "a",
+      "b",
+      "d",
+    ]);
+    // Un cliente con dos créditos aparece una sola vez
+    expect(construirOrdenVigente(["a", "a", "b"], [])).toEqual(["a", "b"]);
+  });
+
+  test("fusionarConGuardado conserva a los ausentes detrás de quien los precedía", () => {
+    // "x" terminó su crédito: no está en la ruta, pero estaba detrás de "a"
+    const guardado = ["a", "x", "b", "c"];
+    const vigenteNuevo = ["b", "a", "c"]; // el cobrador subió a "b"
+    expect(fusionarConGuardado(guardado, vigenteNuevo)).toEqual(["b", "a", "x", "c"]);
+    // Ausentes al inicio se quedan al inicio
+    expect(fusionarConGuardado(["x", "a", "b"], ["b", "a"])).toEqual(["x", "b", "a"]);
+  });
+
+  test("vecinoVisible salta las filas del mismo cliente", () => {
+    const claves = ["a", "b", "b", "c"];
+    expect(vecinoVisible(claves, 2, -1)).toBe("a");
+    expect(vecinoVisible(claves, 1, 1)).toBe("c");
+    expect(vecinoVisible(claves, 0, -1)).toBe(null);
+    expect(vecinoVisible(claves, 3, 1)).toBe(null);
+  });
+
+  test("moverJuntoA solo cambia de lugar al cliente movido", () => {
+    // La sección visible es [a, c]: "c" sube por encima de "a" y "b" no se mueve de su lugar relativo
+    expect(moverJuntoA(["a", "b", "c", "d"], "c", "a", -1)).toEqual(["c", "a", "b", "d"]);
+    expect(moverJuntoA(["a", "b", "c", "d"], "a", "c", 1)).toEqual(["b", "c", "a", "d"]);
+    // Clave desconocida o la misma: no cambia nada
+    expect(moverJuntoA(["a", "b"], "a", "a", 1)).toEqual(["a", "b"]);
+    expect(moverJuntoA(["a", "b"], "z", "a", -1)).toEqual(["a", "b"]);
+  });
+
+  test("moverAPosicion lleva el cliente a la posición pedida (1 = primero)", () => {
+    expect(moverAPosicion(["a", "b", "c", "d"], "d", 1)).toEqual(["d", "a", "b", "c"]);
+    expect(moverAPosicion(["a", "b", "c", "d"], "a", 3)).toEqual(["b", "c", "a", "d"]);
+    // Fuera de rango se ajusta al primero o al último
+    expect(moverAPosicion(["a", "b", "c"], "b", 99)).toEqual(["a", "c", "b"]);
+    expect(moverAPosicion(["a", "b", "c"], "b", 0)).toEqual(["b", "a", "c"]);
   });
 });

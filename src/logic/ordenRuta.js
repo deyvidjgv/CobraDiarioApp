@@ -1,47 +1,132 @@
 /**
- * Orden de la cola de HOY en Ruta del Día.
+ * Orden de la ruta del cobradiario.
  *
  * Por defecto el sistema decide (mora primero, ver compararPrioridad en
  * useRutaHoy.js). El cobradiario conoce su calle mejor que cualquier
  * algoritmo — cerca del cliente A, luego el que queda de paso, etc. — así
- * que puede preferir armar su propio orden de visita. Esa preferencia
- * solo aplica a la cola de hoy (lo único que se trabaja en el momento);
- * mañana, mora general, etc. siguen ordenados automáticamente.
+ * que puede preferir armar su propio recorrido. Ese orden manual es UNO
+ * solo para toda la ruta: se aplica a Hoy, a cada día siguiente y al
+ * filtro de Mora, cada lista mostrando sus créditos en el orden del
+ * recorrido.
  *
- * El orden manual se guarda como una lista de ids de crédito. No requiere
- * arrastrar y soltar (poco confiable en pantallas táctiles en la calle,
- * con cobertura floja): se reordena con flechas arriba/abajo por fila.
+ * El orden se guarda por CLIENTE, no por crédito: en cobro diario un
+ * cliente renueva seguido, y el crédito nuevo debe heredar el lugar que
+ * el cliente ya tenía en la calle en vez de irse al final. Dos créditos
+ * del mismo cliente comparten lugar (es la misma casa) y quedan juntos.
+ *
+ * No requiere arrastrar y soltar (poco confiable en pantallas táctiles en
+ * la calle, con cobertura floja): se reordena con flechas arriba/abajo
+ * por fila, o llevando un cliente directo a una posición.
  */
 export const MODOS_ORDEN = { AUTOMATICO: "automatico", MANUAL: "manual" };
 
+/** Clave de orden de un ítem de la ruta: su cliente. */
+export const claveDeOrden = (item) => item.clientId;
+
 /**
- * Aplica el orden manual guardado sobre una lista ya en orden automático.
- * Los ítems sin posición guardada (créditos nuevos, por ejemplo) quedan al
- * final, en el orden automático que ya traían entre ellos.
+ * Orden vigente de la ruta: primero las claves del orden guardado que
+ * siguen en la ruta, en ese orden; al final las que todavía no tienen
+ * lugar (clientes nuevos), en el orden automático que ya traían. Las
+ * claves guardadas que hoy no están en la ruta no cuentan aquí (pero
+ * no se borran del guardado, ver fusionarConGuardado).
+ * @param {string[]} clavesAutomaticas - claves en orden automático (puede haber repetidas)
+ * @param {string[]} ordenGuardado - claves en el orden armado por el cobradiario
  */
-export function ordenarSegunPreferencia(items, modo, ordenGuardado) {
-  if (modo !== MODOS_ORDEN.MANUAL || !ordenGuardado || ordenGuardado.length === 0) {
+export function construirOrdenVigente(clavesAutomaticas, ordenGuardado = []) {
+  const presentes = new Set(clavesAutomaticas);
+  const vistas = new Set();
+  const orden = [];
+  for (const clave of [...ordenGuardado, ...clavesAutomaticas]) {
+    if (!presentes.has(clave) || vistas.has(clave)) continue;
+    vistas.add(clave);
+    orden.push(clave);
+  }
+  return orden;
+}
+
+/**
+ * Orden a guardar tras reordenar: el nuevo orden vigente, con cada clave
+ * que hoy no está en la ruta colgada detrás de la que la precedía en el
+ * guardado. Así un cliente que terminó su crédito y renueva unos días
+ * después recupera su lugar en la calle, y una lista incompleta (caché
+ * offline a medio sincronizar) no borra lugares ya armados.
+ */
+export function fusionarConGuardado(ordenGuardado, ordenVigente) {
+  const vigentes = new Set(ordenVigente);
+  const colgadas = new Map(); // clave vigente (null = inicio) → ausentes que la seguían
+  const vistas = new Set();
+  let ancla = null;
+  for (const clave of ordenGuardado) {
+    if (vigentes.has(clave)) {
+      ancla = clave;
+      continue;
+    }
+    if (vistas.has(clave)) continue;
+    vistas.add(clave);
+    if (!colgadas.has(ancla)) colgadas.set(ancla, []);
+    colgadas.get(ancla).push(clave);
+  }
+  const resultado = [...(colgadas.get(null) ?? [])];
+  for (const clave of ordenVigente) resultado.push(clave, ...(colgadas.get(clave) ?? []));
+  return resultado;
+}
+
+/**
+ * Aplica el orden manual sobre una lista ya en orden automático. Los
+ * ítems sin posición en el orden quedan al final, en el orden automático
+ * que ya traían entre ellos (el sort es estable).
+ */
+export function ordenarSegunPreferencia(items, modo, orden, clave = claveDeOrden) {
+  if (modo !== MODOS_ORDEN.MANUAL || !orden || orden.length === 0) {
     return items;
   }
-  const posicion = new Map(ordenGuardado.map((id, i) => [id, i]));
+  const posicion = new Map(orden.map((c, i) => [c, i]));
   return [...items].sort((a, b) => {
-    const pa = posicion.has(a.id) ? posicion.get(a.id) : Infinity;
-    const pb = posicion.has(b.id) ? posicion.get(b.id) : Infinity;
+    const pa = posicion.has(clave(a)) ? posicion.get(clave(a)) : Infinity;
+    const pb = posicion.has(clave(b)) ? posicion.get(clave(b)) : Infinity;
     return pa - pb;
   });
 }
 
 /**
- * Intercambia un ítem con su vecino (arriba o abajo) dentro de la lista de
- * ids visible actualmente, y devuelve el nuevo orden completo a guardar.
- * @param {string[]} idsVisibles - ids en el orden que se está mostrando
- * @param {number} index - posición del ítem a mover
- * @param {1 | -1} direccion - -1 sube, +1 baja
+ * Vecino visible de una fila: la clave más cercana arriba (-1) o abajo
+ * (+1) que sea de OTRO cliente. Las filas de un mismo cliente comparten
+ * lugar, así que "subir" debe saltar por encima de las suyas propias.
+ * @param {string[]} clavesVisibles - claves en el orden que se está mostrando
+ * @returns {string | null} null si no hay a dónde moverse
  */
-export function moverEnOrden(idsVisibles, index, direccion) {
-  const destino = index + direccion;
-  if (destino < 0 || destino >= idsVisibles.length) return idsVisibles;
-  const nuevos = [...idsVisibles];
-  [nuevos[index], nuevos[destino]] = [nuevos[destino], nuevos[index]];
-  return nuevos;
+export function vecinoVisible(clavesVisibles, index, direccion) {
+  const propia = clavesVisibles[index];
+  for (let i = index + direccion; i >= 0 && i < clavesVisibles.length; i += direccion) {
+    if (clavesVisibles[i] !== propia) return clavesVisibles[i];
+  }
+  return null;
+}
+
+/**
+ * Mueve `clave` justo antes (-1) o justo después (+1) de `claveVecina`
+ * dentro del orden completo. Solo cambia de lugar la clave movida: los
+ * demás conservan su orden relativo, aunque no estén a la vista (otro
+ * día, filtro de búsqueda, etc.).
+ */
+export function moverJuntoA(orden, clave, claveVecina, direccion) {
+  if (clave === claveVecina || !orden.includes(clave) || !orden.includes(claveVecina)) {
+    return orden;
+  }
+  const sinClave = orden.filter((c) => c !== clave);
+  const idxVecina = sinClave.indexOf(claveVecina);
+  sinClave.splice(direccion < 0 ? idxVecina : idxVecina + 1, 0, clave);
+  return sinClave;
+}
+
+/**
+ * Lleva `clave` a una posición del recorrido (1 = primero). Posiciones
+ * fuera de rango se ajustan al primero o al último.
+ */
+export function moverAPosicion(orden, clave, posicion) {
+  if (!orden.includes(clave)) return orden;
+  const sinClave = orden.filter((c) => c !== clave);
+  const destino = Math.min(Math.max(Math.trunc(posicion) - 1, 0), sinClave.length);
+  sinClave.splice(destino, 0, clave);
+  return sinClave;
 }

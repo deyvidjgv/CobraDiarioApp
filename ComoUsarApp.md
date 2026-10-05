@@ -152,9 +152,13 @@ La **Ruta del día** es tu lista organizada de cobros programados.
 ### Cómo funciona
 
 - **Agrupación por fecha:** Hoy, Mañana, etc.
-- **Ordenamiento por prioridad:**
-  - Primero: clientes en mora (atrasados)
-  - Después: clientes al día
+- **Orden de ruta — Automático o Manual** (selector arriba de la lista):
+  - **Automático:** el sistema ordena cada día: primero clientes en mora (atrasados), después clientes al día
+  - **Manual:** tú armas tu propio recorrido. Usa las flechas ▲▼ de cada fila para subir o bajar a un cliente, o toca su número de posición para llevarlo directo a otro lugar (Primero, Último o un número)
+  - El orden manual es uno solo para toda la ruta: se aplica a Hoy, a los días siguientes y al filtro Mora
+  - Se guarda por cliente: cuando un cliente renueva, su crédito nuevo conserva el mismo lugar. Los clientes nuevos entran al final
+  - **Reiniciar** descarta tu orden y vuelve a empezar desde el orden automático
+  - El orden se guarda en tu celular (si cambias de celular, tendrás que armarlo de nuevo)
 - **Botón GPS:** Abre Google Maps con la ubicación del cliente
 
 ### Filtros disponibles

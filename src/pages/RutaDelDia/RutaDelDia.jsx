@@ -5,12 +5,14 @@ import ClientRow from "../../components/ui/ClientRow";
 import RouteProgress from "../../components/ui/RouteProgress";
 import VisitActionSheet from "../../components/ui/VisitActionSheet";
 import UndoToast from "../../components/ui/UndoToast";
+import PosicionRutaSheet from "../../components/ui/PosicionRutaSheet";
 import { useRutaHoy } from "../../hooks/useRutaHoy";
+import { useOrdenRuta } from "../../hooks/useOrdenRuta";
 import { useMovements } from "../../hooks/useMovements";
 import { RESULTADOS_VISITA } from "../../hooks/useVisits";
 import { useAuth } from "../../context/AuthContext";
 import { formatearMonto } from "../../logic/formato";
-import { MODOS_ORDEN, ordenarSegunPreferencia, moverEnOrden } from "../../logic/ordenRuta";
+import { MODOS_ORDEN, claveDeOrden, vecinoVisible } from "../../logic/ordenRuta";
 import { IconSearch, IconPlus, IconChevronDown } from "@tabler/icons-react";
 
 const ETIQUETA_GESTION = {
@@ -22,16 +24,9 @@ const ETIQUETA_GESTION = {
 const DIAS_INICIALES = 2;
 const DIAS_POR_CLIC = 3;
 
-function claveModoOrden(uid) {
-  return `ruta-modo-orden-${uid}`;
-}
-function claveOrdenManual(uid) {
-  return `ruta-orden-manual-${uid}`;
-}
-
 export default function RutaDelDia() {
   const navigate = useNavigate();
-  const { isAdmin, usuario } = useAuth();
+  const { isAdmin } = useAuth();
   const {
     diasAgrupados,
     moraGeneral,
@@ -56,42 +51,11 @@ export default function RutaDelDia() {
   const [pendiente, setPendiente] = useState(null);
   const timerRef = useRef(null);
 
-  // Orden de la cola de hoy: "automático" (mora primero, decide el
-  // sistema) o "manual" (el cobrador arma su propio recorrido). La
-  // preferencia y el orden armado se guardan por usuario en este
-  // dispositivo — ver logic/ordenRuta.js.
-  const [modoOrden, setModoOrden] = useState(MODOS_ORDEN.AUTOMATICO);
-  const [ordenManual, setOrdenManual] = useState([]);
-
-  useEffect(() => {
-    if (!usuario?.uid) return;
-    try {
-      const modoGuardado = localStorage.getItem(claveModoOrden(usuario.uid));
-      if (modoGuardado === MODOS_ORDEN.MANUAL) setModoOrden(MODOS_ORDEN.MANUAL);
-      const ordenGuardado = localStorage.getItem(claveOrdenManual(usuario.uid));
-      if (ordenGuardado) setOrdenManual(JSON.parse(ordenGuardado));
-    } catch {
-      /* sin almacenamiento: la ruta se ve en orden automático */
-    }
-  }, [usuario?.uid]);
-
-  function cambiarModoOrden(nuevo) {
-    setModoOrden(nuevo);
-    try {
-      if (usuario?.uid) localStorage.setItem(claveModoOrden(usuario.uid), nuevo);
-    } catch {
-      /* sin almacenamiento: la preferencia solo dura esta sesión */
-    }
-  }
-
-  function guardarOrdenManual(nuevosIds) {
-    setOrdenManual(nuevosIds);
-    try {
-      if (usuario?.uid) localStorage.setItem(claveOrdenManual(usuario.uid), JSON.stringify(nuevosIds));
-    } catch {
-      /* sin almacenamiento: el orden solo dura esta sesión */
-    }
-  }
+  // Orden de la ruta: "automático" (mora primero, decide el sistema) o
+  // "manual" (el cobrador arma su propio recorrido, que se aplica a todas
+  // las secciones). Ver hooks/useOrdenRuta.js y logic/ordenRuta.js.
+  const orden = useOrdenRuta(rutaOrdenada, loading);
+  const [posicionItem, setPosicionItem] = useState(null);
 
   useEffect(() => () => clearTimeout(timerRef.current), []);
 
@@ -207,36 +171,46 @@ export default function RutaDelDia() {
   }
 
   /**
-   * Renderiza la cola de "pendientes de hoy": la única sección donde el
-   * orden manual tiene sentido (lo demás ya está gestionado o no toca hoy).
-   * En modo manual muestra flechas arriba/abajo por fila; en automático,
-   * filas normales.
+   * Renderiza una sección de la ruta (un día, pendientes/cobrados de hoy,
+   * mora). En modo manual la ordena según el recorrido del cobrador y
+   * agrega a cada fila las flechas y su número de posición. Las flechas
+   * saltan al vecino VISIBLE en la sección, pero el cambio se guarda en el
+   * orden de toda la ruta, así que se refleja en las demás secciones.
    */
-  function renderPendientesHoy(itemsHoyDelDia) {
-    const pendientes = ordenarSegunPreferencia(
-      itemsHoyDelDia.filter((i) => !esGestionadoHoy(i)),
-      modoOrden,
-      ordenManual
-    );
-    const ids = pendientes.map((i) => i.id);
-    return pendientes.map((item, idx) =>
-      renderFila(
-        item,
-        modoOrden === MODOS_ORDEN.MANUAL
-          ? {
-              canUp: idx > 0,
-              canDown: idx < pendientes.length - 1,
-              onUp: () => guardarOrdenManual(moverEnOrden(ids, idx, -1)),
-              onDown: () => guardarOrdenManual(moverEnOrden(ids, idx, 1)),
-            }
-          : null
-      )
-    );
+  function renderSeccion(items) {
+    const lista = orden.ordenar(items);
+    if (!orden.esManual) return lista.map((item) => renderFila(item));
+    const claves = lista.map(claveDeOrden);
+    return lista.map((item, idx) => {
+      const clave = claves[idx];
+      const arriba = vecinoVisible(claves, idx, -1);
+      const abajo = vecinoVisible(claves, idx, 1);
+      return renderFila(item, {
+        posicion: orden.posicionDe(clave),
+        canUp: arriba != null,
+        canDown: abajo != null,
+        onUp: () => orden.moverJuntoA(clave, arriba, -1),
+        onDown: () => orden.moverJuntoA(clave, abajo, 1),
+        onPosicion: () => setPosicionItem(item),
+      });
+    });
+  }
+
+  function restablecerOrden() {
+    if (!confirm("¿Descartar tu orden y volver a empezar desde el orden del sistema (mora primero)?")) return;
+    orden.restablecer();
   }
 
   return (
     <div>
-      <Header title="Ruta de hoy" />
+      <Header
+        title="Ruta de hoy"
+        modalOpen={Boolean(sheetItem || posicionItem)}
+        closeModal={() => {
+          setSheetItem(null);
+          setPosicionItem(null);
+        }}
+      />
 
       <div className="py-4 flex flex-col gap-4">
         <RouteProgress
@@ -300,36 +274,47 @@ export default function RutaDelDia() {
           )}
         </div>
 
-        {/* Orden de la cola de hoy: decide el sistema (mora primero) o el
+        {/* Orden de la ruta: decide el sistema (mora primero) o el
             cobrador arma su propio recorrido con flechas por fila. */}
-        <div className="flex items-center gap-2">
-          <span className="eyebrow shrink-0">Orden de hoy</span>
-          <div className="flex rounded-xl border border-line bg-surface p-1 gap-1">
-            <button
-              type="button"
-              onClick={() => cambiarModoOrden(MODOS_ORDEN.AUTOMATICO)}
-              className={
-                "px-3 py-1.5 rounded-lg text-xs font-semibold transition " +
-                (modoOrden === MODOS_ORDEN.AUTOMATICO
-                  ? "bg-gold text-surface-1"
-                  : "text-primary/65 hover:text-primary")
-              }
-            >
-              Automático
-            </button>
-            <button
-              type="button"
-              onClick={() => cambiarModoOrden(MODOS_ORDEN.MANUAL)}
-              className={
-                "px-3 py-1.5 rounded-lg text-xs font-semibold transition " +
-                (modoOrden === MODOS_ORDEN.MANUAL
-                  ? "bg-gold text-surface-1"
-                  : "text-primary/65 hover:text-primary")
-              }
-            >
-              Manual
-            </button>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="eyebrow shrink-0">Orden de ruta</span>
+            <div className="flex rounded-xl border border-line bg-surface p-1 gap-1">
+              {[
+                { modo: MODOS_ORDEN.AUTOMATICO, label: "Automático" },
+                { modo: MODOS_ORDEN.MANUAL, label: "Manual" },
+              ].map((op) => (
+                <button
+                  key={op.modo}
+                  type="button"
+                  aria-pressed={orden.modo === op.modo}
+                  onClick={() => orden.cambiarModo(op.modo)}
+                  className={
+                    "px-3 py-1.5 rounded-lg text-xs font-semibold transition " +
+                    (orden.modo === op.modo
+                      ? "bg-gold text-surface-1"
+                      : "text-primary/65 hover:text-primary")
+                  }
+                >
+                  {op.label}
+                </button>
+              ))}
+            </div>
+            {orden.esManual && rutaOrdenada.length > 0 && (
+              <button
+                type="button"
+                onClick={restablecerOrden}
+                className="ml-auto text-xs font-medium text-primary/60 underline underline-offset-4 shrink-0"
+              >
+                Reiniciar
+              </button>
+            )}
           </div>
+          <p className="text-[11.5px] text-primary/60 leading-snug">
+            {orden.esManual
+              ? "Usa las flechas o toca el número para llevar a un cliente a otra posición. Tu orden aplica a toda la ruta y se guarda en este celular."
+              : "El sistema ordena cada día: primero los clientes en mora, luego los que están al día."}
+          </p>
         </div>
 
         {loading ? (
@@ -371,7 +356,7 @@ export default function RutaDelDia() {
                       Pendientes
                       <span className="num text-[10.5px] opacity-50">{pendientesDeHoy.length}</span>
                     </p>
-                    {renderPendientesHoy(hoyFiltrado)}
+                    {renderSeccion(pendientesDeHoy)}
                   </div>
                 )}
                 {cobradosDeHoy.length > 0 && (
@@ -380,7 +365,7 @@ export default function RutaDelDia() {
                       Cobrados hoy
                       <span className="num text-[10.5px] opacity-50">{cobradosDeHoy.length}</span>
                     </p>
-                    {cobradosDeHoy.map((item) => renderFila(item))}
+                    {renderSeccion(cobradosDeHoy)}
                   </div>
                 )}
               </div>
@@ -394,7 +379,7 @@ export default function RutaDelDia() {
                   Mora
                   <span className="num text-[10.5px] opacity-50">{moraGeneralFiltrada.length}</span>
                 </p>
-                {moraGeneralFiltrada.map(renderFila)}
+                {renderSeccion(moraGeneralFiltrada)}
               </div>
             )}
             {moraHoyFiltrada.length > 0 && (
@@ -403,7 +388,7 @@ export default function RutaDelDia() {
                   Mora · cobro hoy
                   <span className="num text-[10.5px] opacity-50">{moraHoyFiltrada.length}</span>
                 </p>
-                {moraHoyFiltrada.map(renderFila)}
+                {renderSeccion(moraHoyFiltrada)}
               </div>
             )}
           </div>
@@ -420,10 +405,10 @@ export default function RutaDelDia() {
                 </p>
                 {grupo.offset === 0
                   ? [
-                      ...renderPendientesHoy(grupo.items),
-                      ...grupo.items.filter(esGestionadoHoy).map((item) => renderFila(item)),
+                      ...renderSeccion(grupo.items.filter((item) => !esGestionadoHoy(item))),
+                      ...renderSeccion(grupo.items.filter(esGestionadoHoy)),
                     ]
-                  : grupo.items.map((item) => renderFila(item))}
+                  : renderSeccion(grupo.items)}
               </div>
             ))}
             {hayMasDias && (
@@ -465,6 +450,15 @@ export default function RutaDelDia() {
           navigate("/cobro/" + id);
         }}
         onGestion={(resultado) => programarGestion(sheetItem, resultado)}
+      />
+
+      <PosicionRutaSheet
+        open={Boolean(posicionItem)}
+        nombre={posicionItem?.client.nombre}
+        posicion={posicionItem ? orden.posicionDe(claveDeOrden(posicionItem)) : null}
+        total={orden.totalPosiciones}
+        onClose={() => setPosicionItem(null)}
+        onMover={(destino) => orden.moverAPosicion(claveDeOrden(posicionItem), destino)}
       />
 
       <UndoToast
