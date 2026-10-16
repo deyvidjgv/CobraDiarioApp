@@ -48,7 +48,7 @@ export default function ClientRow({
         (reorder ? "pl-2 " : "pl-4 ") +
         (enMora ? "border-l-[3px] border-l-mora border-l-solid " : "") +
         (drag?.isDragging
-          ? "border-gold/60 shadow-xl shadow-black/60 "
+          ? "border-gold/60 shadow-xl shadow-black/15 "
           : done
           ? "opacity-55 "
           : "hover:border-primary/25 ")

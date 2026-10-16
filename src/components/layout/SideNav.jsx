@@ -139,7 +139,7 @@ export default function SideNav() {
     <>
       {drawerOpen && (
         <div
-          className="fixed inset-0 bg-black/70 z-40"
+          className="fixed inset-0 bg-black/40 z-40"
           onClick={() => setDrawerOpen(false)}
           aria-hidden="true"
         />
