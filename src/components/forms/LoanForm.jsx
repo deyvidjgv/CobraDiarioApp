@@ -241,7 +241,7 @@ export default function LoanForm({
             type="checkbox"
             checked={form.vencimientoActivo}
             onChange={(e) => setForm({ ...form, vencimientoActivo: e.target.checked })}
-            className="rounded border-primary/20 text-mora focus:ring-red-500"
+            className="rounded border-primary/20 text-mora focus:ring-mora/40"
           />
           <span className="text-sm font-medium text-primary">Penalidad por vencimiento (Mora)</span>
         </label>

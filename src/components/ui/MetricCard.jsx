@@ -15,12 +15,12 @@ export default function MetricCard({ label, value, color = "primary", onClick })
     <div
       onClick={onClick}
       className={
-        "bg-surface rounded-2xl p-4 border border-line " +
+        "min-w-0 bg-surface rounded-2xl p-4 border border-line " +
         (onClick ? "cursor-pointer hover:border-primary/25 transition" : "")
       }
     >
       <p className="eyebrow">{label}</p>
-      <p className={"num text-2xl font-medium leading-tight mt-2 tracking-tight " + valueColor}>
+      <p className={"num text-xl sm:text-2xl font-medium leading-tight mt-2 tracking-tight [overflow-wrap:anywhere] " + valueColor}>
         {value}
       </p>
     </div>

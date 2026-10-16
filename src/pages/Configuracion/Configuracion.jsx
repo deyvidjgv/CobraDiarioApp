@@ -756,7 +756,7 @@ export default function Configuracion() {
                   setFiltroClient("");
                   setSelectedLoanId("");
                 }}
-                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-red-300 transition"
+                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-mora/30 transition"
               >
                 <option value="">Todos los cobradiarios</option>
                 {cobradiarios.map((c) => (
@@ -776,7 +776,7 @@ export default function Configuracion() {
                   setFiltroClient(e.target.value);
                   setSelectedLoanId("");
                 }}
-                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-red-300 transition"
+                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-2.5 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-mora/30 transition"
               >
                 <option value="">Todos los clientes</option>
                 {clients
@@ -795,7 +795,7 @@ export default function Configuracion() {
               <select
                 value={selectedLoanId}
                 onChange={(e) => setSelectedLoanId(e.target.value)}
-                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-3 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-red-300 transition"
+                className="mt-1 block w-full rounded-xl border border-mora/20 bg-surface px-4 py-3 text-sm focus:outline-none focus:border-mora/40 focus:ring-1 focus:ring-mora/30 transition"
               >
                 <option value="">
                   {filtroClient ? "Selecciona un crédito" : "Filtra por cliente para ver sus créditos"}

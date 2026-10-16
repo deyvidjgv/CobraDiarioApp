@@ -18,21 +18,23 @@ export default {
         mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "monospace"],
       },
       colors: {
-        // Paleta premium — obsidiana + champán
-        primary: "#F4F1EA",        // tinta principal: texto sobre obsidiana
-        "primary-light": "#A5A096", // tinta secundaria
-        "primary-bg": "#1B1A17",   // relleno sutil: chips, avatares
-        gold: "#D9C9A3",           // champán: acento y acciones primarias
-        // Estados de crédito, aclarados para leer sobre fondo oscuro
-        mora: "#C87B54",           // terracota
-        "al-dia": "#7E9A78",       // verde apagado
-        adelanto: "#8FA3BC",       // azul acero
+        // Paleta clara — marfil + bronce. Todos los colores de la app salen
+        // de estos tokens; los contrastes de texto cumplen WCAG AA (≥4.5:1)
+        // sobre blanco, y `text-surface-1` sobre gold/mora/al-dia también.
+        primary: "#1C1B17",        // tinta principal
+        "primary-light": "#6B665C", // tinta secundaria
+        "primary-bg": "#EEEAE1",   // relleno sutil: chips, avatares, fondo del login
+        gold: "#86682F",           // bronce: acento y acciones primarias
+        // Estados de crédito, oscurecidos para leer sobre fondo claro
+        mora: "#B04A26",           // terracota
+        "al-dia": "#4A7A45",       // verde
+        adelanto: "#46698F",       // azul acero
         // Superficies
-        obsidian: "#0A0A09",       // barra lateral y paneles profundos
-        surface: "#131311",        // tarjeta
-        "surface-1": "#0E0E0D",    // fondo de página
-        "surface-2": "#1B1A17",
-        line: "#272621",           // borde único de toda la app
+        obsidian: "#FDFCFA",       // barra lateral (nombre heredado del tema oscuro)
+        surface: "#FFFFFF",        // tarjeta
+        "surface-1": "#F6F5F1",    // fondo de página; también texto sobre acentos
+        "surface-2": "#F0EDE6",    // hover / relleno secundario
+        line: "#E4E0D6",           // borde único de toda la app
       },
       borderRadius: {
         xl: "0.75rem",

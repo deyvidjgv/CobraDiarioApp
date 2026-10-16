@@ -51,12 +51,12 @@ export default function Registro() {
   const linkEmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(CONTACTO_EMAIL)}&su=${encodeURIComponent(ASUNTO_EMAIL)}`;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-primary-bg p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen flex items-center justify-center bg-surface-1 p-4 sm:p-6 lg:p-8">
       <div className="w-full min-w-0 max-w-md sm:max-w-4xl bg-surface rounded-3xl shadow-xl overflow-hidden grid grid-cols-1 sm:grid-cols-2 border border-line">
         {/* Panel decorativo */}
-        <div className="bg-obsidian p-8 sm:p-10 flex flex-col justify-center items-center text-center relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gold/[0.04]" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary/[0.03]" />
+        <div className="bg-primary-bg p-8 sm:p-10 flex flex-col justify-center items-center text-center relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gold/[0.08]" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary/[0.04]" />
           <div className="relative z-10 flex flex-col items-center gap-4">
             <Logo size={56} />
             <div>
@@ -100,7 +100,7 @@ export default function Registro() {
               href={linkWhatsapp}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-gold hover:bg-gold/90 active:scale-[0.98] text-surface-1 font-medium rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-md shadow-black/40">
+              className="w-full bg-gold hover:bg-gold/90 active:scale-[0.98] text-surface-1 font-medium rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all shadow-md shadow-black/10">
               <IconBrandWhatsapp
                 size={18}
                 stroke={1.5}

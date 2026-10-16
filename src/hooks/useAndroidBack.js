@@ -120,7 +120,7 @@ function mostrarAviso(mensaje) {
   div.style.bottom = "30px";
   div.style.left = "50%";
   div.style.transform = "translateX(-50%)";
-  div.style.backgroundColor = "rgba(38, 33, 92, 0.9)"; // text-primary approx
+  div.style.backgroundColor = "rgba(28, 27, 23, 0.9)"; // text-primary
   div.style.color = "white";
   div.style.padding = "10px 20px";
   div.style.borderRadius = "20px";

@@ -214,7 +214,7 @@ export default function DetalleCliente() {
         {!isAdmin && (
           <button
             onClick={() => navigate(`/creditos/nuevo?clientId=${clientId}`)}
-            className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-xl py-3.5 flex items-center justify-center gap-2 transition shadow-md shadow-black/40"
+            className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-xl py-3.5 flex items-center justify-center gap-2 transition shadow-md shadow-black/10"
           >
             <IconFileText size={18} stroke={1.5} />
             Nuevo crédito para {client.nombre?.split(" ")[0] || "este cliente"}

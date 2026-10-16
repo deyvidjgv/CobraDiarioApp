@@ -110,7 +110,7 @@ export default function Inicio() {
       {/* CTA Principal */}
       <button
         onClick={() => navigate(isAdmin ? "/dashboard" : "/ruta")}
-        className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-2xl py-4 px-6 flex items-center justify-center gap-2 transition shadow-md shadow-black/40 text-base"
+        className="w-full bg-gold hover:bg-gold/90 text-surface-1 font-medium rounded-2xl py-4 px-6 flex items-center justify-center gap-2 transition shadow-md shadow-black/10 text-base"
       >
         {isAdmin ? <IconLayoutDashboard size={22} stroke={1.5} /> : <IconMapPin size={22} stroke={1.5} />}
         {isAdmin ? "Ver dashboard de la organización" : "Ir a la ruta de hoy"}
