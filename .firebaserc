@@ -1,5 +1,12 @@
 {
   "projects": {
-    "default": "prueba-credidev"
+    "default": "cobra-diario--admin"
+  },
+  "targets": {
+    "cobra-diario--admin": {
+      "hosting": {
+        "credidev": ["credidev"]
+      }
+    }
   }
 }
