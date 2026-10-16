@@ -104,6 +104,14 @@ service cloud.firestore {
 
     match /organizations/{orgId} {
       allow read, write: if isAdminOf(orgId);
+      // Bootstrap: el documento raiz se crea en el mismo batch que
+      // userIndex/{uid} y users/{uid}, cuando isAdminOf aun no ve al
+      // miembro. getAfter lee el estado final del batch: solo el dueño
+      // (orgId == su uid, indexado como admin de esa org) puede crearlo.
+      allow create: if isSignedIn() && orgId == request.auth.uid
+                    && request.resource.data.ownerId == request.auth.uid
+                    && getAfter(/databases/$(database)/documents/userIndex/$(request.auth.uid)).data.organizationId == orgId
+                    && getAfter(/databases/$(database)/documents/userIndex/$(request.auth.uid)).data.role == "admin";
 
       match /users/{userId} {
         allow read: if isAdminOf(orgId) || (isSignedIn() && request.auth.uid == userId);

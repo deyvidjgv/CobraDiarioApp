@@ -1,4 +1,4 @@
-﻿import { useEffect } from "react";
+﻿import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { UIProvider } from "./context/UIContext";
@@ -7,26 +7,29 @@ import AdminLayout from "./components/layout/AdminLayout";
 import CobradiarioLayout from "./components/layout/CobradiarioLayout";
 
 import Login from "./pages/Login/Login";
-import Registro from "./pages/Registro/Registro";
-import Inicio from "./pages/Inicio/Inicio";
-import RutaDelDia from "./pages/RutaDelDia/RutaDelDia";
-import Clientes from "./pages/Clientes/Clientes";
-import NuevoCliente from "./pages/Clientes/NuevoCliente";
-import DetalleCliente from "./pages/Clientes/DetalleCliente";
-import NuevoCredito from "./pages/Creditos/NuevoCredito";
-import CreditosAdmin from "./pages/Creditos/CreditosAdmin";
-import DetalleCredito from "./pages/Creditos/DetalleCredito";
-import RegistrarCobro from "./pages/RegistrarCobro/RegistrarCobro";
-import Reportes from "./pages/Reportes/Reportes";
-import Caja from "./pages/Caja/Caja";
-import Configuracion from "./pages/Configuracion/Configuracion";
-import Cobradiarios from "./pages/Cobradiarios/Cobradiarios";
-import NuevoCobradiario from "./pages/Cobradiarios/NuevoCobradiario";
-import Correcciones from "./pages/Correcciones/Correcciones";
-import Auditoria from "./pages/Auditoria/Auditoria";
-import Dashboard from "./pages/Dashboard/Dashboard";
-import Desempeno from "./pages/Desempeno/Desempeno";
-import OperacionCobradiario from "./pages/OperacionCobradiario/OperacionCobradiario";
+
+// Las páginas se cargan bajo demanda: jsPDF/ExcelJS y el resto de pantallas
+// ya no van en el bundle inicial, así el login abre rápido en datos móviles.
+const Registro = lazy(() => import("./pages/Registro/Registro"));
+const Inicio = lazy(() => import("./pages/Inicio/Inicio"));
+const RutaDelDia = lazy(() => import("./pages/RutaDelDia/RutaDelDia"));
+const Clientes = lazy(() => import("./pages/Clientes/Clientes"));
+const NuevoCliente = lazy(() => import("./pages/Clientes/NuevoCliente"));
+const DetalleCliente = lazy(() => import("./pages/Clientes/DetalleCliente"));
+const NuevoCredito = lazy(() => import("./pages/Creditos/NuevoCredito"));
+const CreditosAdmin = lazy(() => import("./pages/Creditos/CreditosAdmin"));
+const DetalleCredito = lazy(() => import("./pages/Creditos/DetalleCredito"));
+const RegistrarCobro = lazy(() => import("./pages/RegistrarCobro/RegistrarCobro"));
+const Reportes = lazy(() => import("./pages/Reportes/Reportes"));
+const Caja = lazy(() => import("./pages/Caja/Caja"));
+const Configuracion = lazy(() => import("./pages/Configuracion/Configuracion"));
+const Cobradiarios = lazy(() => import("./pages/Cobradiarios/Cobradiarios"));
+const NuevoCobradiario = lazy(() => import("./pages/Cobradiarios/NuevoCobradiario"));
+const Correcciones = lazy(() => import("./pages/Correcciones/Correcciones"));
+const Auditoria = lazy(() => import("./pages/Auditoria/Auditoria"));
+const Dashboard = lazy(() => import("./pages/Dashboard/Dashboard"));
+const Desempeno = lazy(() => import("./pages/Desempeno/Desempeno"));
+const OperacionCobradiario = lazy(() => import("./pages/OperacionCobradiario/OperacionCobradiario"));
 
 /**
  * React Router no reinicia el scroll al cambiar de ruta. La pantalla de
@@ -88,7 +91,9 @@ export default function App() {
           <BrowserRouter>
             <ScrollToTop />
             <div className="min-h-screen bg-surface-1 text-primary font-sans antialiased flex flex-col">
-              <AppRoutes />
+              <Suspense fallback={null}>
+                <AppRoutes />
+              </Suspense>
             </div>
           </BrowserRouter>
         </UIProvider>

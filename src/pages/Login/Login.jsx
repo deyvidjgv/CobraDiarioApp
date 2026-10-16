@@ -1,9 +1,9 @@
-﻿import { useRef, useState } from 'react';
+﻿import { useEffect, useRef, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import gsap from 'gsap';
 import Logo from '../../components/ui/Logo';
 import { iniciarSesion } from '../../firebase/auth';
-import { getUserIndex } from '../../firebase/firestore';
+import { useAuth } from '../../context/AuthContext';
 import { DIAMOND_PATH, morphDiamondToPig } from './pigMorph';
 import {
   IconCoin,
@@ -19,12 +19,14 @@ import {
  * mecanismo email/contraseña). La separación real de paneles ocurre al
  * entrar: el admin aterriza en su Dashboard y el cobradiario en Inicio.
  *
- * Las cuentas nuevas de ADMIN se crean en /registro (una organización
- * aparte — el sistema se vende a varios negocios). Las cuentas de
+ * Las cuentas nuevas de ADMIN se crean en Firebase Console; en su primer
+ * login AuthContext les crea su propia organización. Las cuentas de
  * cobradiario las crea el Admin desde su panel.
  */
 export default function Login() {
   const navigate = useNavigate();
+  const { usuario, cargando, isAdmin } = useAuth();
+  const [entrando, setEntrando] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -104,25 +106,25 @@ export default function Login() {
     return { landed, reset };
   }
 
+  // Tras el login (y la animación), se espera a que AuthContext resuelva
+  // la organización — en una cuenta nueva incluye crearla — para mandar
+  // al admin a su Dashboard y al cobradiario a Inicio.
+  useEffect(() => {
+    if (!entrando || cargando || !usuario) return;
+    navigate(isAdmin ? '/dashboard' : '/', { replace: true });
+  }, [entrando, cargando, usuario, isAdmin, navigate]);
+
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
     setLoading(true);
     const anim = playPigAnimation();
     try {
-      const cred = await iniciarSesion(email, password);
+      await iniciarSesion(email, password);
       await anim.landed;
-      // Redirigir según el rol resuelto en userIndex (con fallback a Inicio
-      // si el índice tarda en aparecer; AuthContext lo corrige al llegar).
-      let destino = '/';
-      try {
-        const index = await getUserIndex(cred.user.uid);
-        if (index?.role === 'admin') destino = '/dashboard';
-      } catch {
-        /* sin índice aún: va a Inicio */
-      }
-      navigate(destino, { replace: true });
+      setEntrando(true);
     } catch (err) {
+      setLoading(false);
       anim.reset();
       const msgs = {
         'auth/invalid-email': 'Correo no válido',
@@ -132,13 +134,11 @@ export default function Login() {
         'auth/too-many-requests': 'Demasiados intentos. Espera un momento.',
       };
       setError(msgs[err.code] || 'Error al autenticar');
-    } finally {
-      setLoading(false);
     }
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-primary-bg p-4 sm:p-6 lg:p-8">
+    <div className="min-h-dvh flex items-center justify-center bg-surface-1 p-4 sm:p-6 lg:p-8">
       <div className="w-full min-w-0 max-w-md sm:max-w-4xl max-h-[95dvh] overflow-y-auto bg-surface rounded-3xl shadow-xl grid grid-cols-1 sm:grid-cols-2 border border-line">
         {/* Header / Panel decorativo — la versión grande (logo+título+
             subtítulo apilados) solo cabe si hay ancho Y alto de sobra
@@ -148,9 +148,9 @@ export default function Login() {
             demasiado baja para contenerlo, y por eso hacía falta scroll.
             Las columnas (grid-cols-2) sí quedan solo por ancho: usar el
             ancho disponible en horizontal siempre ayuda, nunca estorba. */}
-        <div className="bg-obsidian p-4 tall-sm:p-10 flex flex-row tall-sm:flex-col justify-center items-center gap-3 tall-sm:gap-4 text-center relative overflow-hidden">
-          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gold/[0.04]" />
-          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary/[0.03]" />
+        <div className="bg-primary-bg p-4 tall-sm:p-10 flex flex-row tall-sm:flex-col justify-center items-center gap-3 tall-sm:gap-4 text-center relative overflow-hidden">
+          <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-gold/[0.08]" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full bg-primary/[0.04]" />
 
           <div className="relative z-10 flex flex-row tall-sm:flex-col items-center gap-3 tall-sm:gap-4">
             {/* Al dar clic en Entrar, el rombo se transforma en marranito
@@ -339,7 +339,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full mt-2 bg-gold hover:bg-gold/90 active:scale-[0.98] text-surface-1 font-medium rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-md shadow-black/40">
+              className="w-full mt-2 bg-gold hover:bg-gold/90 active:scale-[0.98] text-surface-1 font-medium rounded-xl py-3.5 flex items-center justify-center gap-2 transition-all disabled:opacity-50 shadow-md shadow-black/10">
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-surface-1/30 border-t-surface-1 rounded-full animate-spin" />

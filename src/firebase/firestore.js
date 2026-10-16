@@ -161,14 +161,26 @@ export async function getOrgUser(orgId, uid) {
   return getDocument(orgId, "users", uid);
 }
 
+function organizationData(uid, { email, nombre }) {
+  return {
+    ownerId: uid,
+    ownerEmail: email ?? null,
+    nombre: nombre || "",
+    estado: "activa",
+    createdAt: serverTimestamp(),
+  };
+}
+
 /**
- * Crea userIndex/{uid} y organizations/{uid}/users/{uid} con role "admin".
- * Reproduce el comportamiento actual (1 usuario = dueño total de su org)
- * expresado con el modelo de roles, para usuarios que ya existían antes
- * de introducir userIndex.
+ * Crea, en un solo batch atómico, la organización completa de una cuenta
+ * nueva: organizations/{uid} (documento raíz), userIndex/{uid} y
+ * organizations/{uid}/users/{uid} con role "admin". Antes no se escribía
+ * el documento raíz y la organización quedaba "fantasma" en la consola
+ * (solo existían sus subcolecciones).
  */
 export async function bootstrapAdminUser(uid, { email, nombre }) {
   const batch = getBatch();
+  batch.set(orgRef(uid), organizationData(uid, { email, nombre }));
   batch.set(userIndexRef(uid), {
     organizationId: uid,
     role: "admin",
@@ -184,6 +196,19 @@ export async function bootstrapAdminUser(uid, { email, nombre }) {
   });
   await batch.commit();
   return { organizationId: uid, role: "admin" };
+}
+
+/**
+ * Repara cuentas de admin creadas antes de que el bootstrap escribiera el
+ * documento raíz: si organizations/{orgId} no existe, lo crea. Solo aplica
+ * al dueño (orgId === uid); no toca nada si ya existe.
+ */
+export async function ensureOrganizationDoc(uid, { email, nombre }) {
+  const ref = orgRef(uid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) return false;
+  await setDoc(ref, organizationData(uid, { email, nombre }));
+  return true;
 }
 
 /**

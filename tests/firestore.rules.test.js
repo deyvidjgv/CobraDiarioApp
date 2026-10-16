@@ -5,7 +5,7 @@ import {
   assertSucceeds,
   assertFails,
 } from "@firebase/rules-unit-testing";
-import { setDoc, doc, getDoc, updateDoc, deleteDoc, addDoc, collection } from "firebase/firestore";
+import { setDoc, doc, getDoc, updateDoc, deleteDoc, addDoc, collection, writeBatch } from "firebase/firestore";
 
 let testEnv;
 
@@ -121,6 +121,41 @@ describe("userIndex", () => {
         organizationId: OUTSIDER_UID,
         role: "cobradiario",
       })
+    );
+  });
+
+  test("el bootstrap crea organización raíz + userIndex + miembro en un batch", async () => {
+    const ctx = testEnv.authenticatedContext(OUTSIDER_UID);
+    const db = ctx.firestore();
+    const batch = writeBatch(db);
+    batch.set(doc(db, "organizations", OUTSIDER_UID), { ownerId: OUTSIDER_UID, estado: "activa" });
+    batch.set(doc(db, "userIndex", OUTSIDER_UID), { organizationId: OUTSIDER_UID, role: "admin" });
+    batch.set(doc(db, "organizations", OUTSIDER_UID, "users", OUTSIDER_UID), {
+      uid: OUTSIDER_UID,
+      role: "admin",
+      estado: "activo",
+    });
+    await assertSucceeds(batch.commit());
+  });
+
+  test("no se puede crear la organización raíz sin el userIndex de admin", async () => {
+    const ctx = testEnv.authenticatedContext(OUTSIDER_UID);
+    await assertFails(
+      setDoc(doc(ctx.firestore(), "organizations", OUTSIDER_UID), { ownerId: OUTSIDER_UID })
+    );
+  });
+
+  test("un cobradiario no puede crear una organización a su nombre", async () => {
+    const ctx = testEnv.authenticatedContext(COBRADIARIO_UID);
+    await assertFails(
+      setDoc(doc(ctx.firestore(), "organizations", COBRADIARIO_UID), { ownerId: COBRADIARIO_UID })
+    );
+  });
+
+  test("un admin existente puede reparar su organización raíz", async () => {
+    const ctx = testEnv.authenticatedContext(ADMIN_UID);
+    await assertSucceeds(
+      setDoc(doc(ctx.firestore(), "organizations", ORG_ID), { ownerId: ADMIN_UID, estado: "activa" })
     );
   });
 
